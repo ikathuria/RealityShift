@@ -1,102 +1,96 @@
-![Mistral Hack Banner](hackathon/MistralHack%20banner.png)
+# RealityShift
 
-# 🧙 MistralHack: The Reality-Shift RPG
+RealityShift is a browser-first action RPG about surviving a broken simulation by asking the Architect to reshape your loadout. The project is moving from a hackathon-era Python prototype to a safer browser architecture built around typed Architect input, validated loadout data, and low-cost deployment.
 
-**MistralHack** is an experimental RPG built for the **Mistral AI Hackathon**. It pushes the boundaries of real-time AI integration by allowing players to rewrite the game's source code through voice commands while playing.
+## Current Status
 
-![The Architect](https://img.shields.io/badge/Mistral-AI-orange) ![ElevenLabs](https://img.shields.io/badge/ElevenLabs-Voice-blue) ![Pygame](https://img.shields.io/badge/Pygame-Engine-green)
+The repository now has its first browser implementation scaffold.
 
----
+- The product direction is locked around a desktop-web vertical slice first.
+- The old Python prototype is preserved in `legacy/` as reference material.
+- The new implementation target is `packages/game-client/` plus `worker/`.
+- A minimal Phaser client and Cloudflare Worker are now in place.
 
-## 🌌 The Concept
-In the world of MistralHack, you are a "Brawler" in a reality controlled by **The Architect** (powered by Mistral AI). Reality is not fixed but is a script. By using your "Mana", you can whisper instructions to the Architect to shift physics, reveal hidden paths, or cast powerful spells.
+## Core Mechanic
 
-### 🎙️ Voice-to-Reality Loop
-1. **Speak**: Hold **Spacebar** to record your intent (e.g., *"Make me move twice as fast"* or *"Reveal the hidden path"*).
-2. **Translate**: **ElevenLabs scribe_v2** transcribes your voice with high accuracy.
-3. **Rewrite**: **Mistral (devstral-medium-latest)** receives your intent and the current game logic, then generates a live patch.
-4. **Narrate**: **ElevenLabs eleven_turbo_v2_5** narrates the changes made by the Architect.
-5. **Deploy**: The engine hot-reloads the `game_logic.py` module instantly without interrupting your movement.
+RealityShift is built around a constrained "rewrite reality" loop:
 
----
+1. The player reads the trial constraint.
+2. The player asks the Architect for a shift using text.
+3. The server validates the request and returns a legal loadout.
+4. The client applies safe, authored gameplay behaviors.
+5. The player adapts to the trial using limited charges.
 
-## ✨ Key Features
+The browser version will not execute arbitrary model-authored code.
 
-### 🛠️ Real-Time Code Patching
-Powered by Mistral's coding models, the game can handle complex logic shifts. Whether you want to change your class (Mage, Scout, Tank), alter gravity, or spawn new entities, the Architect handles the refactoring in microseconds.
+## Planned Stack
 
-### 🎭 Narrative & Roleplay
-- **The Architect**: A constant presence that comments on your changes via **ElevenLabs TTS**.
-- **Dynamic NPCs**: Characters like the **Elder** and **Guard** have unique voices and quest-specific dialogue.
-- **Quest System**: Complete the "Architect's Sight" quest and "Reflex Calibration" mini-game to unlock the final confrontation.
+- Phaser 3
+- TypeScript
+- Vite
+- Cloudflare Workers
+- Mistral for structured loadout generation
+- Optional ElevenLabs transcription and TTS later
 
-### ⚔️ Final Boss: Lillith
-Lillith is protected by a logic barrier. Once weakened by the Sigils of Truth, she enters a pursuit phase where she aggressively hunts the player. Players must use voice-casted spells (Lightning, Fire, Ice) to defeat her.
+## Repository Structure
 
----
+```text
+RealityShift/
+|- docs/
+|- packages/
+|  `- game-client/
+|- worker/
+`- legacy/
+```
 
-## 🚀 Getting Started
+- `docs/` contains the planning, product, and architecture documents.
+- `packages/game-client/` is the future browser game client.
+- `worker/` is the future edge API and hosting layer.
+- `legacy/` contains the original prototype and hackathon materials kept for reference.
 
-### 1. Prerequisites
-- Python 3.10+
-- A working microphone
-- **API Keys** for:
-  - [Mistral AI](https://console.mistral.ai/)
-  - [ElevenLabs](https://elevenlabs.io/api)
+## Documentation
 
-### 2. Installation
+- [PRD](docs/PRD.md)
+- [User Stories](docs/USER_STORIES.md)
+- [Game Design](docs/GAME_DESIGN.md)
+- [Tech Architecture](docs/TECH_ARCHITECTURE.md)
+- [API Contracts](docs/API_CONTRACTS.md)
+- [Content Bible](docs/CONTENT_BIBLE.md)
+- [Roadmap](docs/ROADMAP.md)
+- [QA Plan](docs/QA_PLAN.md)
+- [Budget and Risks](docs/BUDGET_AND_RISKS.md)
+- [Production Plan](docs/PRODUCTION_PLAN.md)
+
+## Local Development
+
+Install workspace dependencies from the repo root:
+
 ```bash
-# Clone the repository
-git clone https://github.com/ikathuria/MistralHack.git
-cd MistralHack
-
-# Use the provided .venv or create one
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
+npm install
 ```
 
-### 3. Configuration
-Create a `.env` file in the root directory:
-```env
-MISTRAL_API_KEY=your_mistral_key
-ELEVENLABS_API_KEY=your_elevenlabs_key
-```
+Run the browser client:
 
-### 4. Run the Game
 ```bash
-python engine.py
+npm run dev:client
 ```
 
----
+Run the Worker:
 
-## 🎮 Controls
-- **Arrow Keys**: Move your character.
-- **Spacebar (Start/Stop)**: Toggle voice recording. Speak your intent to the Architect.
-- **E Key**: Interact with NPCs and items.
-- **R Key**: Reset the game (after Win/Lose).
+```bash
+npm run dev:worker
+```
 
-> 💡 Pro-Tip: Your Mana is your most precious resource. Don't waste it on small changes; save it for the final showdown with Lillith.
+The Vite client proxies `/api/*` to the local Worker during development.
 
----
+## Legacy Prototype
 
-## 🏗️ Technical Architecture
-- **`engine.py`**: The core loop and hot-reloading orchestrator. 
-- **`app/coder.py`**: The interface to Mistral AI for code generation.
-- **`app/narrator.py`**: Voice recording (STT) and narration (TTS).
-- **`game/game_logic.py`**: The "living" source code that gets modified by AI.
-- **`game/constants.py`**: A `GlobalRegistry` that preserves game state across logic reloads.
+The original Python, Flask, FastAPI, and hackathon assets are intentionally retained in `legacy/` so the concept, mechanics, and content can still inform the browser rebuild without dictating the new production direction.
 
----
+## Design Rules
 
-## 🏆 Hackathon Details
-- **Date**: Feb 28th - March 1st, 2026
-- **Submission**: Mistral AI Hackathon 2026.
-- **Focus**: Demonstrating the power of Mistral's coding models and ElevenLabs voice models in interactive, low-latency environments.
-- **Primary AI Models**: `devstral-medium-latest`, `scribe_v2`, `eleven_turbo_v2_5`.
-- **Demo Video**: [Link to Demo Video](https://youtu.be/jj_8OoTdjRQ)
-
----
-*Created with ❤️ by Ishani Kathuria.*
+- Text-first Architect interaction for the first release
+- Desktop web first
+- Free-first infrastructure wherever possible
+- Structured loadout data instead of executable AI output
+- One polished vertical slice before full-campaign expansion
