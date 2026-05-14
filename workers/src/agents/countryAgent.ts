@@ -1,7 +1,8 @@
 import { chat } from '../ai/llm.js';
 import { buildMessages } from './prompt.js';
-import type { CountryHistory, CountryStateRow, NeighborSummary } from './prompt.js';
+import type { CountryHistory, CountryStateRow, NeighborSummary, HistoricalParallel } from './prompt.js';
 import { getSupabase } from '../lib/supabase.js';
+import { topParallel } from '../history/match.js';
 import countryHistories from '../data/history/country_histories.json';
 import type { Env } from '../index.js';
 
@@ -22,12 +23,10 @@ export interface AgentDecision {
   };
 }
 
-// Load history for a country — returns null if not in the curated set
 function getHistory(iso3: string): CountryHistory | null {
   return (countryHistories as Record<string, CountryHistory>)[iso3] ?? null;
 }
 
-// Fetch the most recent country state from Supabase
 async function fetchState(
   worldId: string,
   countryCode: string,
@@ -46,7 +45,6 @@ async function fetchState(
   return data as CountryStateRow;
 }
 
-// Fetch recent decisions from key partner countries for context
 async function fetchNeighborContext(
   worldId: string,
   keyRelationships: string[],
@@ -55,8 +53,6 @@ async function fetchNeighborContext(
 ): Promise<NeighborSummary[]> {
   if (!keyRelationships.length) return [];
   const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
-
-  // Get the most recent agent decision for each neighbor
   const { data } = await db
     .from('agent_decisions')
     .select('country_code, reasoning, decision')
@@ -65,7 +61,6 @@ async function fetchNeighborContext(
     .in('country_code', keyRelationships.slice(0, 5));
 
   if (!data) return [];
-
   return data.map((row: { country_code: string; reasoning: string; decision: AgentDecision }) => ({
     country_code: row.country_code,
     country_name: (countryHistories as Record<string, CountryHistory>)[row.country_code]?.country ?? row.country_code,
@@ -74,7 +69,6 @@ async function fetchNeighborContext(
   }));
 }
 
-// Apply deltas from the agent decision to current indicators
 function applyDeltas(
   indicators: Record<string, number>,
   decision: AgentDecision
@@ -82,9 +76,9 @@ function applyDeltas(
   const updated = { ...indicators };
   const { policies_adjusted: p, projected_indicators: proj } = decision;
 
-  if (p.tax_rate_delta)         updated.tax_rate         = (updated.tax_rate ?? 0) + p.tax_rate_delta;
-  if (p.military_spend_delta)   updated.military_spend   = (updated.military_spend ?? 0) + p.military_spend_delta;
-  if (p.education_spend_delta)  updated.education_spend  = (updated.education_spend ?? 0) + p.education_spend_delta;
+  if (p.tax_rate_delta)         updated.tax_rate         = (updated.tax_rate         ?? 0) + p.tax_rate_delta;
+  if (p.military_spend_delta)   updated.military_spend   = (updated.military_spend   ?? 0) + p.military_spend_delta;
+  if (p.education_spend_delta)  updated.education_spend  = (updated.education_spend  ?? 0) + p.education_spend_delta;
   if (p.healthcare_spend_delta) updated.healthcare_spend = (updated.healthcare_spend ?? 0) + p.healthcare_spend_delta;
 
   if (proj.gdp_growth_pct !== undefined && updated.gdp_per_capita) {
@@ -101,33 +95,50 @@ export async function runCountryAgent(
   worldId: string,
   countryCode: string,
   env: Env
-): Promise<{ decision: AgentDecision; newState: Record<string, number> }> {
+): Promise<{ decision: AgentDecision; newState: Record<string, number>; parallel: HistoricalParallel | null }> {
   const state = await fetchState(worldId, countryCode, env);
   if (!state) throw new Error(`No state found for ${countryCode} in world ${worldId}`);
 
   const history = getHistory(countryCode);
 
-  // Fetch neighbor context (best-effort, non-blocking)
+  // Fetch neighbor context (best-effort)
   const neighbors: NeighborSummary[] = history
     ? await fetchNeighborContext(worldId, history.key_relationships, state.year, env).catch(() => [])
     : [];
 
-  const messages = buildMessages(state, history ?? {
-    country: countryCode,
-    iso3: countryCode,
-    political_leaning: 'unknown',
-    current_government: 'unknown',
-    key_relationships: [],
-    events: [],
-  }, neighbors, null /* historical parallel — Milestone 4 */);
+  // ── Milestone 4: find closest historical parallel via TF-IDF cosine match ──
+  const match = topParallel({ indicators: state.indicators, policies: state.policies });
+  const parallel: HistoricalParallel | null = match
+    ? {
+        period_id: match.period.id,
+        name: match.period.name,
+        summary: match.period.summary,
+        outcomes: match.period.outcomes,
+        similarity_score: match.similarity,
+      }
+    : null;
+
+  const messages = buildMessages(
+    state,
+    history ?? {
+      country: countryCode,
+      iso3: countryCode,
+      political_leaning: 'unknown',
+      current_government: 'unknown',
+      key_relationships: [],
+      events: [],
+    },
+    neighbors,
+    parallel
+  );
 
   const raw = await chat(messages, env.GROQ_API_KEY, { temperature: 0.6, maxTokens: 1024 });
 
-  // Parse JSON from LLM response — strip any accidental markdown fences
+  // Strip any accidental markdown fences
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
   const decision: AgentDecision = JSON.parse(cleaned);
 
   const newIndicators = applyDeltas(state.indicators, decision);
 
-  return { decision, newState: newIndicators };
+  return { decision, newState: newIndicators, parallel };
 }

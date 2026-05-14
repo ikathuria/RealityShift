@@ -24,7 +24,7 @@ export async function runAgent(
   env: Env
 ): Promise<RunResult> {
   try {
-    const { decision, newState } = await runCountryAgent(worldId, countryCode, env);
+    const { decision, newState, parallel } = await runCountryAgent(worldId, countryCode, env);
     const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
 
     // Determine current simulated year from the state
@@ -39,6 +39,14 @@ export async function runAgent(
 
     const year: number = stateRow?.year ?? new Date().getFullYear();
 
+    // Build historical_parallel column value — prefer the RAG match (M4)
+    // over the LLM's self-reported string (which may hallucinate a name)
+    const historicalParallelValue = parallel
+      ? { period_id: parallel.period_id, name: parallel.name, similarity_score: parallel.similarity_score }
+      : decision.historical_parallel
+        ? { name: decision.historical_parallel, similarity_score: null }
+        : null;
+
     // Write to agent_decisions log
     await db.from('agent_decisions').insert({
       world_id: worldId,
@@ -46,9 +54,7 @@ export async function runAgent(
       year,
       decision: decision.policies_adjusted,
       reasoning: decision.reasoning,
-      historical_parallel: decision.historical_parallel
-        ? { name: decision.historical_parallel, similarity_score: null }
-        : null,
+      historical_parallel: historicalParallelValue,
       projected_indicators: decision.projected_indicators,
     });
 

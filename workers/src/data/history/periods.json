@@ -1,0 +1,915 @@
+[
+  {
+    "id": "weimar-hyperinflation-1923",
+    "name": "Weimar Hyperinflation",
+    "country": "Germany",
+    "yearRange": [1921, 1924],
+    "tags": ["hyperinflation", "currency_crisis", "war_reparations", "money_printing", "political_instability", "middle_class_collapse"],
+    "policyProfile": {
+      "fiscal_deficit": "extreme",
+      "monetary_expansion": "extreme",
+      "political_stability": "low",
+      "trade_balance": "negative",
+      "foreign_debt": "extreme"
+    },
+    "outcomes": "Currency became worthless (1 trillion marks per dollar by Nov 1923). Middle-class savings wiped out. Social unrest and resentment fuelled radical politics. Stabilised by Rentenmark and Dawes Plan (1924), but long-term damage to institutional trust was catastrophic.",
+    "internationalReaction": "Allied powers imposed Dawes Plan (1924) restructuring reparations. France and Belgium occupied the Ruhr (1923) to extract reparations directly. US banks (Young Plan) lent heavily to stabilise. Served as a cautionary tale permanently shaping German monetary conservatism.",
+    "summary": "Germany's 1921–1924 hyperinflation, triggered by war reparations and deliberate money printing to fund passive resistance in the Ruhr, destroyed the currency and the savings of the middle class."
+  },
+  {
+    "id": "nazi-rearmament-1933",
+    "name": "Nazi Militarisation and Autarky",
+    "country": "Germany",
+    "yearRange": [1933, 1939],
+    "tags": ["militarism", "nationalism", "autarky", "press_restrictions", "authoritarian_consolidation", "rearmament", "ethnic_persecution", "economic_stimulus"],
+    "policyProfile": {
+      "military_spend": "extreme",
+      "press_freedom": "low",
+      "trade_openness": "low",
+      "state_control_of_economy": "high",
+      "political_pluralism": "none",
+      "unemployment_reduction": "rapid"
+    },
+    "outcomes": "Unemployment fell from 6M to near zero by 1938 via rearmament and public works. GDP grew 8% annually. Jewish population stripped of rights and eventually murdered. Culminated in World War II and total destruction of Germany.",
+    "internationalReaction": "Western powers appeased repeatedly (Rhineland 1936, Anschluss 1938, Munich 1938). USSR signed Molotov-Ribbentrop Pact (1939). Eventually triggered a world war killing 70-85M people.",
+    "summary": "Hitler's Germany combined massive state spending on rearmament with totalitarian political consolidation, elimination of press freedom, and racial persecution — producing short-term economic recovery at the cost of catastrophic long-term destruction."
+  },
+  {
+    "id": "fdr-new-deal-1933",
+    "name": "FDR New Deal",
+    "country": "USA",
+    "yearRange": [1933, 1941],
+    "tags": ["keynesian_stimulus", "welfare_state", "bank_regulation", "public_works", "rural_support", "labour_rights", "democratic_reform"],
+    "policyProfile": {
+      "fiscal_deficit": "high",
+      "state_intervention": "high",
+      "bank_regulation": "high",
+      "social_spending": "high",
+      "trade_openness": "moderate",
+      "political_stability": "moderate"
+    },
+    "outcomes": "Unemployment fell from 25% to 14% by 1937. Banking system stabilised by FDIC and Glass-Steagall. Social Security established. GDP recovered to pre-Depression levels by 1937, then dipped again. Full recovery required WWII mobilisation.",
+    "internationalReaction": "Inspired similar programs in Canada, UK (Keynesian influence). Alarmed conservatives globally. Bretton Woods (1944) built on New Deal institutions. Seen as proof democracy could fight the Depression without fascism.",
+    "summary": "Roosevelt's New Deal responded to the Great Depression with massive state intervention: bank regulation, public works (WPA, CCC), agricultural support, and the foundations of the US welfare state."
+  },
+  {
+    "id": "soviet-five-year-plans-1928",
+    "name": "Soviet Forced Industrialisation",
+    "country": "USSR",
+    "yearRange": [1928, 1941],
+    "tags": ["forced_collectivisation", "state_planning", "rapid_industrialisation", "authoritarian_control", "famine", "political_purges", "military_buildup"],
+    "policyProfile": {
+      "state_ownership": "extreme",
+      "private_enterprise": "none",
+      "agricultural_control": "extreme",
+      "political_pluralism": "none",
+      "military_spend": "high",
+      "urbanisation": "rapid"
+    },
+    "outcomes": "Industrial output grew dramatically — USSR became second-largest industrial economy by 1940. Collectivisation caused Ukrainian Holodomor (3.5–7.5M dead) and Soviet famine (1932-33). Purges killed 750,000+ and weakened the military before WWII.",
+    "internationalReaction": "Western powers largely ignored the famine (Duranty in NYT denied it). Model inspired developing-world leaders from Mao to Nasser. Nazi Germany remained the greater concern for Western democracies.",
+    "summary": "Stalin's Five Year Plans rapidly industrialised the USSR through forced collectivisation of agriculture and centrally directed industry, at the cost of millions of lives and the destruction of private economic activity."
+  },
+  {
+    "id": "mao-great-leap-1958",
+    "name": "Mao's Great Leap Forward",
+    "country": "China",
+    "yearRange": [1958, 1962],
+    "tags": ["forced_collectivisation", "state_planning", "propaganda", "agricultural_mismanagement", "famine", "authoritarian_control", "mass_mobilisation"],
+    "policyProfile": {
+      "state_ownership": "extreme",
+      "agricultural_management": "extremely_poor",
+      "political_pluralism": "none",
+      "information_control": "extreme",
+      "rural_labour": "mobilised_to_industry"
+    },
+    "outcomes": "Caused the Great Chinese Famine: 15–55 million deaths. Steel production targets met using crude backyard furnaces (output mostly unusable). Agricultural output collapsed 15–20%. Mao temporarily sidelined; Liu Shaoqi and Deng Xiaoping restored pragmatic policies.",
+    "internationalReaction": "USSR grew alarmed; Sino-Soviet split accelerated. The scale of the disaster was concealed from the world for decades. West had little visibility; Cold War framing dominated. Helped sour Khrushchev's view of Mao.",
+    "summary": "Mao's Great Leap Forward attempted to transition China from agrarian to communist industrial society in five years through mass collectivisation and backyard steel production, causing the deadliest famine in history."
+  },
+  {
+    "id": "pinochet-shock-therapy-1973",
+    "name": "Pinochet Shock Therapy",
+    "country": "Chile",
+    "yearRange": [1973, 1990],
+    "tags": ["market_liberalisation", "privatisation", "austerity", "military_coup", "authoritarian_rule", "chicago_boys", "trade_openness", "political_repression"],
+    "policyProfile": {
+      "privatisation": "extreme",
+      "trade_openness": "high",
+      "social_spending": "low",
+      "political_freedom": "low",
+      "military_control": "extreme",
+      "inflation_control": "priority"
+    },
+    "outcomes": "Inflation reduced from 600% to single digits by late 1970s. Poverty initially worsened (1975 shock); GDP fell 13%. Long-term growth improved; Chile became Latin America's most stable economy. 3,000+ political opponents killed or disappeared; 80,000 imprisoned.",
+    "internationalReaction": "USA (CIA) supported coup; West generally tolerated regime for anti-communist alignment. International human rights movement emerged partly in response. Thatcher admired the economic model. Pinochet eventually arrested in London (1998) on human rights warrant.",
+    "summary": "Following the 1973 coup against Allende, Pinochet's Chicago Boys implemented radical free-market reforms: privatisation, trade liberalisation, pension privatisation — combined with violent political repression."
+  },
+  {
+    "id": "thatcher-uk-1979",
+    "name": "Thatcher Revolution",
+    "country": "United Kingdom",
+    "yearRange": [1979, 1990],
+    "tags": ["privatisation", "monetarism", "union_busting", "austerity", "deregulation", "financial_liberalisation", "trade_openness"],
+    "policyProfile": {
+      "privatisation": "high",
+      "trade_union_power": "low",
+      "financial_regulation": "low",
+      "social_spending": "reduced",
+      "monetary_tightening": "high",
+      "inflation_control": "priority"
+    },
+    "outcomes": "Inflation reduced from 22% to 3%. Unemployment peaked at 3.3M (1984) before falling. Coal, steel, and manufacturing industries decimated. City of London deregulated (Big Bang 1986), becoming global financial centre. Income inequality (Gini) rose sharply. North-South divide deepened.",
+    "internationalReaction": "Reagan in USA pursued parallel agenda (Reaganomics). Model adopted in various forms globally via Washington Consensus. Falklands War (1982) boosted popularity. Miners' strike (1984-85) seen as pivotal victory over labour movement.",
+    "summary": "Margaret Thatcher's 1979–1990 government privatised state industries, broke trade union power, deregulated finance, and imposed monetarism — fundamentally reshaping Britain's economy and the global centre-left consensus."
+  },
+  {
+    "id": "reagan-revolution-1981",
+    "name": "Reagan Revolution / Supply-Side Economics",
+    "country": "USA",
+    "yearRange": [1981, 1989],
+    "tags": ["tax_cuts", "deregulation", "military_buildup", "anti_communism", "supply_side", "deficit_spending", "union_busting"],
+    "policyProfile": {
+      "tax_rate": "reduced",
+      "military_spend": "high",
+      "deregulation": "high",
+      "fiscal_deficit": "high",
+      "trade_union_power": "low",
+      "social_spending": "reduced"
+    },
+    "outcomes": "Top marginal tax rate cut from 70% to 28%. GDP grew strongly after 1982 recession. National debt tripled. Unions weakened (PATCO strike). Deregulation of S&Ls contributed to savings and loan crisis ($130B bailout). Cold War arms race strained USSR.",
+    "internationalReaction": "Thatcher partnership formed ideological axis. Washington Consensus spread supply-side doctrine to developing world via IMF/World Bank. USSR attempted to match military spending, contributing to economic strain. Latin America followed deregulation in 1980s.",
+    "summary": "Reagan cut taxes for the wealthy and corporations, increased defence spending massively, deregulated industries, and broke organised labour — establishing supply-side economics as the dominant US policy framework for decades."
+  },
+  {
+    "id": "nordic-social-democracy-1960",
+    "name": "Nordic Social Democracy",
+    "country": "Sweden",
+    "yearRange": [1960, 1990],
+    "tags": ["high_taxation", "universal_welfare", "labour_rights", "social_cohesion", "export_competitiveness", "active_labour_market", "gender_equality"],
+    "policyProfile": {
+      "tax_rate": "high",
+      "social_spending": "high",
+      "labour_rights": "strong",
+      "trade_openness": "high",
+      "income_equality": "high",
+      "political_stability": "high"
+    },
+    "outcomes": "Sweden achieved near-zero unemployment, world-leading life expectancy, and low inequality (Gini ~0.23) while maintaining export competitiveness. Universal healthcare, childcare, and education produced among the world's best outcomes on human development indices. Economic slowdown in 1990s led to partial reform.",
+    "internationalReaction": "Admired internationally as 'third way' between capitalism and communism. US conservatives labelled it 'socialism'; Scandinavians rejected the label. European Social Democrats used as model. Strong labour-capital 'Saltsjöbaden' social compact seen as key ingredient.",
+    "summary": "Sweden's postwar Social Democratic model combined high taxes, universal welfare, strong unions, and export-driven private enterprise — producing high equality, strong public services, and sustained prosperity."
+  },
+  {
+    "id": "japanese-miracle-1955",
+    "name": "Japanese Economic Miracle",
+    "country": "Japan",
+    "yearRange": [1955, 1973],
+    "tags": ["export_led_growth", "industrial_policy", "state_capitalism", "technology_transfer", "high_savings", "education_investment", "labour_discipline"],
+    "policyProfile": {
+      "export_orientation": "extreme",
+      "state_industrial_policy": "high",
+      "savings_rate": "high",
+      "trade_openness": "selective",
+      "education_spend": "high",
+      "military_spend": "low"
+    },
+    "outcomes": "GDP grew at 10% annually. Japan became second-largest economy by 1968. Life expectancy surpassed USA. Manufacturing quality revolutionised (Toyota, Sony). Income inequality reduced (Gini among world's lowest). Resource-poor nation became industrial power through human capital.",
+    "internationalReaction": "USA allowed Japan preferential trade access as Cold War ally. MITI model studied globally; South Korea and Taiwan adapted it. Western manufacturers faced intense competition from Japanese exports in cars and electronics.",
+    "summary": "Japan's postwar 'miracle' combined American-style democracy with MITI-directed industrial policy: state-guided credit, strategic protectionism, forced savings, and intense focus on education and technology transfer."
+  },
+  {
+    "id": "asian-financial-crisis-1997",
+    "name": "Asian Financial Crisis",
+    "country": "Thailand/South Korea/Indonesia",
+    "yearRange": [1997, 1999],
+    "tags": ["currency_crisis", "capital_flight", "imf_austerity", "bank_collapse", "hot_money", "contagion", "property_bubble"],
+    "policyProfile": {
+      "fiscal_deficit": "moderate_to_high",
+      "currency_peg": "broken",
+      "bank_regulation": "weak",
+      "foreign_debt": "high",
+      "imf_conditionality": "imposed"
+    },
+    "outcomes": "Thailand, Indonesia, South Korea, Malaysia all suffered severe recessions (-5 to -15% GDP). Indonesia's Suharto fell. IMF conditions worsened unemployment and social unrest. Capital account liberalisation identified as key vulnerability. Most countries recovered by 2000.",
+    "internationalReaction": "IMF imposed harsh austerity (later acknowledged as counterproductive). USA and Europe initially slow to help; Japan proposed Asian Monetary Fund (blocked by USA). Malaysia's Mahathir imposed capital controls against IMF advice — Malaysia recovered faster. Led to massive reserve accumulation across Asia.",
+    "summary": "The 1997 Asian financial crisis was triggered by sudden capital outflows after currency pegs broke, collapsing overleveraged banking systems across Thailand, Indonesia, South Korea, and Malaysia."
+  },
+  {
+    "id": "soviet-collapse-1989",
+    "name": "Soviet Collapse and Transition",
+    "country": "USSR",
+    "yearRange": [1989, 1994],
+    "tags": ["state_collapse", "transition_economy", "hyperinflation", "privatisation", "oligarch_rise", "loss_of_empire", "ethnic_conflict"],
+    "policyProfile": {
+      "state_planning": "collapsing",
+      "privatisation": "chaotic",
+      "fiscal_control": "lost",
+      "monetary_expansion": "extreme",
+      "political_transition": "democratic_opening"
+    },
+    "outcomes": "GDP fell 40%+ in Russia 1989-1998 — worse than the Great Depression. Life expectancy fell sharply (alcohol, despair). Oligarchs captured state assets for pennies. Ukraine, Baltic states and others gained independence. NATO expanded eastward. Russia emerged traumatised and resentful.",
+    "internationalReaction": "USA declared 'end of history' (Fukuyama). Washington Consensus imposed shock therapy via IMF. NATO began eastward expansion. Germany reunified. Aid flows were modest relative to the scale of transformation. Sense of Western triumphalism sowed long-term resentment.",
+    "summary": "The Soviet Union's dissolution produced catastrophic economic contraction across successor states, mass privatisation that created oligarchies, and a geopolitical vacuum that reshaped Eurasia."
+  },
+  {
+    "id": "marshall-plan-1948",
+    "name": "Marshall Plan Reconstruction",
+    "country": "Western Europe",
+    "yearRange": [1948, 1952],
+    "tags": ["reconstruction", "foreign_aid", "trade_liberalisation", "institution_building", "anti_communism", "keynesian_investment"],
+    "policyProfile": {
+      "foreign_investment": "high",
+      "trade_openness": "increasing",
+      "institution_building": "high",
+      "fiscal_support": "externally_provided",
+      "political_stability": "improving"
+    },
+    "outcomes": "$13B ($140B in 2023) transferred to 17 countries. Western European industrial production surpassed pre-war levels by 1951. OEEC (later OECD) and European Payments Union created foundations for EU. West Germany included, preventing repeat of Versailles resentment.",
+    "internationalReaction": "USSR rejected participation; Eastern Europe barred from joining. Cemented Cold War division. US business gained European markets. Keynes's influence felt in rejection of punitive peace. Japan received parallel support under MacArthur.",
+    "summary": "The USA's Marshall Plan provided $13B in aid to rebuild Western Europe after WWII, establishing institutions, rebuilding infrastructure, and cementing the Atlantic alliance — a model for post-conflict reconstruction."
+  },
+  {
+    "id": "deng-china-reforms-1978",
+    "name": "Deng Xiaoping's Reform and Opening Up",
+    "country": "China",
+    "yearRange": [1978, 1997],
+    "tags": ["market_reform", "export_led_growth", "special_economic_zones", "pragmatism", "authoritarian_stability", "foreign_direct_investment", "agriculture_liberalisation"],
+    "policyProfile": {
+      "market_reform": "gradual",
+      "trade_openness": "selective_high",
+      "state_control": "maintained_politically",
+      "private_enterprise": "permitted",
+      "foreign_investment": "encouraged",
+      "political_pluralism": "low"
+    },
+    "outcomes": "GDP grew ~9% annually for 20 years, lifting 800M out of poverty — the largest poverty reduction in history. Special Economic Zones (Shenzhen) became global manufacturing hubs. Tiananmen (1989) showed political liberalisation was not part of the bargain. Hong Kong handover managed smoothly.",
+    "internationalReaction": "USA extended Most Favoured Nation status; WTO membership (2001). Western businesses rushed in for cheap labour. Tiananmen caused sanctions that were quickly relaxed. Model inspired 'China can grow without democracy' thesis globally.",
+    "summary": "Deng Xiaoping's gradual market reforms — while maintaining CCP political control — produced the greatest sustained economic growth in history, turning China from an impoverished agrarian state to the world's manufacturing hub."
+  },
+  {
+    "id": "iran-revolution-1979",
+    "name": "Iranian Islamic Revolution",
+    "country": "Iran",
+    "yearRange": [1979, 1989],
+    "tags": ["theocracy", "nationalisation", "anti_western", "sanctions", "war", "religious_governance", "press_restrictions"],
+    "policyProfile": {
+      "nationalisation": "high",
+      "trade_openness": "low",
+      "press_freedom": "low",
+      "religious_governance": "extreme",
+      "foreign_relations": "hostile_to_west",
+      "military_spend": "high"
+    },
+    "outcomes": "Shah overthrown; Ayatollah Khomeini established theocratic Islamic Republic. US hostage crisis (444 days). Iran-Iraq War (1980-88) killed 500,000+. Economy contracted sharply; oil revenues mismanaged. Brain drain of educated middle class. Permanent enmity with USA and Israel.",
+    "internationalReaction": "USA imposed comprehensive sanctions (still in effect). Iraq invaded with Western tacit support. USSR exploited but couldn't control. Arab monarchies funded Iraq. Revolution inspired Islamist movements globally; terrified Gulf states.",
+    "summary": "The 1979 Iranian Revolution replaced a pro-Western monarchy with an Islamist theocracy, triggering a US hostage crisis, a devastating 8-year war with Iraq, and a permanent rupture with the Western-led international order."
+  },
+  {
+    "id": "turkey-ataturk-1923",
+    "name": "Atatürk's Modernisation",
+    "country": "Turkey",
+    "yearRange": [1923, 1938],
+    "tags": ["secularism", "modernisation", "state_building", "nationalism", "authoritarian_reform", "westernisation", "literacy_campaign"],
+    "policyProfile": {
+      "secularism": "extreme",
+      "state_control": "high",
+      "education_reform": "rapid",
+      "political_pluralism": "low",
+      "trade_protectionism": "moderate",
+      "military_role": "founding_institution"
+    },
+    "outcomes": "Turkey transformed from Ottoman empire remnant to modern republic. Alphabet changed to Latin script; literacy rose rapidly. Women granted voting rights (1934, before France). Caliphate abolished. Industrialisation began. One-party rule maintained until 1946.",
+    "internationalReaction": "Western powers (Lausanne Treaty 1923) recognised Turkey's sovereignty. Model of secular Muslim-majority modernisation studied globally. Inspired Iranian Shah, later failed to inspire Arab Nasserism. Turkey joined NATO (1952).",
+    "summary": "Mustafa Kemal Atatürk's top-down modernisation programme transformed Turkey through secularism, alphabet reform, legal westernisation, and state-directed industrialisation — establishing a secular republic from the Ottoman ruins."
+  },
+  {
+    "id": "korea-park-development-1961",
+    "name": "South Korean Developmental State",
+    "country": "South Korea",
+    "yearRange": [1961, 1979],
+    "tags": ["export_led_growth", "industrial_policy", "chaebol", "authoritarian_development", "education_investment", "foreign_aid", "state_capitalism"],
+    "policyProfile": {
+      "export_orientation": "extreme",
+      "state_industrial_policy": "high",
+      "political_freedom": "low",
+      "education_spend": "high",
+      "trade_unions": "suppressed",
+      "foreign_investment": "selective"
+    },
+    "outcomes": "GDP grew 9% annually for 18 years. Korea transformed from one of the world's poorest countries (income comparable to Ghana in 1960) to middle income. Chaebol conglomerates (Samsung, Hyundai) became global corporations. Park Chung-hee assassinated 1979.",
+    "internationalReaction": "USA provided security umbrella and market access. Japan provided industrial technology and FDI (despite historical grievances). World Bank supported infrastructure. Model studied as 'East Asian Miracle'; later influenced Singapore, Taiwan, China's export zones.",
+    "summary": "Park Chung-hee's authoritarian developmental state directed credit to export-oriented chaebol, suppressed wages and unions, invested heavily in education, and produced one of history's fastest economic transformations."
+  },
+  {
+    "id": "singapore-lee-1965",
+    "name": "Singapore's Authoritarian Meritocracy",
+    "country": "Singapore",
+    "yearRange": [1965, 1990],
+    "tags": ["meritocracy", "authoritarian_stability", "export_led_growth", "anti_corruption", "education_investment", "financial_hub", "multiracial_management"],
+    "policyProfile": {
+      "anti_corruption": "extreme",
+      "education_spend": "high",
+      "trade_openness": "extreme",
+      "political_pluralism": "low",
+      "welfare_selectivity": "targeted",
+      "foreign_investment": "extreme"
+    },
+    "outcomes": "Singapore grew from third-world city-state (1965) to first-world financial hub. GDP per capita overtook UK by 1990s. Zero tolerance for corruption; government among world's least corrupt. Ethnic tensions managed through HDB housing integration. Press freedom low but prosperity high.",
+    "internationalReaction": "Admired for efficiency and incorruptibility; criticised for press repression and caning. US and West maintained close business ties while criticising human rights. 'Asian Values' debate (Lee vs. Western liberalism) shaped regional political philosophy.",
+    "summary": "Lee Kuan Yew built Singapore into a global financial centre through ruthless anti-corruption enforcement, meritocratic governance, strategic trade openness, and ethnic management — at the cost of political pluralism."
+  },
+  {
+    "id": "zimbabwe-hyperinflation-2000",
+    "name": "Zimbabwe Hyperinflation and Collapse",
+    "country": "Zimbabwe",
+    "yearRange": [2000, 2009],
+    "tags": ["hyperinflation", "land_seizure", "authoritarian_mismanagement", "currency_collapse", "sanctions", "capital_flight", "emigration"],
+    "policyProfile": {
+      "monetary_expansion": "extreme",
+      "property_rights": "undermined",
+      "fiscal_deficit": "extreme",
+      "political_repression": "high",
+      "agricultural_output": "collapsed",
+      "foreign_investment": "fled"
+    },
+    "outcomes": "Inflation reached 89.7 sextillion percent (2008). Agricultural output collapsed 50%+ after white farm seizures. GDP fell 50% over the decade. 4M Zimbabweans (25%+) emigrated. USD adopted in 2009; economy partially stabilised. Mugabe remained in power until 2017.",
+    "internationalReaction": "Western sanctions followed farm seizures and election rigging. South Africa under Mbeki refused to condemn (quiet diplomacy). China and Russia blocked UN Security Council action. SADC regional body ineffective.",
+    "summary": "Zimbabwe's land seizures, money printing to fund war veterans and the DRC conflict, and political repression produced the world's worst hyperinflation outside wartime, collapsing the economy and triggering mass emigration."
+  },
+  {
+    "id": "argentina-default-2001",
+    "name": "Argentina 2001 Debt Default",
+    "country": "Argentina",
+    "yearRange": [1999, 2003],
+    "tags": ["debt_default", "currency_peg_collapse", "imf_austerity", "bank_runs", "political_instability", "capital_controls", "dollarisation"],
+    "policyProfile": {
+      "fiscal_austerity": "extreme",
+      "currency_peg": "broken",
+      "imf_conditionality": "imposed",
+      "bank_access": "frozen",
+      "political_stability": "collapsed",
+      "unemployment": "extreme"
+    },
+    "outcomes": "World's largest ever debt default ($100B in 2001). Five presidents in two weeks. GDP fell 11%. Unemployment hit 25%. Piquetero protests. Currency devalued 75%. Peso re-introduced; economy recovered strongly 2003-2007 under Kirchner with default haircut. Long-running dispute with 'vulture funds'.",
+    "internationalReaction": "IMF widely blamed for contractionary austerity recommendations. USA unsympathetic; Bush administration refused bailout. Later litigation by holdout creditors (NML Capital) blocked Argentina from capital markets until 2016 settlement.",
+    "summary": "Argentina's 2001 crisis: the Convertibility Plan's dollar peg combined with IMF-mandated austerity produced a bank run, a chaotic default on $100B of debt, political collapse, and Argentina's worst peacetime depression."
+  },
+  {
+    "id": "venezuela-chavez-2000",
+    "name": "Venezuelan Petro-Populism",
+    "country": "Venezuela",
+    "yearRange": [2000, 2015],
+    "tags": ["petro_populism", "nationalisation", "social_spending", "authoritarian_drift", "oil_dependency", "sanctions", "hyperinflation"],
+    "policyProfile": {
+      "oil_dependency": "extreme",
+      "nationalisation": "high",
+      "social_spending": "high",
+      "press_freedom": "declining",
+      "fiscal_deficit": "high",
+      "private_enterprise": "restricted"
+    },
+    "outcomes": "Extreme poverty halved under Chávez using oil revenues (Misiones programs). Middle class shrank. After oil price fall (2014), economy collapsed — GDP fell 80% by 2020 under Maduro. Hyperinflation (10M% in 2019). 7M+ Venezuelans emigrated (2015-2023). Opposition repeatedly imprisoned.",
+    "internationalReaction": "USA attempted coup support (2002); Chávez survived. ALBA bloc (Cuba, Bolivia, Ecuador, Nicaragua) formed. After Maduro's election fraud (2018), 50+ countries recognised Guaidó. Russia and China maintained support for Maduro.",
+    "summary": "Hugo Chávez used Venezuela's oil wealth to fund social programs and challenge US hegemony — but oil dependency, nationalisation, and price controls hollowed out the productive economy, leading to catastrophic collapse under Maduro."
+  },
+  {
+    "id": "japan-lost-decade-1991",
+    "name": "Japan's Lost Decade",
+    "country": "Japan",
+    "yearRange": [1991, 2003],
+    "tags": ["asset_bubble_collapse", "deflation", "zombie_banks", "fiscal_stimulus", "stagnation", "structural_rigidity", "debt_overhang"],
+    "policyProfile": {
+      "fiscal_deficit": "high",
+      "monetary_policy": "near_zero",
+      "bank_reform": "delayed",
+      "private_investment": "collapsed",
+      "corporate_restructuring": "resisted",
+      "deflation": "chronic"
+    },
+    "outcomes": "GDP stagnated for a decade; stock market fell 80% from peak. Property prices fell 70%. Banks carried massive non-performing loans ('zombie banks'). National debt rose from 65% to 150% of GDP. Demographics (ageing) compounded structural problems. Deflation entrenched expectations.",
+    "internationalReaction": "IMF and US Treasury urged faster bank restructuring. Sweden's rapid bank nationalisation (1992) offered contrasting model. Lost Decade became cautionary tale for central banks globally — cited by Bernanke in justifying quantitative easing after 2008.",
+    "summary": "Japan's 1990s asset bubble burst produced a decade of stagnation: zombie banks refusing to write down bad loans, deflationary expectations, and fiscal stimulus that failed to restart the economy without structural banking reform."
+  },
+  {
+    "id": "us-stagflation-1973",
+    "name": "US Stagflation",
+    "country": "USA",
+    "yearRange": [1973, 1982],
+    "tags": ["stagflation", "oil_shock", "inflation", "unemployment", "gold_standard_end", "supply_side_shock", "monetarism"],
+    "policyProfile": {
+      "inflation": "high",
+      "unemployment": "high",
+      "oil_dependency": "high",
+      "monetary_policy": "confused",
+      "fiscal_deficit": "moderate",
+      "trade_balance": "deteriorating"
+    },
+    "outcomes": "Inflation peaked at 14.8% (1980); unemployment at 10.8% (1982). Two recessions (1973-75 and 1980). Keynesian demand management discredited. Volcker's 'shock therapy' rate hikes (20%+) crushed inflation but caused deep recession. Opened the door to Reagan's supply-side revolution.",
+    "internationalReaction": "OPEC embargo (1973) exposed Western energy dependence. Bretton Woods system already ended (Nixon shock, 1971). IMF system reformed. West Germany and Japan more resilient. Third World debt crisis (1982) triggered by Volcker rate hikes.",
+    "summary": "The 1973-82 US stagflation — combining high inflation and unemployment from oil shocks and monetary mismanagement — discredited Keynesian economics, empowered OPEC, and created the political conditions for Reaganomics."
+  },
+  {
+    "id": "uk-attlee-welfare-1945",
+    "name": "UK Attlee Welfare State",
+    "country": "United Kingdom",
+    "yearRange": [1945, 1951],
+    "tags": ["welfare_state", "nationalisation", "universal_healthcare", "full_employment", "social_democracy", "postwar_reconstruction"],
+    "policyProfile": {
+      "nationalisation": "high",
+      "social_spending": "high",
+      "healthcare_universality": "extreme",
+      "full_employment": "target",
+      "fiscal_deficit": "moderate",
+      "trade_union_power": "high"
+    },
+    "outcomes": "NHS created (1948): universal free healthcare. Coal, steel, railways nationalised. National Insurance (cradle-to-grave welfare) established. Full employment maintained. UK remained a great power despite wartime debt. Foundations laid for 30 years of broadly shared prosperity.",
+    "internationalReaction": "Inspired welfare states across Western Europe and Commonwealth. Marshall Plan helped finance reconstruction. US tolerant despite socialist label. Model contrasted with communist states ('democratic socialism'). NHS became defining national institution.",
+    "summary": "Clement Attlee's Labour government created the NHS, nationalised key industries, and established the UK welfare state in 1945–51 — transforming British society despite a war-ravaged economy and massive debt."
+  },
+  {
+    "id": "german-wirtschaftswunder-1950",
+    "name": "German Economic Miracle (Wirtschaftswunder)",
+    "country": "West Germany",
+    "yearRange": [1950, 1965],
+    "tags": ["reconstruction", "social_market_economy", "export_led_growth", "currency_reform", "low_inflation", "labour_partnership", "postwar_boom"],
+    "policyProfile": {
+      "social_market_economy": "high",
+      "export_orientation": "high",
+      "price_stability": "priority",
+      "labour_codetermination": "high",
+      "trade_openness": "high",
+      "foreign_investment": "high"
+    },
+    "outcomes": "GDP grew 8% annually through 1960s. West Germany became Europe's dominant economy by 1960. Low inflation (Bundesbank culture from Weimar trauma). Codetermination (workers on boards) reduced labour conflict. Guest workers (Gastarbeiter) recruited. Marshall Plan catalysed recovery.",
+    "internationalReaction": "France initially wary but Schuman Plan (1951) integrated German industry into European Coal and Steel Community. EEC (1957) foundational. USA supported rearmament and NATO membership. Model balanced capitalist efficiency with social partnership — contrasted with UK's adversarial labour relations.",
+    "summary": "West Germany's postwar economic miracle combined ordoliberal social market principles, export orientation, price stability, and labour-management codetermination — rebuilding Europe's strongest economy from the rubble of 1945."
+  },
+  {
+    "id": "china-cultural-revolution-1966",
+    "name": "Chinese Cultural Revolution",
+    "country": "China",
+    "yearRange": [1966, 1976],
+    "tags": ["ideological_purge", "anti_intellectualism", "economic_disruption", "political_violence", "authoritarian_control", "propaganda", "youth_mobilisation"],
+    "policyProfile": {
+      "education": "dismantled",
+      "political_pluralism": "none",
+      "economic_planning": "disrupted",
+      "scientific_research": "halted",
+      "political_repression": "extreme",
+      "information_control": "extreme"
+    },
+    "outcomes": "1–2M killed directly; millions more through famine and indirect effects. Universities closed 1966-70; a generation lost education. Scientific and intellectual capacity gutted. Deng Xiaoping twice purged. Mao's cult of personality at peak. Economy stagnated relative to capitalist neighbours.",
+    "internationalReaction": "USSR condemned it; Sino-Soviet split complete. Nixon/Kissinger's 1972 opening to China began normalising relations. Red Guards terrorised foreign embassies. Cultural Revolution exported ideological inspiration to Khmer Rouge, western student radicals.",
+    "summary": "Mao's Cultural Revolution (1966-76) mobilised youth Red Guards to destroy 'bourgeois' culture and purge political rivals — closing universities, killing intellectuals, and setting China's development back by a decade."
+  },
+  {
+    "id": "apartheid-south-africa-1960",
+    "name": "Apartheid South Africa",
+    "country": "South Africa",
+    "yearRange": [1960, 1990],
+    "tags": ["racial_apartheid", "authoritarian_rule", "sanctions", "resource_wealth", "political_repression", "state_capitalism", "emigration"],
+    "policyProfile": {
+      "racial_discrimination": "institutionalised",
+      "political_repression": "high",
+      "trade_openness": "declining_sanctions",
+      "mineral_exports": "high",
+      "press_freedom": "low",
+      "social_spending": "racially_segregated"
+    },
+    "outcomes": "Resource wealth and productive white minority maintained GDP growth. International isolation via sanctions (1986 Comprehensive Anti-Apartheid Act) began to bite by late 1980s. Internal resistance (ANC, Inkatha, UDF) intensified. De Klerk released Mandela (1990); negotiations began.",
+    "internationalReaction": "Commonwealth expelled; international boycotts and disinvestment campaigns. UN arms embargo (1977). USA imposed sanctions (overriding Reagan veto, 1986). Cuba sent troops to Angola fighting South African forces. Isolation accelerated end of apartheid.",
+    "summary": "South Africa's apartheid system segregated society by race, producing resource-fuelled growth for the white minority while systematically dispossessing and repressing the Black majority — ending only under combined internal resistance and international sanctions."
+  },
+  {
+    "id": "russia-putin-petro-state-2000",
+    "name": "Putin's Petro-State Consolidation",
+    "country": "Russia",
+    "yearRange": [2000, 2013],
+    "tags": ["resource_nationalism", "authoritarian_stability", "oligarch_control", "energy_dependence", "press_restrictions", "nationalism", "centralisation"],
+    "policyProfile": {
+      "energy_dependence": "extreme",
+      "state_control_of_key_industries": "high",
+      "press_freedom": "low",
+      "political_pluralism": "low",
+      "fiscal_policy": "conservative",
+      "foreign_reserves": "high"
+    },
+    "outcomes": "GDP grew 7% annually 2000-2008 (oil price windfall). Poverty fell from 29% to 11%. Middle class expanded. Sovereign wealth funds accumulated ($600B+). Oligarchs brought to heel (Khodorkovsky imprisoned). Press freedom declined; TV nationalised. Regional wars (Chechnya, Georgia) cemented state authority.",
+    "internationalReaction": "West engaged Russia as a partner (G8 membership). Business investment surged. NATO enlargement debates caused friction. Chechen war criticised but tolerated. Energy dependence of Europe seen as stabilising. 2008 Georgia war began reassessment.",
+    "summary": "Putin rebuilt Russian state authority and living standards using oil windfall revenues, while systematically dismantling independent media, political competition, and civil society — creating a petrostate governed by a security-services elite."
+  },
+  {
+    "id": "greece-austerity-2010",
+    "name": "Greek Debt Crisis and Austerity",
+    "country": "Greece",
+    "yearRange": [2010, 2018],
+    "tags": ["austerity", "debt_crisis", "imf_troika", "unemployment", "banking_crisis", "eurozone", "capital_controls", "youth_emigration"],
+    "policyProfile": {
+      "fiscal_austerity": "extreme",
+      "public_sector_cuts": "extreme",
+      "pension_cuts": "extreme",
+      "unemployment": "extreme",
+      "capital_controls": "imposed",
+      "trade_openness": "constrained_by_euro"
+    },
+    "outcomes": "GDP fell 27% (2008-2016) — deeper and longer than Great Depression. Unemployment peaked at 27%. Youth unemployment 60%+. Three bailouts totalling €326B. Pension cuts of 40%+. 500,000 skilled workers emigrated. SYRIZA elected on anti-austerity platform; capitulated under Tsipras. Economy slowly recovering post-2017.",
+    "internationalReaction": "ECB, IMF, European Commission ('Troika') imposed conditionality. IMF later acknowledged austerity multipliers underestimated. Germany led insistence on full repayment. Cyprus bail-in (2013) confiscated bank deposits. Served as warning for other European governments.",
+    "summary": "Greece's 2010-2018 debt crisis required three bailouts from the Eurozone/IMF in exchange for extreme austerity, producing a 27% GDP collapse worse than the Great Depression — fundamentally reshaping Greek politics and society."
+  },
+  {
+    "id": "india-liberalisation-1991",
+    "name": "India's 1991 Economic Liberalisation",
+    "country": "India",
+    "yearRange": [1991, 2000],
+    "tags": ["market_liberalisation", "license_raj_dismantling", "trade_openness", "imf_conditionality", "privatisation", "foreign_investment", "balance_of_payments_crisis"],
+    "policyProfile": {
+      "trade_openness": "increasing",
+      "state_industrial_licensing": "reduced",
+      "foreign_investment": "permitted",
+      "fiscal_reform": "moderate",
+      "privatisation": "partial",
+      "imf_conditionality": "imposed"
+    },
+    "outcomes": "GDP growth accelerated from 3.5% to 6-7% annually. FDI surged. IT and services sector boom (Infosys, Wipro). Current account balance restored. License Raj dismantled, freeing entrepreneurship. Poverty fell significantly through 1990s-2000s. Agricultural sector less reformed.",
+    "internationalReaction": "IMF/World Bank supported with conditionality. USA granted MFN status. Global IT outsourcing enabled by English-speaking workforce and cheap labour. India-China economic comparison became standard (India slower reform but stronger democracy argument).",
+    "summary": "India's 1991 balance-of-payments crisis forced liberalisation that dismantled the License Raj, opened trade, and welcomed foreign investment — transforming India from a socialist mixed economy to the world's fastest-growing major economy within a decade."
+  },
+  {
+    "id": "poland-shock-therapy-1989",
+    "name": "Poland's Post-Communist Shock Therapy",
+    "country": "Poland",
+    "yearRange": [1989, 1995],
+    "tags": ["transition_economy", "shock_therapy", "privatisation", "trade_liberalisation", "eu_accession", "unemployment", "inflation_control"],
+    "policyProfile": {
+      "privatisation": "rapid",
+      "trade_liberalisation": "rapid",
+      "price_controls": "removed",
+      "fiscal_austerity": "moderate",
+      "inflation": "reduced_rapidly",
+      "eu_integration": "target"
+    },
+    "outcomes": "Inflation reduced from 600% (1990) to 20% by 1993. GDP fell 10% in 1990 but recovered faster than other transition economies. By 1994 Poland was first post-communist state to exceed 1989 GDP. EU accession (2004) cemented transformation. Only major economy not to enter recession in 2008-09.",
+    "internationalReaction": "IMF/World Bank funded stabilisation. Germany's reunification and EU integration provided both competition and market access. Balcerowicz Plan praised as Eastern Europe model. Czech velvet revolution contrast (slower Czech privatisation had similar results).",
+    "summary": "Poland's Balcerowicz Plan implemented rapid market transition — overnight price liberalisation, tight monetary policy, and quick privatisation — producing a sharp initial recession but faster recovery than gradualist peers."
+  },
+  {
+    "id": "brazil-lula-growth-2003",
+    "name": "Brazil's Lula Growth Years",
+    "country": "Brazil",
+    "yearRange": [2003, 2010],
+    "tags": ["social_inclusion", "conditional_cash_transfers", "commodity_boom", "emerging_market_rise", "moderate_left", "fiscal_responsibility"],
+    "policyProfile": {
+      "social_spending": "high",
+      "fiscal_responsibility": "maintained",
+      "commodity_exports": "booming",
+      "poverty_reduction": "rapid",
+      "trade_diversification": "active",
+      "private_sector_engagement": "high"
+    },
+    "outcomes": "GDP grew 4% annually. 30M lifted from poverty. Bolsa Família reached 13M families. Brazil became 6th largest economy (overtook UK 2012). Discovered pre-salt oil. Won 2016 Olympics and 2014 World Cup bids. Gini coefficient fell from 0.59 to 0.52.",
+    "internationalReaction": "BRICS forum co-founded. Brazil's 'soft power' rose globally. IMF relationship normalised (repaid debts). Lula's 'third way' model (market economy + social inclusion) attracted global admiration. Obama's 'most popular politician on earth' comment. Successor Dilma less successful.",
+    "summary": "Lula's 2003-2010 government combined fiscal orthodoxy with expanded Bolsa Família cash transfers during a commodity boom — producing Brazil's most successful period of inclusive growth and lifting 30 million from poverty."
+  },
+  {
+    "id": "icelandic-recovery-2008",
+    "name": "Iceland's Banking Collapse and Recovery",
+    "country": "Iceland",
+    "yearRange": [2008, 2014],
+    "tags": ["banking_collapse", "debt_default", "currency_devaluation", "capital_controls", "heterodox_recovery", "imf_program", "social_protection"],
+    "policyProfile": {
+      "bank_debt": "defaulted",
+      "currency": "allowed_to_fall",
+      "capital_controls": "imposed",
+      "fiscal_austerity": "moderate",
+      "social_spending": "maintained",
+      "bankers_prosecuted": "yes"
+    },
+    "outcomes": "Banks collapsed (10× GDP liabilities); Iceland refused to bail out foreign creditors (UK/Netherlands). Krona fell 50%. GDP fell 10% initially but recovered to pre-crisis levels by 2014 — faster than Ireland or Spain which bailed out banks. Unemployment peaked at 9% vs Spain's 27%. Bankers imprisoned.",
+    "internationalReaction": "IMF provided $2.1B programme while praising Iceland's heterodox approach (unprecedented IMF self-criticism). UK invoked anti-terrorism law against Iceland. Eventual EU/EEA negotiated settlement. Held up as alternative model to Irish/Spanish austerity.",
+    "summary": "Iceland let its over-leveraged banks fail rather than bailing them out, imposed capital controls, devalued its currency, and prosecuted banking executives — recovering faster than Europe's austerity-following crisis countries."
+  },
+  {
+    "id": "norway-oil-fund-1990",
+    "name": "Norway's Oil Fund Model",
+    "country": "Norway",
+    "yearRange": [1990, 2024],
+    "tags": ["sovereign_wealth", "resource_stewardship", "social_democracy", "intergenerational_equity", "fiscal_rule", "transparency"],
+    "policyProfile": {
+      "oil_revenue_management": "exceptional",
+      "fiscal_rule": "4_percent_spending",
+      "social_spending": "high",
+      "transparency": "extreme",
+      "trade_openness": "high",
+      "inequality": "low"
+    },
+    "outcomes": "Government Pension Fund Global reached $1.7T (world's largest SWF, ~$330,000 per Norwegian). Norway avoided Dutch Disease. 4% fiscal rule prevented inflation from oil wealth. Maintained AAA credit. Universal welfare state sustained. Oil industry workforce employed without crowding private sector.",
+    "internationalReaction": "Widely studied as the gold standard for natural resource management. Contrasted with Nigeria, Venezuela, and Angola's failures. IMF recommends Norwegian model to resource-rich developing countries. Scottish Government cites Norway in independence debates.",
+    "summary": "Norway's Petroleum Fund (GPFG) saves the majority of oil revenues for future generations through a strict fiscal rule, making Norway the world's most successful manager of natural resource wealth — avoiding the resource curse that plagued peers."
+  },
+  {
+    "id": "interwar-fascist-italy-1922",
+    "name": "Mussolini's Fascist Italy",
+    "country": "Italy",
+    "yearRange": [1922, 1943],
+    "tags": ["fascism", "corporatism", "nationalism", "authoritarian_rule", "public_works", "press_restrictions", "military_expansion"],
+    "policyProfile": {
+      "political_pluralism": "none",
+      "press_freedom": "none",
+      "state_economic_control": "high",
+      "military_spend": "high",
+      "public_works": "high",
+      "trade_protectionism": "moderate"
+    },
+    "outcomes": "Initial economic gains from 'Battle for Grain' and public works. Corporatist model suppressed strikes. Depression hit hard regardless; austerity imposed. Ethiopia invaded (1935); League of Nations sanctions. Alliance with Nazi Germany. Military humiliations in WWII. Mussolini overthrown 1943; Italy switches sides.",
+    "internationalReaction": "Initially admired by Western conservatives (Churchill called him 'Roman genius' in 1927). Ethiopia invasion alienated League of Nations. Anti-Comintern Pact with Germany and Japan. UK and France appeased until Albania invasion (1939).",
+    "summary": "Mussolini's Fascist Italy pioneered the model of nationalist corporatism — single-party rule, state-coordinated economy, propaganda-fuelled mass mobilisation, and imperial expansion — later adopted in modified form by Hitler's Germany."
+  },
+  {
+    "id": "ussr-perestroika-1985",
+    "name": "Gorbachev's Perestroika and Glasnost",
+    "country": "USSR",
+    "yearRange": [1985, 1991],
+    "tags": ["political_liberalisation", "transparency", "economic_reform", "loss_of_control", "empire_collapse", "nationalism", "transition_failure"],
+    "policyProfile": {
+      "press_freedom": "increasing",
+      "political_pluralism": "opening",
+      "economic_reform": "partial",
+      "military_spend": "reducing",
+      "central_planning": "weakening",
+      "fiscal_deficit": "worsening"
+    },
+    "outcomes": "Glasnost unleashed suppressed nationalism and criticism; exposing Chernobyl, Afghanistan, and historical crimes. Economic reform incomplete — dismantled planning without creating markets. Ethnic conflicts erupted (Armenia-Azerbaijan, Georgia). Baltic states declared independence. August coup (1991) failed; USSR dissolved December 1991.",
+    "internationalReaction": "Reagan-Thatcher responded with scepticism initially then engagement. INF Treaty (1987) and START negotiations. West urged faster reform. German reunification supported. Bush administration worried about nuclear security during collapse. Arms reduction treaties signed.",
+    "summary": "Gorbachev's Perestroika attempted to reform the Soviet system without dismantling it — political openness without economic transition destroyed communist legitimacy and released suppressed nationalism, accelerating the USSR's dissolution."
+  },
+  {
+    "id": "baltic-independence-transition-1991",
+    "name": "Baltic States EU Transition",
+    "country": "Estonia/Latvia/Lithuania",
+    "yearRange": [1991, 2004],
+    "tags": ["transition_economy", "currency_board", "flat_tax", "eu_accession", "nato_membership", "rapid_reform", "digital_governance"],
+    "policyProfile": {
+      "privatisation": "rapid",
+      "flat_tax": "low",
+      "trade_openness": "extreme",
+      "currency_stability": "currency_board",
+      "eu_integration": "target",
+      "nato_membership": "target"
+    },
+    "outcomes": "Estonia introduced flat 26% income tax (1994); Latvia and Lithuania followed. Currency boards enforced monetary discipline. EU accession (2004) and NATO membership achieved. Estonia became 'Digital Republic' (e-government, digital signatures, digital residency). GDP per capita rose from ~$3,000 to ~$20,000 by 2010.",
+    "internationalReaction": "IMF and World Bank supported transition. EU accession process disciplined reforms. Russia deeply opposed NATO membership; gas pressure applied periodically. Baltics cited as model for post-Soviet transition.",
+    "summary": "Estonia, Latvia, and Lithuania achieved rapid successful transitions from Soviet command economies to EU market democracies through radical reform: flat taxes, currency boards, rapid privatisation, and integration into Western institutions."
+  },
+  {
+    "id": "uk-austerity-2010",
+    "name": "UK Austerity 2010-2016",
+    "country": "United Kingdom",
+    "yearRange": [2010, 2016],
+    "tags": ["austerity", "deficit_reduction", "public_sector_cuts", "welfare_reform", "inequality", "slow_recovery"],
+    "policyProfile": {
+      "fiscal_austerity": "high",
+      "public_sector_employment": "reduced",
+      "welfare_cuts": "significant",
+      "tax_increases": "moderate",
+      "monetary_easing": "maximum",
+      "housing_investment": "low"
+    },
+    "outcomes": "Deficit fell from 10% to 2.4% of GDP by 2016. Recovery slower than historic average. Public services degraded (NHS waiting lists, police numbers cut 20%). Inequality rose. Low-income households bore disproportionate burden (IFS analysis). 2017 snap election: hung parliament showed voter exhaustion with austerity.",
+    "internationalReaction": "IMF initially praised, then reversed (2013 'austerity too fast'); Blanchard apology for multiplier underestimation. Contrast with US QE/stimulus recovery rate. Cameron/Osborne model cited in European debates as cautionary tale by Keynesians.",
+    "summary": "George Osborne's 2010-2016 austerity programme cut UK public spending by 25%, reducing the deficit while producing the slowest recovery in a century and degrading public services — particularly affecting low-income households."
+  },
+  {
+    "id": "turkey-erdogan-centralisation-2013",
+    "name": "Erdoğan's Centralisation",
+    "country": "Turkey",
+    "yearRange": [2013, 2024],
+    "tags": ["authoritarian_consolidation", "press_restrictions", "nationalism", "lira_crisis", "heterodox_monetary_policy", "islamism", "electoral_manipulation"],
+    "policyProfile": {
+      "press_freedom": "low",
+      "political_pluralism": "declining",
+      "monetary_policy": "heterodox",
+      "inflation": "high",
+      "nationalism": "rising",
+      "religious_policy": "islamising"
+    },
+    "outcomes": "Turkey's press freedom fell to bottom 10 globally. 2016 coup gave pretext for 150,000 arrests. Gezi Park protesters imprisoned. Currency lost 80% of value 2018-2023. Inflation reached 85%. Tourism-dependent economy vulnerable. Erdoğan won 2023 election despite economic crisis.",
+    "internationalReaction": "EU accession talks frozen. NATO membership maintained but used as leverage. USA imposed F-35 exclusion for S-400 purchase. Russia exploited Turkey-NATO tensions. Kept Bosphorus open to both sides in Ukraine war.",
+    "summary": "Erdoğan's post-2013 authoritarian consolidation systematically dismantled Turkish judicial independence, press freedom, and democratic checks — while pursuing heterodox monetary policy that produced chronic inflation and currency collapse."
+  },
+  {
+    "id": "hungary-orban-illiberal-2010",
+    "name": "Orbán's Illiberal Democracy",
+    "country": "Hungary",
+    "yearRange": [2010, 2024],
+    "tags": ["democratic_backsliding", "gerrymandering", "press_capture", "eu_rule_of_law", "nationalism", "oligarch_enrichment", "crony_capitalism"],
+    "policyProfile": {
+      "press_freedom": "declining",
+      "judicial_independence": "undermined",
+      "political_system": "electoral_autocracy",
+      "eu_funds": "captured",
+      "migration": "hard_restrictive",
+      "fiscal_policy": "populist_with_eu_money"
+    },
+    "outcomes": "Fidesz gerrymandered constituencies and captured media to win supermajorities on 49% votes. EU rule of law mechanism triggered; billions in funds withheld. Hungary wealthier than 2010 but Transparency International corruption rank fell sharply. Model for illiberal reformers globally (Bolsonaro, Law and Justice).",
+    "internationalReaction": "EU Article 7 proceedings (toothless). ECJ rulings flouted. EPP (European People's Party) expelled Fidesz after delay. Poland and Hungary formed blocking minority in Council. US State Department under Biden listed Hungary as concern. Orbán met Tucker Carlson and Trump; ideological alignment.",
+    "summary": "Orbán's Fidesz systematically dismantled Hungarian liberal democracy while remaining in the EU, capturing courts, media, and electoral rules — creating what political scientists call a 'competitive authoritarian' or 'electoral autocratic' system within the EU."
+  },
+  {
+    "id": "south-korea-imf-crisis-1997",
+    "name": "South Korea IMF Crisis",
+    "country": "South Korea",
+    "yearRange": [1997, 2001],
+    "tags": ["currency_crisis", "imf_conditionality", "chaebol_reform", "unemployment_spike", "trade_opening", "labour_flexibilisation"],
+    "policyProfile": {
+      "imf_conditionality": "accepted",
+      "chaebol_debt": "forced_restructuring",
+      "unemployment": "rising",
+      "trade_openness": "forced_increase",
+      "labour_market": "flexibilised",
+      "fiscal_austerity": "initial_then_reversed"
+    },
+    "outcomes": "GDP fell 5.5% (1998); unemployment tripled to 8%. Won strengthened after IMF programme; gold campaign raised $2.2B. Chaebols Daewoo (bankrupt) and others restructured. Recovery rapid: back to pre-crisis levels by 2000. IT sector boom followed. Card credit bubble emerged later (2003).",
+    "internationalReaction": "IMF $58B rescue package (largest ever at time). USA pushed Korean market opening (cars, rice, financial services) — seen as opportunistic. Japan refused to contribute (geopolitical tension). Recovery seen as validating IMF 'harsh medicine'. Led Korea to accumulate large forex reserves.",
+    "summary": "South Korea's 1997 IMF crisis forced painful chaebol restructuring, labour market reforms, and financial liberalisation — recovering rapidly through a combination of austerity, gold donations, and an IT export boom."
+  },
+  {
+    "id": "france-dirigisme-1945",
+    "name": "French Dirigisme (Postwar Planning)",
+    "country": "France",
+    "yearRange": [1945, 1975],
+    "tags": ["state_planning", "industrial_policy", "nationalisation", "grands_projets", "export_promotion", "technocracy", "trente_glorieuses"],
+    "policyProfile": {
+      "state_industrial_policy": "high",
+      "nationalisation": "moderate",
+      "education_investment": "high",
+      "technocratic_governance": "high",
+      "trade_openness": "selective",
+      "social_spending": "growing"
+    },
+    "outcomes": "GDP grew 5% annually for 30 years ('Trente Glorieuses'). Industry modernised (Concorde, TGV, nuclear power). Elite grandes écoles produced technocratic elite. France became industrial power (cars, aerospace, nuclear). Income inequality fell; welfare state built. Oil shock ended the era.",
+    "internationalReaction": "EEC membership (1957) shaped dirigisme through competition policy. US investors welcomed French market. De Gaulle challenged US dollar hegemony (demanded gold for dollars). Franco-German axis in EEC became EU's engine.",
+    "summary": "France's postwar dirigisme — state planning, strategic nationalisation, and grands projets — produced 30 years of rapid growth (Trente Glorieuses), creating a modern industrial economy while maintaining a strong state-directed framework."
+  },
+  {
+    "id": "indonesia-suharto-1967",
+    "name": "Suharto's New Order",
+    "country": "Indonesia",
+    "yearRange": [1967, 1998],
+    "tags": ["authoritarian_development", "oil_revenues", "anti_communist", "crony_capitalism", "ethnic_targeting", "press_restrictions", "rapid_growth"],
+    "policyProfile": {
+      "political_pluralism": "low",
+      "press_freedom": "low",
+      "oil_dependency": "high",
+      "crony_capitalism": "extreme",
+      "military_role": "pervasive",
+      "poverty_reduction": "significant"
+    },
+    "outcomes": "GDP grew 7% annually. Poverty fell from 60% to 11%. Green Revolution made Indonesia rice self-sufficient (1984). Suharto family looted $15-35B. 1965 massacres killed 500,000+. East Timor occupation (1975-99). Asian financial crisis toppled Suharto (1998); democracy established.",
+    "internationalReaction": "US/West supported as anti-communist bulwark; overlooked atrocities. World Bank praised 'East Asian miracle'. IMF crisis conditions humiliated Suharto. Australia recognised East Timor annexation. Suharto's fall celebrated as democratisation.",
+    "summary": "Suharto's 32-year New Order delivered rapid economic development and poverty reduction, while his family extracted billions, the military permeated civil society, and political dissent and ethnic minorities faced violent repression."
+  },
+  {
+    "id": "india-emergency-1975",
+    "name": "Indira Gandhi's Emergency Rule",
+    "country": "India",
+    "yearRange": [1975, 1977],
+    "tags": ["emergency_rule", "press_censorship", "authoritarian_turn", "political_repression", "economic_programme", "birth_control_coercion"],
+    "policyProfile": {
+      "press_freedom": "suspended",
+      "political_pluralism": "suspended",
+      "economic_programme": "20_point",
+      "forced_sterilisation": "mass_programme",
+      "judicial_independence": "undermined",
+      "political_stability": "imposed"
+    },
+    "outcomes": "Press censorship imposed; opposition imprisoned including JP Narayan and Vajpayee. Sanjay Gandhi's forced sterilisation programme caused widespread trauma. Economy actually improved short-term (inflation fell, strikes ended). 1977 election: Indira Gandhi lost in landslide — Indian democracy proved resilient.",
+    "internationalReaction": "Western governments expressed concern but maintained relations. USSR supported Congress Party. Emergency ended voluntarily; Janata Party coalition won. Indira returned in 1980 — unique example of authoritarian leader accepting electoral defeat.",
+    "summary": "Indira Gandhi declared a 21-month Emergency (1975-77) suspending democratic rights, censoring the press, and imprisoning opponents — but India's democratic institutions proved resilient and she lost the subsequent election."
+  },
+  {
+    "id": "saudi-gulf-oil-boom-1973",
+    "name": "Gulf Oil Boom",
+    "country": "Saudi Arabia/Gulf States",
+    "yearRange": [1973, 1985],
+    "tags": ["oil_boom", "resource_wealth", "rapid_modernisation", "foreign_workers", "welfare_state_oil", "islamic_finance", "petrodollar"],
+    "policyProfile": {
+      "oil_revenues": "extreme",
+      "state_spending": "extreme",
+      "taxation": "none",
+      "foreign_labour_dependence": "high",
+      "private_sector": "underdeveloped",
+      "islamic_governance": "moderate"
+    },
+    "outcomes": "Per capita incomes rose 10-fold in decade. Infrastructure built from scratch. Universities, hospitals, free housing created. Petrodollar recycling through Western banks caused global credit expansion. 1979 oil price shock doubled revenues again. Collapse of oil price (1986) exposed fiscal vulnerability.",
+    "internationalReaction": "1973 embargo against USA/West over Yom Kippur War caused 400% oil price surge. Petrodollar recycling through Western banks financed developing-world debt that caused 1982 debt crisis. Saudi donations to Pakistani madrassas exported Wahhabism. PLO funded.",
+    "summary": "The 1973 oil shock transferred immense wealth to Gulf states, funding instant modernisation, welfare states without taxation, and petrodollar recycling — while exposing Western energy vulnerability and funding Islamist movements globally."
+  },
+  {
+    "id": "dutch-disease-netherlands-1960",
+    "name": "Dutch Disease",
+    "country": "Netherlands",
+    "yearRange": [1960, 1980],
+    "tags": ["resource_curse", "deindustrialisation", "currency_appreciation", "gas_discovery", "manufacturing_decline", "labour_cost"],
+    "policyProfile": {
+      "gas_exports": "booming",
+      "manufacturing_competitiveness": "declining",
+      "wage_costs": "rising",
+      "currency": "appreciating",
+      "social_spending": "expanding",
+      "unemployment": "rising"
+    },
+    "outcomes": "Groningen natural gas discovery (1959) boosted exports but caused real exchange rate appreciation, making Dutch manufacturing uncompetitive. Unemployment rose despite energy wealth. Term 'Dutch Disease' coined by The Economist (1977). Eventually addressed by Wassenaar Accord (1982) — wage moderation.",
+    "internationalReaction": "Economists worldwide studied it as cautionary tale for resource discoveries. UK's North Sea oil partially blamed for UK deindustrialisation. Australian 'resources curse' debate. Provided framework for understanding Nigeria, Venezuela, Saudi Arabia challenges.",
+    "summary": "The Netherlands' Groningen gas discovery (1959) coined the concept of 'Dutch Disease': how resource booms appreciate the currency and destroy the manufacturing sector, leaving resource-dependent countries economically hollowed out."
+  },
+  {
+    "id": "us-post-war-hegemony-1944",
+    "name": "Bretton Woods / US Postwar Order",
+    "country": "USA",
+    "yearRange": [1944, 1971],
+    "tags": ["dollar_hegemony", "multilateral_institutions", "trade_liberalisation", "postwar_order", "cold_war", "development_finance"],
+    "policyProfile": {
+      "trade_openness": "high",
+      "multilateralism": "high",
+      "dollar_standard": "gold_backed",
+      "military_presence": "global",
+      "foreign_aid": "marshall_plan",
+      "institution_building": "extreme"
+    },
+    "outcomes": "IMF, World Bank, GATT (WTO), UN system created. Dollar as reserve currency (still today). US-led 'Golden Age of Capitalism' (1950-1973): rich countries averaged 4% growth. Cold War competition drove development aid. Vietnam War and Great Society spending ended gold standard (Nixon, 1971).",
+    "internationalReaction": "USSR built parallel COMECON system. Decolonising nations sought Non-Aligned Movement. Europe rebuilt under Marshall Plan; EEC integrated. Japan and Korea anchored Western Pacific order. End of Bretton Woods opened era of floating currencies.",
+    "summary": "The 1944 Bretton Woods conference created the postwar international economic order: the IMF, World Bank, dollar-gold standard, and eventual GATT — underpinning three decades of unprecedented growth in the Western-led world."
+  },
+  {
+    "id": "taiwan-export-miracle-1965",
+    "name": "Taiwan's Export-Led Development",
+    "country": "Taiwan",
+    "yearRange": [1965, 1990],
+    "tags": ["export_led_growth", "land_reform", "education_investment", "industrial_upgrading", "authoritarian_development", "technology_transfer", "sme_dominance"],
+    "policyProfile": {
+      "export_orientation": "extreme",
+      "land_reform": "complete",
+      "education_spend": "high",
+      "industrial_policy": "active",
+      "political_pluralism": "low",
+      "income_equality": "high_for_developing_country"
+    },
+    "outcomes": "GDP per capita rose from $200 (1952) to $8,000 (1990). Land reform prevented landlord class; SME economy more equal than Korea's chaebol model. Gini fell. Semiconductor industry emergence (TSMC, 1987). Gradual democratisation completed 1996. Now income ~$35,000.",
+    "internationalReaction": "US security guarantee (Taiwan Relations Act) critical. Japan provided industrial technology. China's threat drove military spending. US investment in semiconductor supply chain now defining 21st-century geopolitics.",
+    "summary": "Taiwan combined thorough land reform, export orientation, education investment, and US security backing to achieve rapid equitable development — building SME capitalism rather than Korean-style chaebol, and emerging as the world's critical semiconductor supplier."
+  },
+  {
+    "id": "mexico-nafta-1994",
+    "name": "Mexico NAFTA Integration",
+    "country": "Mexico",
+    "yearRange": [1994, 2006],
+    "tags": ["trade_liberalisation", "manufacturing_hub", "wage_suppression", "migration_pressure", "agricultural_disruption", "maquiladora", "peso_crisis"],
+    "policyProfile": {
+      "trade_openness": "extreme",
+      "manufacturing_fdi": "high",
+      "agricultural_protection": "removed",
+      "wage_levels": "competitive_low",
+      "migration": "increasing",
+      "income_inequality": "persistent"
+    },
+    "outcomes": "Exports tripled; Mexico became major auto/electronics manufacturer. Pero 1994 peso crisis wiped gains for millions. Corn farmers displaced by cheap US imports; rural migration accelerated. GDP per capita barely higher in 2006 than 1994 for poor. Drug violence escalated as NAFTA disrupted traditional economies.",
+    "internationalReaction": "NAFTA (Jan 1 1994) coincided with Zapatista uprising. Peso crisis required $50B US bailout (Clinton). WTO accession concurrent. China's WTO accession (2001) then undercut Mexico's maquiladora advantage. Remittances became larger than FDI.",
+    "summary": "Mexico's NAFTA integration tripled exports and attracted manufacturing investment but failed to reduce poverty, displaced rural farmers, and left the economy vulnerable to the 1994 peso crisis — while China's WTO accession later undercut Mexico's low-wage advantage."
+  },
+  {
+    "id": "covid-stimulus-2020",
+    "name": "COVID-19 Stimulus Response",
+    "country": "USA/EU/UK/Global",
+    "yearRange": [2020, 2022],
+    "tags": ["pandemic", "fiscal_stimulus", "monetary_expansion", "supply_chain_disruption", "inflation", "debt_surge", "inequality"],
+    "policyProfile": {
+      "fiscal_deficit": "extreme",
+      "monetary_expansion": "extreme",
+      "supply_chains": "disrupted",
+      "unemployment": "spiked_then_rapid_recovery",
+      "inflation": "delayed_then_surge",
+      "inequality": "worsened_then_partially_reversed"
+    },
+    "outcomes": "Global GDP fell 3.5% (2020) but recovered fully by 2021 — fastest post-recession recovery in modern history. Asset prices boomed (stocks, housing). Inflation surged 2021-2023 as supply met demand stimulus. Global debt rose from 226% to 256% of GDP. Rich countries' advantage in vaccines caused political resentment in developing world.",
+    "internationalReaction": "COVAX initiative attempted vaccine equity (limited success). US CARES Act ($2.2T), EU Recovery Fund (€750B), UK furlough — all unprecedented in scale. IMF and World Bank provided $157B in rapid financing. Inflation returned globally; central banks raised rates sharply 2022-2023.",
+    "summary": "The 2020-22 COVID pandemic triggered the largest peacetime fiscal expansion in history — preventing a depression but contributing to the biggest inflationary surge since the 1970s as supply chains disrupted and demand rebounded faster than expected."
+  },
+  {
+    "id": "ukraine-war-sanctions-2022",
+    "name": "Russia-Ukraine War and Sanctions",
+    "country": "Russia/Ukraine/Europe",
+    "yearRange": [2022, 2025],
+    "tags": ["war", "sanctions", "energy_crisis", "food_crisis", "military_economy", "refugee_crisis", "deglobalisation"],
+    "policyProfile": {
+      "military_spend": "extreme_russia",
+      "trade_restrictions": "severe",
+      "energy_transition": "accelerated",
+      "food_prices": "elevated",
+      "currency_controls": "russia",
+      "refugee_displacement": "large"
+    },
+    "outcomes": "Ukraine GDP fell 30%+ (2022). Russia's economy contracted less than expected (3-6%); war economy created labour shortages and inflation. European energy prices spiked; €300B+ in spending on energy diversification. 8M Ukrainian refugees in Europe. Global food prices elevated (Black Sea grain corridor). Russia's $300B frozen reserves.",
+    "internationalReaction": "Largest sanctions package in history. G7 oil price cap. Lend-lease style military aid ($200B+). Global South largely neutral. China-Russia trade expanded. NATO expanded (Finland, Sweden). SWIFT exclusion drove Russia toward China/India payment systems.",
+    "summary": "Russia's 2022 full-scale invasion of Ukraine triggered the largest sanctions regime in history, a European energy crisis, a global food shock, and a fundamental restructuring of European security — while proving more economically resilient than Western planners expected."
+  }
+]
