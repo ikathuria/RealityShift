@@ -8,12 +8,14 @@
 // (e.g. wrangler dev locally).
 
 import { runCountryAgent } from './countryAgent.js';
+import { writeEvents, detectConflicts } from './events.js';
 import { getSupabase } from '../lib/supabase.js';
 import type { Env } from '../index.js';
 
 export interface RunResult {
   country_code: string;
   success: boolean;
+  events_emitted?: number;
   error?: string;
 }
 
@@ -24,7 +26,7 @@ export async function runAgent(
   env: Env
 ): Promise<RunResult> {
   try {
-    const { decision, newState, parallel } = await runCountryAgent(worldId, countryCode, env);
+    const { decision, newState, newRelations, parallel } = await runCountryAgent(worldId, countryCode, env);
     const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
 
     // Determine current simulated year from the state
@@ -65,11 +67,19 @@ export async function runAgent(
       year: year + 1,
       indicators: newState,
       policies: decision.policies_adjusted,
+      relations: newRelations,
       agent_memory_summary: decision.reasoning,
       last_updated: new Date().toISOString(),
     }, { onConflict: 'world_id,country_code,year' });
 
-    return { country_code: countryCode, success: true };
+    // Write any inter-country events the agent emitted
+    const agentEvents = decision.events ?? [];
+    await writeEvents(worldId, countryCode, year, agentEvents, env);
+
+    // Conflict detection: if mutual hostility + high military spend, emit conflict_risk
+    await detectConflicts(worldId, countryCode, newRelations, newState, year, env);
+
+    return { country_code: countryCode, success: true, events_emitted: agentEvents.length };
   } catch (err) {
     return { country_code: countryCode, success: false, error: String(err) };
   }

@@ -181,10 +181,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
             : null,
         }));
 
-        // Refresh world data
+        // Refresh world data + events
         const ws = useWorldStore.getState();
         await ws.loadChoropleth();
         await ws.loadCountry(activeFork.countryCode);
+        await ws.loadWorldEvents(activeFork.worldId, 30);
       }
     } finally {
       set({ isSimulating: false });

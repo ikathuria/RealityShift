@@ -78,6 +78,26 @@ create index if not exists divergences_country_date
   on divergences (country_code, published_at desc);
 
 -- ────────────────────────────────────────────────────────────────────────────
+-- World events: inter-agent diplomatic/trade/military events (M8)
+-- ────────────────────────────────────────────────────────────────────────────
+create table if not exists world_events (
+  id           bigserial primary key,
+  world_id     text not null references worlds(id) on delete cascade,
+  from_country text not null,
+  to_country   text,
+  event_type   text not null,
+  details      text not null,
+  sim_year     int  not null,
+  created_at   timestamptz not null default now()
+);
+
+create index if not exists world_events_world_year
+  on world_events (world_id, sim_year desc, created_at desc);
+
+create index if not exists world_events_target
+  on world_events (world_id, to_country, sim_year desc);
+
+-- ────────────────────────────────────────────────────────────────────────────
 -- Game sessions: player takeover sessions
 -- ────────────────────────────────────────────────────────────────────────────
 create table if not exists game_sessions (
@@ -135,6 +155,17 @@ create policy "players read own sessions" on game_sessions
 
 create policy "players write own sessions" on game_sessions
   for all using (player_id = auth.uid());
+
+-- World events RLS
+alter table world_events enable row level security;
+
+create policy "public read live world events" on world_events
+  for select using (world_id = 'live');
+
+create policy "players read own fork events" on world_events
+  for select using (
+    world_id in (select id from worlds where player_id = auth.uid())
+  );
 
 -- Players read/write agent_decisions in their forks
 create policy "players read own fork decisions" on agent_decisions

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useWorldStore } from '../store/worldStore';
 import type { Divergence } from '../store/worldStore';
 import DivergenceCard from '../components/DivergenceCard';
+import WorldEventsFeed from '../components/WorldEventsFeed';
 import Globe from '../components/Globe';
 import CountryPanel from '../components/CountryPanel';
 
@@ -87,14 +88,17 @@ export default function WorldDashboard() {
     setChoroplethMode,
     choroplethMode,
     selectedCountry,
+    worldEvents,
+    loadWorldEvents,
   } = useWorldStore();
 
   const [simYear, setSimYear] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'top' | 'timeline'>('top');
+  const [activeTab, setActiveTab] = useState<'top' | 'timeline' | 'events'>('top');
 
-  // Load divergences on mount and switch globe to divergence mode
+  // Load divergences + events on mount and switch globe to divergence mode
   useEffect(() => {
     loadRecentDivergences(50);
+    loadWorldEvents('live', 40);
     setChoroplethMode('divergence');
     return () => setChoroplethMode('gdp_per_capita'); // reset on unmount
   }, []);
@@ -163,7 +167,7 @@ export default function WorldDashboard() {
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, padding: '0 16px 12px' }}>
-          {(['top', 'timeline'] as const).map(tab => (
+          {(['top', 'timeline', 'events'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -174,7 +178,7 @@ export default function WorldDashboard() {
                 cursor: 'pointer', fontSize: 12, fontWeight: 600,
               }}
             >
-              {tab === 'top' ? 'Top Divergences' : 'Timeline'}
+              {tab === 'top' ? 'Top' : tab === 'timeline' ? 'Timeline' : 'Events'}
             </button>
           ))}
         </div>
@@ -183,7 +187,9 @@ export default function WorldDashboard() {
         <div style={{ flex: 1, padding: '0 16px 16px', overflowY: 'auto' }}>
           {activeTab === 'top'
             ? <TopDivergences divs={recentDivergences} />
-            : <DivergenceTimeline divs={recentDivergences} />}
+            : activeTab === 'timeline'
+              ? <DivergenceTimeline divs={recentDivergences} />
+              : <WorldEventsFeed events={worldEvents} />}
         </div>
       </div>
 

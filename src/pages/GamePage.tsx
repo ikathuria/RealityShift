@@ -6,6 +6,7 @@ import { useWorldStore } from '../store/worldStore';
 import Globe from '../components/Globe';
 import CountryPanel from '../components/CountryPanel';
 import PolicyEditor from '../components/PolicyEditor';
+import WorldEventsFeed from '../components/WorldEventsFeed';
 
 function SimulateLog({ log }: { log: { country: string; status: string; error?: string }[] }) {
   if (!log.length) return null;
@@ -32,7 +33,7 @@ export default function GamePage() {
   const navigate = useNavigate();
   const { session } = useAuthStore();
   const { activeFork, playerForks, loadPlayerForks, enterFork, exitFork, simulateYear, isSimulating, simulateLog } = useGameStore();
-  const { selectedCountry, countryData } = useWorldStore();
+  const { selectedCountry, countryData, worldEvents, loadWorldEvents } = useWorldStore();
 
   // Guard: must be logged in
   useEffect(() => {
@@ -45,7 +46,10 @@ export default function GamePage() {
     if (!worldId || !playerForks.length) return;
     const fork = playerForks.find(f => f.worldId === worldId);
     if (!fork) return;
-    if (activeFork?.worldId !== worldId) enterFork(fork);
+    if (activeFork?.worldId !== worldId) {
+      enterFork(fork);
+      loadWorldEvents(worldId, 30);
+    }
   }, [worldId, playerForks]);
 
   // Cleanup on unmount
@@ -135,6 +139,16 @@ export default function GamePage() {
           )}
 
           <SimulateLog log={simulateLog} />
+
+          {/* World events in this fork */}
+          {worldEvents.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 11, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+                World Events
+              </div>
+              <WorldEventsFeed events={worldEvents} maxHeight={240} />
+            </div>
+          )}
         </div>
       </div>
 

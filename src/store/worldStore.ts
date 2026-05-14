@@ -35,6 +35,17 @@ export interface AgentDecision {
   created_at: string;
 }
 
+export interface WorldEvent {
+  id: number;
+  world_id: string;
+  from_country: string;
+  to_country: string | null;
+  event_type: string;
+  details: string;
+  sim_year: number;
+  created_at: string;
+}
+
 export type ChoroplethMode =
   | 'gdp_per_capita'
   | 'military_spend'
@@ -57,6 +68,9 @@ interface WorldStore {
   divergenceMagnitudes: Map<string, number>; // iso3 → max absolute delta sum
   countryDecisions: Record<string, AgentDecision[]>;
 
+  // World events feed
+  worldEvents: WorldEvent[];
+
   // Actions
   selectCountry: (iso3: string | null) => void;
   loadCountry: (iso3: string) => Promise<void>;
@@ -65,6 +79,7 @@ interface WorldStore {
   loadChoropleth: () => Promise<void>;
   loadRecentDivergences: (limit?: number) => Promise<void>;
   loadCountryDecisions: (iso3: string) => Promise<void>;
+  loadWorldEvents: (worldId?: string, limit?: number) => Promise<void>;
 }
 
 /** Sum of absolute values in a delta object — proxy for "how diverged is this country" */
@@ -81,6 +96,7 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
   recentDivergences: [],
   divergenceMagnitudes: new Map(),
   countryDecisions: {},
+  worldEvents: [],
 
   selectCountry: (iso3) => {
     set({ selectedCountry: iso3 });
@@ -182,6 +198,21 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
 
     if (!error && data) {
       set(s => ({ countryDecisions: { ...s.countryDecisions, [iso3]: data as AgentDecision[] } }));
+    }
+  },
+
+  loadWorldEvents: async (worldId = 'live', limit = 40) => {
+    if (!supabase) return;
+    const { data, error } = await supabase
+      .from('world_events')
+      .select('*')
+      .eq('world_id', worldId)
+      .order('sim_year', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (!error && data) {
+      set({ worldEvents: data as WorldEvent[] });
     }
   },
 }));

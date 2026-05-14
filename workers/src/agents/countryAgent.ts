@@ -3,6 +3,8 @@ import { buildMessages } from './prompt.js';
 import type { CountryHistory, CountryStateRow, NeighborSummary, HistoricalParallel } from './prompt.js';
 import { getSupabase } from '../lib/supabase.js';
 import { topParallel } from '../history/match.js';
+import { fetchIncomingEvents } from './events.js';
+import type { AgentEvent } from './events.js';
 import countryHistories from '../data/history/country_histories.json';
 import type { Env } from '../index.js';
 
@@ -21,6 +23,10 @@ export interface AgentDecision {
     unemployment_delta?: number;
     inflation_est?: number;
   };
+  /** Inter-country events emitted by this agent */
+  events?: AgentEvent[];
+  /** Relations to update: ISO3 → 'ally' | 'neutral' | 'rival' | 'enemy' */
+  relations_update?: Record<string, string>;
 }
 
 function getHistory(iso3: string): CountryHistory | null {
@@ -45,28 +51,76 @@ async function fetchState(
   return data as CountryStateRow;
 }
 
+/**
+ * Fetch enriched neighbor context: last 3 decision reasonings + current
+ * indicators for each of the country's top 5 key relationships.
+ */
 async function fetchNeighborContext(
   worldId: string,
   keyRelationships: string[],
-  year: number,
+  currentYear: number,
   env: Env
 ): Promise<NeighborSummary[]> {
   if (!keyRelationships.length) return [];
   const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
-  const { data } = await db
-    .from('agent_decisions')
-    .select('country_code, reasoning, decision')
-    .eq('world_id', worldId)
-    .eq('year', year)
-    .in('country_code', keyRelationships.slice(0, 5));
+  const targets = keyRelationships.slice(0, 5);
 
-  if (!data) return [];
-  return data.map((row: { country_code: string; reasoning: string; decision: AgentDecision }) => ({
-    country_code: row.country_code,
-    country_name: (countryHistories as Record<string, CountryHistory>)[row.country_code]?.country ?? row.country_code,
-    recent_decision: row.reasoning ?? 'No recent decision recorded.',
-    key_indicators: {},
-  }));
+  // Fetch last 3 decisions per neighbor
+  const { data: decisions } = await db
+    .from('agent_decisions')
+    .select('country_code, reasoning, year')
+    .eq('world_id', worldId)
+    .in('country_code', targets)
+    .gte('year', currentYear - 3)
+    .order('year', { ascending: false })
+    .limit(15);  // max 3 × 5 countries
+
+  // Fetch latest indicators per neighbor
+  const { data: states } = await db
+    .from('country_states')
+    .select('country_code, indicators, year')
+    .eq('world_id', worldId)
+    .in('country_code', targets)
+    .order('year', { ascending: false });
+
+  // Deduplicate states: keep latest year per country
+  const latestIndicators = new Map<string, Record<string, number>>();
+  for (const row of (states ?? []) as { country_code: string; indicators: Record<string, number>; year: number }[]) {
+    if (!latestIndicators.has(row.country_code)) {
+      latestIndicators.set(row.country_code, row.indicators);
+    }
+  }
+
+  // Group decisions by country, preserve recency order
+  const decisionsByCountry = new Map<string, string[]>();
+  for (const row of (decisions ?? []) as { country_code: string; reasoning: string }[]) {
+    const list = decisionsByCountry.get(row.country_code) ?? [];
+    if (list.length < 3) list.push(row.reasoning ?? '');
+    decisionsByCountry.set(row.country_code, list);
+  }
+
+  const summaries: NeighborSummary[] = [];
+  for (const code of targets) {
+    const hist = (countryHistories as Record<string, CountryHistory>)[code];
+    const [latest = 'No decision recorded.', ...prev] = decisionsByCountry.get(code) ?? [];
+    const indicators = latestIndicators.get(code) ?? {};
+
+    // Only include a subset of indicators most relevant to geopolitics
+    const keyInd: Record<string, number> = {};
+    for (const k of ['gdp_per_capita', 'military_spend', 'unemployment']) {
+      if (indicators[k] !== undefined) keyInd[k] = indicators[k];
+    }
+
+    summaries.push({
+      country_code: code,
+      country_name: hist?.country ?? code,
+      recent_decision: latest,
+      previous_decisions: prev,
+      key_indicators: keyInd,
+    });
+  }
+
+  return summaries;
 }
 
 function applyDeltas(
@@ -95,18 +149,26 @@ export async function runCountryAgent(
   worldId: string,
   countryCode: string,
   env: Env
-): Promise<{ decision: AgentDecision; newState: Record<string, number>; parallel: HistoricalParallel | null }> {
+): Promise<{
+  decision: AgentDecision;
+  newState: Record<string, number>;
+  newRelations: Record<string, string>;
+  parallel: HistoricalParallel | null;
+}> {
   const state = await fetchState(worldId, countryCode, env);
   if (!state) throw new Error(`No state found for ${countryCode} in world ${worldId}`);
 
   const history = getHistory(countryCode);
 
-  // Fetch neighbor context (best-effort)
+  // Fetch enriched neighbor context (last 3 decisions + indicators)
   const neighbors: NeighborSummary[] = history
     ? await fetchNeighborContext(worldId, history.key_relationships, state.year, env).catch(() => [])
     : [];
 
-  // ── Milestone 4: find closest historical parallel via TF-IDF cosine match ──
+  // Fetch events that other countries have sent to this country
+  const incomingEvents = await fetchIncomingEvents(worldId, countryCode, state.year, env).catch(() => []);
+
+  // Find closest historical parallel via TF-IDF cosine match
   const match = topParallel({ indicators: state.indicators, policies: state.policies });
   const parallel: HistoricalParallel | null = match
     ? {
@@ -129,10 +191,11 @@ export async function runCountryAgent(
       events: [],
     },
     neighbors,
-    parallel
+    parallel,
+    incomingEvents
   );
 
-  const raw = await chat(messages, env.GROQ_API_KEY, { temperature: 0.6, maxTokens: 1024 });
+  const raw = await chat(messages, env.GROQ_API_KEY, { temperature: 0.6, maxTokens: 1200 });
 
   // Strip any accidental markdown fences
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
@@ -140,5 +203,11 @@ export async function runCountryAgent(
 
   const newIndicators = applyDeltas(state.indicators, decision);
 
-  return { decision, newState: newIndicators, parallel };
+  // Merge relations_update into current relations
+  const newRelations: Record<string, string> = {
+    ...(state.relations ?? {}),
+    ...(decision.relations_update ?? {}),
+  };
+
+  return { decision, newState: newIndicators, newRelations, parallel };
 }

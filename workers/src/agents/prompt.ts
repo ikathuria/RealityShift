@@ -1,4 +1,5 @@
 import type { Message } from '../ai/llm.js';
+import type { IncomingEvent } from './events.js';
 
 export interface CountryHistory {
   country: string;
@@ -22,7 +23,10 @@ export interface CountryStateRow {
 export interface NeighborSummary {
   country_code: string;
   country_name: string;
+  /** Most recent decision reasoning */
   recent_decision: string;
+  /** Up to 2 prior decision summaries (oldest first) */
+  previous_decisions: string[];
   key_indicators: Record<string, number>;
 }
 
@@ -69,8 +73,10 @@ export function buildMessages(
   state: CountryStateRow,
   history: CountryHistory,
   neighbors: NeighborSummary[],
-  parallel: HistoricalParallel | null
+  parallel: HistoricalParallel | null,
+  incomingEvents: IncomingEvent[] = []
 ): Message[] {
+
   const system: Message = {
     role: 'system',
     content: `You are the AI policy advisor to the government of ${history.country} (${history.iso3}).
@@ -83,7 +89,7 @@ Your role is to decide the policy adjustments your government will make over the
 You must:
 1. Stay in character — your decisions reflect the actual political leaning and priorities of the real government.
 2. Ground decisions in your country's documented history (provided below).
-3. React to what neighboring and allied countries are doing.
+3. React to what neighboring and allied countries are doing, including any sanctions, deals, or protests directed at you.
 4. Explicitly flag if your current trajectory resembles a historical pattern.
 5. Return ONLY valid JSON — no prose outside the JSON object.
 
@@ -102,8 +108,16 @@ OUTPUT FORMAT (strict JSON, no markdown fences):
     "gdp_growth_pct": <expected annual GDP growth rate as decimal, e.g. 0.06 for 6%>,
     "unemployment_delta": <expected change in unemployment percentage points>,
     "inflation_est": <estimated annual inflation rate as decimal>
-  }
+  },
+  "events": [
+    { "type": "<sanction|trade_deal|military_posture|diplomatic_protest|alliance_formed|alliance_broken>", "target": "<ISO3 or omit for global>", "details": "<one sentence>" }
+  ],
+  "relations_update": { "<ISO3>": "<ally|neutral|rival|enemy>" }
 }
+
+Notes on new fields:
+- "events": emit 0–3 inter-country events that naturally follow from your decision. Omit if nothing significant.
+- "relations_update": include only countries whose relationship status actually changes. Omit if unchanged.
 
 Constraints:
 - All deltas represent changes from the current value, not absolute targets.
@@ -112,11 +126,35 @@ Constraints:
 - If the country is at war, in crisis, or under sanctions, reflect this in projections.`,
   };
 
+  // Neighbor block — includes last 3 decisions and current indicators per neighbor
   const neighborBlock = neighbors.length
-    ? neighbors
-        .map(n => `  ${n.country_name} (${n.country_code}): ${n.recent_decision}`)
-        .join('\n')
+    ? neighbors.map(n => {
+        const indStr = Object.entries(n.key_indicators)
+          .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${typeof v === 'number' ? v.toFixed(1) : v}`)
+          .join(', ');
+        const prior = n.previous_decisions
+          .map((d, i) => `    Prior-${i + 2}: ${d}`)
+          .join('\n');
+        return [
+          `  ${n.country_name} (${n.country_code}):`,
+          `    Latest: ${n.recent_decision}`,
+          prior,
+          indStr ? `    Indicators: ${indStr}` : '',
+        ].filter(Boolean).join('\n');
+      }).join('\n\n')
     : '  No significant neighbor decisions this period.';
+
+  // Incoming events block — things other countries did TO this country
+  const eventsBlock = incomingEvents.length
+    ? incomingEvents
+        .map(e => `  [yr ${e.sim_year}] ${e.from_country} → ${e.event_type.replace(/_/g, ' ')}: ${e.details}`)
+        .join('\n')
+    : '  No incoming diplomatic or trade events this period.';
+
+  // Current relations
+  const relationsStr = Object.entries(state.relations ?? {})
+    .map(([k, v]) => `${k}:${v}`)
+    .join(', ') || 'none on record';
 
   const parallelBlock = parallel
     ? `CLOSEST HISTORICAL PARALLEL: "${parallel.name}" (similarity: ${(parallel.similarity_score * 100).toFixed(0)}%)
@@ -133,11 +171,17 @@ COUNTRY: ${history.country} (${history.iso3})
 CURRENT INDICATORS:
 ${fmtIndicators(state.indicators)}
 
+CURRENT DIPLOMATIC RELATIONS:
+  ${relationsStr}
+
 RECENT HISTORY (last 10 years of record):
 ${recentHistory(history.events)}
 
-NEIGHBORING / KEY PARTNER DECISIONS THIS PERIOD:
+NEIGHBORING / KEY PARTNER DECISIONS (last 3 periods):
 ${neighborBlock}
+
+INCOMING DIPLOMATIC / TRADE EVENTS (directed at ${history.iso3}):
+${eventsBlock}
 
 ${parallelBlock}
 

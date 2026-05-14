@@ -207,11 +207,11 @@ Tasks:
 **Goal:** Country agents are aware of each other and react to neighboring decisions. Diplomatic events, trade responses, and military posturing emerge from agent interactions.
 
 Tasks:
-- [ ] Extend `countryAgent` prompt context: before deciding, each agent receives a summary of the last 3 decisions made by its top 5 trade partners and neighbors — Done when: India's agent prompt includes summaries of China, Pakistan, USA, and EU recent decisions
-- [ ] Add inter-agent event system: agents can emit events (`{ type: 'sanction' | 'trade_deal' | 'military_posture' | 'diplomatic_protest', from, to, details }`) that are stored in `agent_decisions` and picked up by the target country's agent on its next run — Done when: if India imposes tariffs on China, China's next decision includes the tariff event as context
-- [ ] Add a global "World Events" feed in the UI — a scrolling ticker of recent inter-agent events (sanctions, alliances, trade deals, conflicts) — Done when: the globe UI shows a live feed of AI-generated world events
-- [ ] Conflict detection: if two agents' military posture scores exceed a threshold against each other, Claude generates a conflict scenario with resolution options — Done when: two countries with high mutual military hostility produce a diplomatic crisis event
-- [ ] Alliance tracking: agents can form and break alliances stored in `country_states.relations{}` — Done when: an agent that forms an alliance routes trade through that ally and cites it in subsequent decisions
+- [x] Extend `countryAgent` prompt context: before deciding, each agent receives a summary of the last 3 decisions made by its top 5 trade partners and neighbors — Done when: India's agent prompt includes summaries of China, Pakistan, USA, and EU recent decisions
+- [x] Add inter-agent event system: agents can emit events (`{ type: 'sanction' | 'trade_deal' | 'military_posture' | 'diplomatic_protest', from, to, details }`) that are stored in `agent_decisions` and picked up by the target country's agent on its next run — Done when: if India imposes tariffs on China, China's next decision includes the tariff event as context
+- [x] Add a global "World Events" feed in the UI — a scrolling ticker of recent inter-agent events (sanctions, alliances, trade deals, conflicts) — Done when: the globe UI shows a live feed of AI-generated world events
+- [x] Conflict detection: if two agents' military posture scores exceed a threshold against each other, Claude generates a conflict scenario with resolution options — Done when: two countries with high mutual military hostility produce a diplomatic crisis event
+- [x] Alliance tracking: agents can form and break alliances stored in `country_states.relations{}` — Done when: an agent that forms an alliance routes trade through that ally and cites it in subsequent decisions
 
 ---
 
