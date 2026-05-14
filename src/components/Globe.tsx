@@ -16,6 +16,8 @@ import {
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 import { useWorldStore } from '../store/worldStore';
 import type { ChoroplethMode, WorldEvent } from '../store/worldStore';
+import { useRegionStore, SUPPORTED_DRILL_COUNTRIES } from '../store/regionStore';
+import type { FeatureCollection, Feature } from 'geojson';
 
 const cesiumToken = import.meta.env.VITE_CESIUM_ION_TOKEN as string | undefined;
 if (cesiumToken) Ion.defaultAccessToken = cesiumToken;
@@ -76,7 +78,48 @@ const ARC_COLORS: Record<string, Color> = {
   conflict_risk:      Color.RED.withAlpha(0.95),
 };
 
-// Compute smooth parabolic arc positions between two lon/lat points
+// ─── Admin-1 GeoJSON (cached at module level) ────────────────────────────────
+// Natural Earth 50m admin-1 state/province boundaries via jsDelivr CDN
+const ADMIN1_URL =
+  'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_50m_admin_1_states_provinces.geojson';
+
+// Module-level cache: null = not started, 'loading' = in flight, FeatureCollection = loaded
+let admin1Cache: null | 'loading' | FeatureCollection = null;
+const admin1Waiters: Array<(fc: FeatureCollection) => void> = [];
+
+function loadAdmin1(): Promise<FeatureCollection> {
+  if (admin1Cache && admin1Cache !== 'loading') {
+    return Promise.resolve(admin1Cache);
+  }
+  if (admin1Cache === 'loading') {
+    return new Promise(resolve => admin1Waiters.push(resolve));
+  }
+  admin1Cache = 'loading';
+  return fetch(ADMIN1_URL)
+    .then(r => r.json())
+    .then((fc: FeatureCollection) => {
+      admin1Cache = fc;
+      admin1Waiters.forEach(fn => fn(fc));
+      admin1Waiters.length = 0;
+      return fc;
+    });
+}
+
+/** Filter admin-1 FeatureCollection to a single country by ISO3 code */
+function filterAdmin1(fc: FeatureCollection, iso3: string): FeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: fc.features.filter((f: Feature) => {
+      const p = f.properties ?? {};
+      return p['adm0_a3'] === iso3 || p['adm0_iso'] === iso3;
+    }),
+  };
+}
+
+// Altitude threshold (metres) below which we switch to admin-1 view
+const DRILL_ALTITUDE = 2_000_000;
+
+// ─── Arc helpers ─────────────────────────────────────────────────────────────
 function arcPositions(
   from: [number, number],
   to: [number, number],
@@ -94,12 +137,7 @@ function arcPositions(
   return pts;
 }
 
-// Draw a glowing arc and auto-remove it after `durationMs`
-function drawArc(
-  viewer: Viewer,
-  event: WorldEvent,
-  durationMs = 4000
-): void {
+function drawArc(viewer: Viewer, event: WorldEvent, durationMs = 4000): void {
   if (!event.to_country) return;
   const from = CENTROIDS[event.from_country];
   const to   = CENTROIDS[event.to_country];
@@ -112,10 +150,7 @@ function drawArc(
     polyline: {
       positions: arcPositions(from, to),
       width,
-      material: new PolylineGlowMaterialProperty({
-        glowPower: 0.25,
-        color,
-      }),
+      material: new PolylineGlowMaterialProperty({ glowPower: 0.25, color }),
       clampToGround: false,
     },
   });
@@ -125,7 +160,7 @@ function drawArc(
   }, durationMs);
 }
 
-// Quantile color scale: value → Cesium Color (green → yellow → red)
+// ─── Choropleth helpers ───────────────────────────────────────────────────────
 function choroplethColor(value: number | undefined, min: number, max: number): Color {
   if (value === undefined || max === min) return Color.GRAY.withAlpha(0.6);
   const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
@@ -151,19 +186,19 @@ function Tooltip({ tip, mode, values }: {
 
   return (
     <div style={{
-      position: 'absolute',
-      left: tip.x + 14,
-      top: tip.y - 10,
-      pointerEvents: 'none',
-      background: 'rgba(10,10,20,0.92)',
-      border: '1px solid rgba(255,255,255,0.12)',
+      position:     'absolute',
+      left:         tip.x + 14,
+      top:          tip.y - 10,
+      pointerEvents:'none',
+      background:   'rgba(10,10,20,0.92)',
+      border:       '1px solid rgba(255,255,255,0.12)',
       borderRadius: 8,
-      padding: '8px 12px',
-      color: '#fff',
-      fontSize: 12,
-      zIndex: 20,
-      maxWidth: 200,
-      boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+      padding:      '8px 12px',
+      color:        '#fff',
+      fontSize:     12,
+      zIndex:       20,
+      maxWidth:     200,
+      boxShadow:    '0 4px 16px rgba(0,0,0,0.5)',
     }}>
       <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 3 }}>{name}</div>
       <div style={{ color: '#6b7280', fontSize: 10, marginBottom: 4 }}>{tip.iso3}</div>
@@ -176,29 +211,54 @@ function Tooltip({ tip, mode, values }: {
   );
 }
 
+// ─── Drill-down indicator ─────────────────────────────────────────────────────
+function DrillBadge({ country }: { country: string }) {
+  return (
+    <div style={{
+      position:      'absolute',
+      bottom:        32,
+      left:          '50%',
+      transform:     'translateX(-50%)',
+      background:    'rgba(99,102,241,0.15)',
+      border:        '1px solid rgba(167,139,250,0.4)',
+      borderRadius:  8,
+      padding:       '5px 12px',
+      fontSize:      11,
+      color:         '#a78bfa',
+      pointerEvents: 'none',
+    }}>
+      🔍 Region view — {COUNTRY_NAMES[country] ?? country} · Click a region to inspect
+    </div>
+  );
+}
+
 // ─── Main Globe component ─────────────────────────────────────────────────────
 export default function Globe() {
-  const containerRef    = useRef<HTMLDivElement>(null);
-  const viewerRef       = useRef<Viewer | null>(null);
-  const sourceRef       = useRef<GeoJsonDataSource | null>(null);
-  const handlerRef      = useRef<ScreenSpaceEventHandler | null>(null);
-  const lastEventIdRef  = useRef<number>(-1);
-  const hoverTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef   = useRef<HTMLDivElement>(null);
+  const viewerRef      = useRef<Viewer | null>(null);
+  const sourceRef      = useRef<GeoJsonDataSource | null>(null);
+  const regionSrcRef   = useRef<GeoJsonDataSource | null>(null);
+  const handlerRef     = useRef<ScreenSpaceEventHandler | null>(null);
+  const lastEventIdRef = useRef<number>(-1);
+  const hoverTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const drillCountryRef = useRef<string | null>(null);
 
   const {
     choroplethValues, choroplethMode, loadChoropleth,
     selectedCountry, worldEvents, pulseCountry, setPulseCountry,
   } = useWorldStore();
 
+  useRegionStore(); // subscribe so RegionPanel re-renders when selection changes
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [drillCountry, setDrillCountry] = useState<string | null>(null);
 
   // ── Apply choropleth colors ──────────────────────────────────────────────
   const applyColors = useCallback(() => {
     const source = sourceRef.current;
     if (!source) return;
-    const vals   = Array.from(choroplethValues.values());
-    const min    = Math.min(...vals);
-    const max    = Math.max(...vals);
+    const vals = Array.from(choroplethValues.values());
+    const min  = Math.min(...vals);
+    const max  = Math.max(...vals);
 
     for (const entity of source.entities.values) {
       const iso3 = (entity.properties as Record<string, { getValue: () => string }>)
@@ -229,7 +289,6 @@ export default function Globe() {
   // ── Country pulse on player policy save ──────────────────────────────────
   useEffect(() => {
     if (!pulseCountry || !sourceRef.current) return;
-
     const source = sourceRef.current;
     const vals   = Array.from(choroplethValues.values());
     const min    = Math.min(...vals);
@@ -239,11 +298,7 @@ export default function Globe() {
       const iso3 = (entity.properties as Record<string, { getValue: () => string }>)
         ?.['ISO_A3']?.getValue();
       if (iso3 !== pulseCountry || !entity.polygon) continue;
-
-      // Flash white
       entity.polygon.material = Color.WHITE.withAlpha(0.95) as unknown as import('cesium').MaterialProperty;
-
-      // Restore original color after 550ms
       const restoreColor = choroplethColor(choroplethValues.get(iso3), min, max);
       setTimeout(() => {
         if (entity.polygon) {
@@ -258,38 +313,70 @@ export default function Globe() {
   // ── Draw event arcs for newly-arrived world events ────────────────────────
   useEffect(() => {
     if (!viewerRef.current || !worldEvents.length) return;
-
     if (lastEventIdRef.current === -1) {
-      // First load — set baseline, don't draw arcs for history
       lastEventIdRef.current = Math.max(...worldEvents.map(e => e.id));
       return;
     }
-
     const newEvents = worldEvents.filter(e => e.id > lastEventIdRef.current && e.to_country);
-    for (const ev of newEvents.slice(0, 12)) {
-      drawArc(viewerRef.current, ev);
-    }
-    if (newEvents.length) {
-      lastEventIdRef.current = Math.max(...newEvents.map(e => e.id));
-    }
+    for (const ev of newEvents.slice(0, 12)) drawArc(viewerRef.current, ev);
+    if (newEvents.length) lastEventIdRef.current = Math.max(...newEvents.map(e => e.id));
   }, [worldEvents]);
+
+  // ── Load / unload admin-1 regions based on altitude + selected country ────
+  const loadRegions = useCallback(async (viewer: Viewer, iso3: string) => {
+    // Remove previous region source
+    if (regionSrcRef.current) {
+      viewer.dataSources.remove(regionSrcRef.current, true);
+      regionSrcRef.current = null;
+    }
+    drillCountryRef.current = iso3;
+    setDrillCountry(iso3);
+
+    try {
+      const fc      = await loadAdmin1();
+      const filtered = filterAdmin1(fc, iso3);
+      if (filtered.features.length === 0) return;
+
+      // Check we're still zoomed in (user may have zoomed out while loading)
+      if (drillCountryRef.current !== iso3) return;
+
+      const src = await GeoJsonDataSource.load(filtered, {
+        stroke:      Color.WHITE.withAlpha(0.6),
+        fill:        Color.fromCssColorString('#6366f1').withAlpha(0.15),
+        strokeWidth: 1.5,
+      });
+      viewer.dataSources.add(src);
+      regionSrcRef.current = src;
+    } catch {
+      // Admin-1 fetch failed — silently degrade
+    }
+  }, []);
+
+  const unloadRegions = useCallback((viewer: Viewer) => {
+    if (regionSrcRef.current) {
+      viewer.dataSources.remove(regionSrcRef.current, true);
+      regionSrcRef.current = null;
+    }
+    drillCountryRef.current = null;
+    setDrillCountry(null);
+  }, []);
 
   // ── Cesium viewer initialisation ──────────────────────────────────────────
   useEffect(() => {
     if (!containerRef.current || viewerRef.current) return;
 
     const viewer = new Viewer(containerRef.current, {
-      animation: false,
-      baseLayerPicker: false,
-      fullscreenButton: false,
-      geocoder: false,
-      homeButton: false,
-      infoBox: false,
-      navigationHelpButton: false,
-      sceneModePicker: false,
-      selectionIndicator: false,
-      timeline: false,
-      creditContainer: document.createElement('div'),
+      animation:             false,
+      baseLayerPicker:       false,
+      fullscreenButton:      false,
+      geocoder:              false,
+      homeButton:            false,
+      infoBox:               false,
+      navigationHelpButton:  false,
+      sceneModePicker:       false,
+      selectionIndicator:    false,
+      timeline:              false,
+      creditContainer:       document.createElement('div'),
     });
     viewerRef.current = viewer;
 
@@ -297,6 +384,7 @@ export default function Globe() {
       .then((t: CesiumTerrainProvider) => { if (viewerRef.current) viewerRef.current.terrainProvider = t; })
       .catch(() => {});
 
+    // Load country-level GeoJSON
     GeoJsonDataSource.load(
       'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json',
       { stroke: Color.WHITE.withAlpha(0.4), fill: Color.GRAY.withAlpha(0.6), strokeWidth: 1 }
@@ -304,54 +392,88 @@ export default function Globe() {
       viewer.dataSources.add(source);
       sourceRef.current = source;
       applyColors();
-    }).catch(() => {
-      return GeoJsonDataSource.load(
+    }).catch(() =>
+      GeoJsonDataSource.load(
         'https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson',
         { stroke: Color.WHITE.withAlpha(0.4), fill: Color.GRAY.withAlpha(0.6), strokeWidth: 1 }
       ).then(source => {
         viewer.dataSources.add(source);
         sourceRef.current = source;
         applyColors();
-      });
-    });
+      })
+    );
 
     const handler = new ScreenSpaceEventHandler(viewer.scene.canvas);
     handlerRef.current = handler;
 
-    // Click → select country
+    // Click handler — country OR region
     handler.setInputAction((evt: { position: import('cesium').Cartesian2 }) => {
       const picked = viewer.scene.pick(evt.position);
       if (!defined(picked) || !(picked.id instanceof Entity)) {
         useWorldStore.getState().selectCountry(null);
+        useRegionStore.getState().selectRegion(null);
         return;
       }
       const entity = picked.id as Entity;
       const props  = entity.properties as Record<string, { getValue: () => string }> | undefined;
-      const iso3   = props?.['ISO_A3']?.getValue() ?? props?.['iso_a3']?.getValue();
-      if (iso3) useWorldStore.getState().selectCountry(iso3);
-      setTooltip(null);
-    }, ScreenSpaceEventType.LEFT_CLICK);
 
-    // Mouse move → hover tooltip (300ms delay)
-    handler.setInputAction((evt: { endPosition: import('cesium').Cartesian2 }) => {
-      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+      // Check if this is a region entity (admin-1 has 'name' + 'adm0_a3')
+      const regionName    = props?.['name']?.getValue();
+      const regionIso32   = props?.['adm0_a3']?.getValue() ?? props?.['adm0_iso']?.getValue();
+      const regionCode    = props?.['iso_3166_2']?.getValue()
+                         ?? props?.['postal']?.getValue()
+                         ?? props?.['name']?.getValue();
 
-      const picked = viewer.scene.pick(evt.endPosition);
-      if (!defined(picked) || !(picked.id instanceof Entity)) {
+      if (regionSrcRef.current && regionName && regionIso32) {
+        // This is an admin-1 region click
+        useRegionStore.getState().selectRegion({
+          code:        regionCode ?? regionName,
+          name:        regionName,
+          countryCode: regionIso32,
+        });
         setTooltip(null);
         return;
       }
+
+      // Otherwise treat as country click
+      const iso3 = props?.['ISO_A3']?.getValue() ?? props?.['iso_a3']?.getValue();
+      if (iso3) {
+        useWorldStore.getState().selectCountry(iso3);
+        useRegionStore.getState().selectRegion(null);
+      }
+      setTooltip(null);
+    }, ScreenSpaceEventType.LEFT_CLICK);
+
+    // Mouse move → hover tooltip
+    handler.setInputAction((evt: { endPosition: import('cesium').Cartesian2 }) => {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+      const picked = viewer.scene.pick(evt.endPosition);
+      if (!defined(picked) || !(picked.id instanceof Entity)) { setTooltip(null); return; }
       const entity = picked.id as Entity;
       const props  = entity.properties as Record<string, { getValue: () => string }> | undefined;
       const iso3   = props?.['ISO_A3']?.getValue() ?? props?.['iso_a3']?.getValue();
       if (!iso3) { setTooltip(null); return; }
-
       const x = evt.endPosition.x;
       const y = evt.endPosition.y;
-      hoverTimerRef.current = setTimeout(() => {
-        setTooltip({ iso3, x, y });
-      }, 300);
+      hoverTimerRef.current = setTimeout(() => setTooltip({ iso3, x, y }), 300);
     }, ScreenSpaceEventType.MOUSE_MOVE);
+
+    // Camera move → detect altitude + selected country for drill-down
+    viewer.camera.changed.addEventListener(() => {
+      if (!viewerRef.current) return;
+      const altitude  = viewerRef.current.camera.positionCartographic.height;
+      const selected  = useWorldStore.getState().selectedCountry;
+      const isDrillable = selected && SUPPORTED_DRILL_COUNTRIES.has(selected);
+      const currentDrill = drillCountryRef.current;
+
+      if (altitude < DRILL_ALTITUDE && isDrillable) {
+        if (currentDrill !== selected) {
+          loadRegions(viewerRef.current, selected!);
+        }
+      } else if (altitude >= DRILL_ALTITUDE && currentDrill) {
+        unloadRegions(viewerRef.current);
+      }
+    });
 
     return () => {
       if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
@@ -359,6 +481,7 @@ export default function Globe() {
       viewerRef.current?.destroy();
       viewerRef.current = null;
       sourceRef.current = null;
+      regionSrcRef.current = null;
     };
   }, []);
 
@@ -369,6 +492,7 @@ export default function Globe() {
       {tooltip && (
         <Tooltip tip={tooltip} mode={choroplethMode} values={choroplethValues} />
       )}
+      {drillCountry && <DrillBadge country={drillCountry} />}
     </div>
   );
 }
@@ -387,11 +511,20 @@ function ChoroplethLegend({ mode }: { mode: ChoroplethMode }) {
   const { setChoroplethMode } = useWorldStore();
   return (
     <div style={{
-      position: 'absolute', bottom: 32, left: 16,
-      background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
-      borderRadius: 10, padding: '12px 16px', color: '#fff', fontSize: 12,
-      display: 'flex', flexDirection: 'column', gap: 7, minWidth: 195,
-      border: '1px solid rgba(255,255,255,0.08)',
+      position:        'absolute',
+      bottom:          32,
+      left:            16,
+      background:      'rgba(0,0,0,0.75)',
+      backdropFilter:  'blur(6px)',
+      borderRadius:    10,
+      padding:         '12px 16px',
+      color:           '#fff',
+      fontSize:        12,
+      display:         'flex',
+      flexDirection:   'column',
+      gap:             7,
+      minWidth:        195,
+      border:          '1px solid rgba(255,255,255,0.08)',
     }}>
       <div style={{ fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: '#9ca3af' }}>
         Overlay

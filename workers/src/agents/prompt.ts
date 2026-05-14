@@ -69,12 +69,21 @@ function recentHistory(events: CountryHistory['events'], n = 10): string {
     .join('\n');
 }
 
+export interface RegionalPolicySummary {
+  region_name: string;
+  region_code: string;
+  housing:     number;
+  transport:   number;
+  local_tax:   number;
+}
+
 export function buildMessages(
   state: CountryStateRow,
   history: CountryHistory,
   neighbors: NeighborSummary[],
   parallel: HistoricalParallel | null,
-  incomingEvents: IncomingEvent[] = []
+  incomingEvents: IncomingEvent[] = [],
+  regionalPolicies: RegionalPolicySummary[] = []
 ): Message[] {
 
   const system: Message = {
@@ -163,6 +172,13 @@ Historical outcomes: ${parallel.outcomes}
 Today's world is different — reason through: nuclear deterrence, international institutions (UN/WTO/EU/ICC), economic interdependence, social media, and this country's current diplomatic relations. The outcome may be similar, harsher, milder, or entirely different.`
     : 'No close historical parallel identified this period.';
 
+  // Regional policy block — player sub-national overrides
+  const regionalBlock = regionalPolicies.length
+    ? regionalPolicies.map(r =>
+        `  ${r.region_name} (${r.region_code}): housing=${r.housing}/10, transit=${r.transport}/10, local_tax=${r.local_tax}%`
+      ).join('\n')
+    : '  No active sub-national policy overrides.';
+
   const user: Message = {
     role: 'user',
     content: `SIMULATED YEAR: ${state.year}
@@ -182,6 +198,9 @@ ${neighborBlock}
 
 INCOMING DIPLOMATIC / TRADE EVENTS (directed at ${history.iso3}):
 ${eventsBlock}
+
+ACTIVE REGIONAL POLICIES (sub-national player overrides):
+${regionalBlock}
 
 ${parallelBlock}
 

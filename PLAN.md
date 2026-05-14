@@ -231,11 +231,11 @@ Tasks:
 **Goal:** Players can zoom into a country and make sub-national policy decisions at the state/province level.
 
 Tasks:
-- [ ] Load state/province GeoJSON (Natural Earth admin-1) for India, USA, UK, Germany, Brazil, China, France, Australia, Canada, Japan — Done when: zooming into India shows state outlines
-- [ ] Switch from country to state boundaries below camera altitude 2000km — Done when: smooth zoom transition
-- [ ] Region click opens `src/components/RegionPanel.tsx` with region-level stats (World Bank sub-national or AI-estimated) — Done when: clicking Maharashtra shows population and basic stats
-- [ ] 3 local policy types: Housing (rent control/zoning), Transport (transit funding), Local Tax (municipal rates) — Done when: sliders exist and write to region-level state in Supabase
-- [ ] Include active regional changes in agent simulation prompts — Done when: a Mumbai housing policy affects Claude's national narrative
+- [x] Load state/province GeoJSON (Natural Earth admin-1) for India, USA, UK, Germany, Brazil, China, France, Australia, Canada, Japan — Done when: zooming into India shows state outlines
+- [x] Switch from country to state boundaries below camera altitude 2000km — Done when: smooth zoom transition
+- [x] Region click opens `src/components/RegionPanel.tsx` with region-level stats (World Bank sub-national or AI-estimated) — Done when: clicking Maharashtra shows population and basic stats
+- [x] 3 local policy types: Housing (rent control/zoning), Transport (transit funding), Local Tax (municipal rates) — Done when: sliders exist and write to region-level state in Supabase
+- [x] Include active regional changes in agent simulation prompts — Done when: a Mumbai housing policy affects Claude's national narrative
 
 ---
 

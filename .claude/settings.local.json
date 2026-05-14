@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(npm --version)",
+      "Bash(npx create-vite@latest . --template react-ts)",
+      "Bash(npx create-vite@latest _vite_init --template react-ts)",
+      "Bash(npm install *)",
+      "Bash(mkdir -p src/lib)"
+    ]
+  }
+}

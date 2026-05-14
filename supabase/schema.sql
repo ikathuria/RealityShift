@@ -179,3 +179,44 @@ create policy "players write own fork decisions" on agent_decisions
   );
 
 -- Service role bypasses RLS for background agents (set in Cloudflare Worker)
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- Region states: sub-national policy drill-down (Milestone 10)
+-- ────────────────────────────────────────────────────────────────────────────
+create table if not exists region_states (
+  id            bigserial primary key,
+  world_id      text        not null default 'live',
+  country_code  text        not null,
+  region_code   text        not null,
+  region_name   text        not null,
+  year          integer     not null default 2024,
+  population    bigint,
+  policies      jsonb       not null default '{}',
+  last_updated  timestamptz not null default now(),
+  unique (world_id, region_code, year)
+);
+
+-- policies JSONB: { "housing": 5, "transport": 5, "local_tax": 20 }
+
+create index if not exists idx_region_states_world_country
+  on region_states (world_id, country_code);
+
+alter table region_states enable row level security;
+
+create policy "public read live regions" on region_states
+  for select using (world_id = 'live');
+
+create policy "players read own fork regions" on region_states
+  for select using (
+    world_id in (select id from worlds where player_id = auth.uid())
+  );
+
+create policy "players insert own fork regions" on region_states
+  for insert with check (
+    world_id in (select id from worlds where player_id = auth.uid())
+  );
+
+create policy "players update own fork regions" on region_states
+  for update using (
+    world_id in (select id from worlds where player_id = auth.uid())
+  );

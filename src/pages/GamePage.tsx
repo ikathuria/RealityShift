@@ -7,6 +7,8 @@ import Globe from '../components/Globe';
 import CountryPanel from '../components/CountryPanel';
 import PolicyEditor from '../components/PolicyEditor';
 import WorldEventsFeed from '../components/WorldEventsFeed';
+import RegionPanel from '../components/RegionPanel';
+import { useRegionStore } from '../store/regionStore';
 
 function SimulateLog({ log }: { log: { country: string; status: string; error?: string }[] }) {
   if (!log.length) return null;
@@ -34,6 +36,7 @@ export default function GamePage() {
   const { session } = useAuthStore();
   const { activeFork, playerForks, loadPlayerForks, enterFork, exitFork, simulateYear, isSimulating, simulateLog } = useGameStore();
   const { selectedCountry, countryData, worldEvents, loadWorldEvents, setPulseCountry } = useWorldStore();
+  const { selectedRegion } = useRegionStore();
 
   // Guard: must be logged in
   useEffect(() => {
@@ -173,7 +176,8 @@ export default function GamePage() {
       {/* Globe */}
       <div style={{ flex: 1, position: 'relative' }}>
         <Globe />
-        {selectedCountry && <CountryPanel />}
+        {selectedCountry && !selectedRegion && <CountryPanel />}
+        {selectedRegion && <RegionPanel />}
 
         {/* Fork banner */}
         <div style={{

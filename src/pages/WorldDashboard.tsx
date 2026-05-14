@@ -6,6 +6,8 @@ import DivergenceCard from '../components/DivergenceCard';
 import WorldEventsFeed from '../components/WorldEventsFeed';
 import Globe from '../components/Globe';
 import CountryPanel from '../components/CountryPanel';
+import RegionPanel from '../components/RegionPanel';
+import { useRegionStore } from '../store/regionStore';
 
 const WORKER_URL = (import.meta.env.VITE_AI_PROXY_URL as string | undefined) ?? '';
 
@@ -92,6 +94,7 @@ export default function WorldDashboard() {
     loadWorldEvents,
   } = useWorldStore();
 
+  const { selectedRegion } = useRegionStore();
   const [simYear, setSimYear] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'top' | 'timeline' | 'events'>('top');
 
@@ -196,7 +199,8 @@ export default function WorldDashboard() {
       {/* Globe */}
       <div style={{ flex: 1, position: 'relative' }}>
         <Globe />
-        {selectedCountry && <CountryPanel />}
+        {selectedCountry && !selectedRegion && <CountryPanel />}
+        {selectedRegion && <RegionPanel />}
 
         {/* Mode label */}
         <div style={{

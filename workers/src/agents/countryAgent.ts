@@ -123,6 +123,44 @@ async function fetchNeighborContext(
   return summaries;
 }
 
+interface RegionalPolicySummary {
+  region_name: string;
+  region_code: string;
+  housing:     number;
+  transport:   number;
+  local_tax:   number;
+}
+
+/**
+ * Fetch any sub-national regional policies set by a player for this country
+ * in the given world. Returns an empty array for AI-run worlds (no player edits).
+ */
+async function fetchRegionalPolicies(
+  worldId: string,
+  countryCode: string,
+  env: Env
+): Promise<RegionalPolicySummary[]> {
+  const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
+  const { data, error } = await db
+    .from('region_states')
+    .select('region_name, region_code, policies')
+    .eq('world_id', worldId)
+    .eq('country_code', countryCode)
+    .order('last_updated', { ascending: false })
+    .limit(20);
+
+  if (error || !data || !data.length) return [];
+
+  return (data as { region_name: string; region_code: string; policies: Record<string, number> }[])
+    .map(row => ({
+      region_name: row.region_name,
+      region_code: row.region_code,
+      housing:     row.policies.housing   ?? 5,
+      transport:   row.policies.transport ?? 5,
+      local_tax:   row.policies.local_tax ?? 20,
+    }));
+}
+
 function applyDeltas(
   indicators: Record<string, number>,
   decision: AgentDecision
@@ -180,6 +218,9 @@ export async function runCountryAgent(
       }
     : null;
 
+  // Fetch active regional policies for this country (sub-national overrides)
+  const regionalContext = await fetchRegionalPolicies(worldId, countryCode, env).catch(() => []);
+
   const messages = buildMessages(
     state,
     history ?? {
@@ -192,7 +233,8 @@ export async function runCountryAgent(
     },
     neighbors,
     parallel,
-    incomingEvents
+    incomingEvents,
+    regionalContext
   );
 
   const raw = await chat(messages, env.GROQ_API_KEY, { temperature: 0.6, maxTokens: 1200 });
