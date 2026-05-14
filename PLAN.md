@@ -182,11 +182,11 @@ Tasks:
 **Goal:** A read-only public page at `/world` shows the live simulation state and all divergence reports — the "alternate history" tracker.
 
 Tasks:
-- [ ] Build `src/pages/WorldDashboard.tsx` — a public page at `/world` that fetches and displays: current simulated year, world GDP, top 5 divergences by magnitude, and a timeline of recent divergence events — Done when: page loads without auth and shows live Supabase data
-- [ ] Build `src/components/DivergenceCard.tsx` — shows per-country divergence: simulated state vs. real state, the delta, and Claude's narrative explanation — Done when: clicking a country in the dashboard shows its divergence history
-- [ ] Add globe view to the dashboard: countries colored by divergence magnitude (green = tracking reality closely, red = highly diverged) — Done when: the globe shows visible variation based on `divergences` table data
-- [ ] Add divergence RSS feed at `/world/feed.xml` — lists the 20 most recent divergence reports as RSS items so people can subscribe — Done when: feed validates and loads in an RSS reader
-- [ ] Add "Agent Decision Log" per country — a public timeline of every autonomous decision an agent has made, with its reasoning — Done when: clicking India shows a chronological log of agent decisions going back to simulation start
+- [x] Build `src/pages/WorldDashboard.tsx` — a public page at `/world` that fetches and displays: current simulated year, world GDP, top 5 divergences by magnitude, and a timeline of recent divergence events — Done when: page loads without auth and shows live Supabase data
+- [x] Build `src/components/DivergenceCard.tsx` — shows per-country divergence: simulated state vs. real state, the delta, and Claude's narrative explanation — Done when: clicking a country in the dashboard shows its divergence history
+- [x] Add globe view to the dashboard: countries colored by divergence magnitude (green = tracking reality closely, red = highly diverged) — Done when: the globe shows visible variation based on `divergences` table data
+- [x] Add divergence RSS feed at `/world/feed.xml` — lists the 20 most recent divergence reports as RSS items so people can subscribe — Done when: feed validates and loads in an RSS reader
+- [x] Add "Agent Decision Log" per country — a public timeline of every autonomous decision an agent has made, with its reasoning — Done when: clicking India shows a chronological log of agent decisions going back to simulation start
 
 ---
 

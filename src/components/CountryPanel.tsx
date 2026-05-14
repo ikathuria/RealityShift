@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useWorldStore } from '../store/worldStore';
 import type { CountryState } from '../store/worldStore';
+import DecisionLog from './DecisionLog';
 
 const INDICATOR_LABELS: Record<string, { label: string; unit: string; decimals: number }> = {
   gdp_per_capita:   { label: 'GDP per Capita',       unit: 'USD',    decimals: 0 },
@@ -45,8 +47,11 @@ function CountryData({ data }: { data: CountryState }) {
   );
 }
 
+type PanelTab = 'indicators' | 'decisions';
+
 export default function CountryPanel() {
   const { selectedCountry, countryData, selectCountry } = useWorldStore();
+  const [tab, setTab] = useState<PanelTab>('indicators');
   if (!selectedCountry) return null;
 
   const data = countryData[selectedCountry];
@@ -60,7 +65,7 @@ export default function CountryPanel() {
       zIndex: 10,
     }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <div>
           <div style={{ fontSize: 11, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 1 }}>
             Selected Country
@@ -79,14 +84,33 @@ export default function CountryPanel() {
         </button>
       </div>
 
-      {/* Body */}
-      {!data ? (
-        <div style={{ color: '#6b7280', fontSize: 13 }}>Loading…</div>
-      ) : (
-        <CountryData data={data} />
-      )}
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
+        {(['indicators', 'decisions'] as PanelTab[]).map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            style={{
+              flex: 1, padding: '5px 0', borderRadius: 6, border: 'none',
+              background: tab === t ? 'rgba(255,255,255,0.1)' : 'transparent',
+              color: tab === t ? '#fff' : '#6b7280',
+              cursor: 'pointer', fontSize: 11, fontWeight: 600,
+              textTransform: 'uppercase', letterSpacing: 0.5,
+            }}
+          >
+            {t === 'indicators' ? 'Indicators' : 'Agent Log'}
+          </button>
+        ))}
+      </div>
 
-      {/* Future: agent decision log, divergence history */}
+      {/* Body */}
+      {tab === 'indicators' ? (
+        !data
+          ? <div style={{ color: '#6b7280', fontSize: 13 }}>Loading…</div>
+          : <CountryData data={data} />
+      ) : (
+        <DecisionLog countryCode={selectedCountry} />
+      )}
     </div>
   );
 }

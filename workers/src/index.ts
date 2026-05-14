@@ -114,6 +114,72 @@ export default {
       }
     }
 
+    // ── GET /api/world/feed.xml — RSS 2.0 divergence feed ────────────────────
+    if (url.pathname === '/api/world/feed.xml' && request.method === 'GET') {
+      try {
+        const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
+        const { data, error } = await db
+          .from('divergences')
+          .select('id, country_code, sim_year, narrative, published_at, delta')
+          .order('published_at', { ascending: false })
+          .limit(50);
+
+        if (error || !data) {
+          return new Response('Internal Server Error', { status: 500 });
+        }
+
+        type DivRow = {
+          id: number;
+          country_code: string;
+          sim_year: number;
+          narrative: string;
+          published_at: string;
+          delta: Record<string, number>;
+        };
+
+        const escapeXml = (s: string) =>
+          s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+        const origin = `${url.protocol}//${url.host}`;
+
+        const items = (data as DivRow[]).map(d => {
+          const magnitude = Object.values(d.delta).reduce((a, v) => a + Math.abs(v), 0);
+          const severity = magnitude > 5 ? '🔴' : magnitude > 2 ? '🟡' : '🟢';
+          const shortNarrative = d.narrative.split('\n\nNews used:')[0].slice(0, 400);
+          const pubDate = new Date(d.published_at).toUTCString();
+          return `    <item>
+      <title>${severity} ${escapeXml(d.country_code)} — sim yr ${d.sim_year} divergence (Δ${magnitude.toFixed(1)})</title>
+      <link>${escapeXml(origin)}/world</link>
+      <guid isPermaLink="false">divergence-${d.id}</guid>
+      <pubDate>${pubDate}</pubDate>
+      <description>${escapeXml(shortNarrative)}</description>
+    </item>`;
+        }).join('\n');
+
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>RealityShift — Divergence Feed</title>
+    <link>${escapeXml(origin)}/world</link>
+    <description>Live simulation vs. reality divergence tracker. Updated monthly.</description>
+    <language>en</language>
+    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+${items}
+  </channel>
+</rss>`;
+
+        return new Response(xml, {
+          headers: {
+            'Content-Type': 'application/rss+xml; charset=utf-8',
+            'Cache-Control': 'public, max-age=3600',
+            'Access-Control-Allow-Origin': '*',
+          },
+        });
+      } catch (e) {
+        return new Response('Internal Server Error', { status: 500 });
+      }
+    }
+
     return new Response('Not Found', { status: 404 });
   },
 };

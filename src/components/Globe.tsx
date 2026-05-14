@@ -147,6 +147,7 @@ const CHOROPLETH_LABELS: Record<ChoroplethMode, string> = {
   unemployment:     'Unemployment (%)',
   education_spend:  'Education Spend (% GDP)',
   healthcare_spend: 'Healthcare Spend (% GDP)',
+  divergence:       'Divergence from Reality',
 };
 
 function ChoroplethLegend({ mode }: { mode: ChoroplethMode }) {

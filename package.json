@@ -14,6 +14,7 @@
     "cesium": "^1.141.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "react-router-dom": "^7.15.1",
     "vite-plugin-cesium": "^1.2.23",
     "zustand": "^5.0.13"
   },
