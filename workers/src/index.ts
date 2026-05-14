@@ -1,7 +1,9 @@
+import { runSeed } from './seed.js';
+
 export interface Env {
   GROQ_API_KEY: string;
-  SUPABASE_SERVICE_KEY: string;
   SUPABASE_URL: string;
+  SUPABASE_SERVICE_KEY: string;
   NEWS_API_KEY: string;
   WORKER_SECRET: string;
   ANTHROPIC_API_KEY?: string;
@@ -23,17 +25,26 @@ export default {
       return Response.json({ status: 'ok', service: 'realityshift-api' });
     }
 
+    if (url.pathname === '/api/seed' && request.method === 'POST') {
+      const denied = requireSecret(request, env);
+      if (denied) return denied;
+      try {
+        const result = await runSeed(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
+        return Response.json(result);
+      } catch (e) {
+        return Response.json({ error: String(e) }, { status: 500 });
+      }
+    }
+
     if (url.pathname === '/api/agents/run' && request.method === 'POST') {
       const denied = requireSecret(request, env);
       if (denied) return denied;
-      // Milestone 3: will import and call runAgents here
       return Response.json({ message: 'agents/run not yet implemented' }, { status: 501 });
     }
 
     if (url.pathname === '/api/sync/country' && request.method === 'POST') {
       const denied = requireSecret(request, env);
       if (denied) return denied;
-      // Milestone 5: will import and call syncCountry here
       return Response.json({ message: 'sync/country not yet implemented' }, { status: 501 });
     }
 

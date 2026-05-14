@@ -134,11 +134,11 @@ Tasks:
 **Goal:** The live world (`world_id = 'live'`) is seeded with real data for all countries. Clicking a country shows its current simulated state.
 
 Tasks:
-- [ ] Write `workers/src/seed.ts` — fetches World Bank indicators for all 195 countries and inserts into `country_states` for `world_id = 'live'`, `year = current` — Done when: running the seed script populates Supabase with real GDP, population, tax rate, military spend, education spend, healthcare, unemployment for all countries
-- [ ] Create `src/data/worldbank.ts` — typed fetch functions for all 7 indicators — Done when: each returns typed data for any country code
-- [ ] Load GeoJSON country boundaries in Globe as CesiumJS entities — Done when: country outlines visible
-- [ ] Country click → fetch `country_states` for that country from Supabase → show in `src/components/CountryPanel.tsx` sidebar — Done when: clicking India shows real seeded data
-- [ ] Choropleth: color globe by GDP per capita from live world state — Done when: visible color variation across all countries
+- [x] Write `workers/src/seed.ts` — fetches World Bank indicators for all 195 countries and inserts into `country_states` for `world_id = 'live'`, `year = current` — Done when: running the seed script populates Supabase with real GDP, population, tax rate, military spend, education spend, healthcare, unemployment for all countries
+- [x] Create `src/data/worldbank.ts` — typed fetch functions for all 7 indicators — Done when: each returns typed data for any country code
+- [x] Load GeoJSON country boundaries in Globe as CesiumJS entities — Done when: country outlines visible
+- [x] Country click → fetch `country_states` for that country from Supabase → show in `src/components/CountryPanel.tsx` sidebar — Done when: clicking India shows real seeded data
+- [x] Choropleth: color globe by GDP per capita from live world state — Done when: visible color variation across all countries
 
 ---
 

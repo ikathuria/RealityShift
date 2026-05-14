@@ -6,6 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 # Set these in Cloudflare dashboard or via wrangler secret put
 # GROQ_API_KEY =
+# SUPABASE_URL =
 # SUPABASE_SERVICE_KEY =
 # NEWS_API_KEY =
 # WORKER_SECRET =
