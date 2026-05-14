@@ -1,0 +1,149 @@
+name: Monthly World Sync
+
+on:
+  # Runs at 00:00 UTC on the 1st of every month
+  schedule:
+    - cron: '0 0 1 * *'
+
+  # Allow manual trigger from the Actions tab for testing
+  workflow_dispatch:
+    inputs:
+      country_code:
+        description: 'Single country code to test (e.g. IND). Leave blank to sync all.'
+        required: false
+        default: ''
+      world_id:
+        description: 'World ID (default: live)'
+        required: false
+        default: 'live'
+
+jobs:
+  sync:
+    name: Sync all countries
+    runs-on: ubuntu-latest
+    timeout-minutes: 120   # 195 countries × ~30s each (news + LLM) = ~97 min worst case
+
+    steps:
+      - name: Sync single country (manual test)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.country_code != '' }}
+        env:
+          WORKER_URL: ${{ secrets.WORKER_URL }}
+          WORKER_SECRET: ${{ secrets.WORKER_SECRET }}
+        run: |
+          CODE="${{ inputs.country_code }}"
+          WORLD="${{ inputs.world_id }}"
+          echo "::group::Syncing $CODE in world $WORLD"
+
+          # 1. Sync real-world news → divergence check
+          echo "--- sync/country ---"
+          curl -sf -X POST \
+            -H "x-worker-secret: $WORKER_SECRET" \
+            -H "Content-Type: application/json" \
+            -d "{\"country_code\":\"$CODE\",\"world_id\":\"$WORLD\"}" \
+            "$WORKER_URL/api/sync/country" | jq .
+
+          # 2. Run agent decision
+          echo "--- agents/run ---"
+          curl -sf -X POST \
+            -H "x-worker-secret: $WORKER_SECRET" \
+            -H "Content-Type: application/json" \
+            -d "{\"country_code\":\"$CODE\",\"world_id\":\"$WORLD\"}" \
+            "$WORKER_URL/api/agents/run" | jq .
+
+          echo "::endgroup::"
+
+      - name: Fetch country list
+        if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.country_code == '') }}
+        id: countries
+        env:
+          WORKER_URL: ${{ secrets.WORKER_URL }}
+          WORKER_SECRET: ${{ secrets.WORKER_SECRET }}
+        run: |
+          WORLD="${{ inputs.world_id || 'live' }}"
+          CODES=$(curl -sf \
+            -H "x-worker-secret: $WORKER_SECRET" \
+            "$WORKER_URL/api/countries?world_id=$WORLD" \
+            | jq -r '.codes[]')
+
+          if [ -z "$CODES" ]; then
+            echo "No countries found in world $WORLD — is the DB seeded?"
+            exit 1
+          fi
+
+          COUNT=$(echo "$CODES" | wc -l)
+          echo "Found $COUNT countries to sync."
+
+          # Store for next step using multiline output
+          {
+            echo "codes<<CODES_EOF"
+            echo "$CODES"
+            echo "CODES_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Sync all countries sequentially
+        if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.country_code == '') }}
+        env:
+          WORKER_URL: ${{ secrets.WORKER_URL }}
+          WORKER_SECRET: ${{ secrets.WORKER_SECRET }}
+        run: |
+          WORLD="${{ inputs.world_id || 'live' }}"
+          TOTAL=0
+          SYNCED=0
+          ERRORED=0
+
+          while IFS= read -r CODE; do
+            [ -z "$CODE" ] && continue
+            TOTAL=$((TOTAL + 1))
+            echo "::group::[$TOTAL] $CODE"
+
+            # --- Sync: real-world news → divergence ---
+            SYNC_RESP=$(curl -sf -X POST \
+              -H "x-worker-secret: $WORKER_SECRET" \
+              -H "Content-Type: application/json" \
+              -d "{\"country_code\":\"$CODE\",\"world_id\":\"$WORLD\"}" \
+              "$WORKER_URL/api/sync/country" 2>&1) || true
+
+            if echo "$SYNC_RESP" | jq -e '.error' > /dev/null 2>&1; then
+              echo "SYNC ERROR: $SYNC_RESP"
+              ERRORED=$((ERRORED + 1))
+            else
+              echo "sync: $(echo "$SYNC_RESP" | jq -r '"diverged=\(.diverged) — \(.explanation[0:80])"')"
+            fi
+
+            # --- Agent: autonomous decision ---
+            AGENT_RESP=$(curl -sf -X POST \
+              -H "x-worker-secret: $WORKER_SECRET" \
+              -H "Content-Type: application/json" \
+              -d "{\"country_code\":\"$CODE\",\"world_id\":\"$WORLD\"}" \
+              "$WORKER_URL/api/agents/run" 2>&1) || true
+
+            if echo "$AGENT_RESP" | jq -e '.error' > /dev/null 2>&1; then
+              echo "AGENT ERROR: $AGENT_RESP"
+              ERRORED=$((ERRORED + 1))
+            else
+              SYNCED=$((SYNCED + 1))
+              echo "agent: success"
+            fi
+
+            echo "::endgroup::"
+
+            # Respect Groq rate limit (30 rpm) — 2 LLM calls per country = 15 countries/min max
+            # Sleep 4s between countries keeps us under the limit with headroom
+            sleep 4
+
+          done <<< "${{ steps.countries.outputs.codes }}"
+
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Monthly sync complete"
+          echo "Total:   $TOTAL"
+          echo "Success: $SYNCED"
+          echo "Errors:  $ERRORED"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          # Fail the workflow if more than 20% of countries errored
+          THRESHOLD=$(( TOTAL / 5 ))
+          if [ "$ERRORED" -gt "$THRESHOLD" ]; then
+            echo "Too many errors ($ERRORED / $TOTAL). Marking workflow as failed."
+            exit 1
+          fi

@@ -170,11 +170,11 @@ Tasks:
 **Goal:** Once a month, each country agent fetches real news, compares the simulated state to reality, self-corrects, and publishes a divergence report.
 
 Tasks:
-- [ ] Add a GitHub Actions workflow at `.github/workflows/monthly-sync.yml` with `schedule: cron('0 0 1 * *')` (runs 1st of each month) — the Action loops through all country codes and calls `POST /api/sync/country` on the Worker once per country, sequentially — Done when: workflow file exists and a manual trigger (`workflow_dispatch`) successfully processes one test country
-- [ ] Write `workers/src/sync/fetchNews.ts` — for each country, calls NewsAPI.org with `q=[country name] economy policy government` and returns the top 5 most relevant headlines + summaries — Done when: returns real headlines for India, USA, Germany
-- [ ] Write `workers/src/sync/compareState.ts` — builds a Claude prompt comparing `country_states.indicators` to a summary of real news, returns: `{ diverged: bool, delta{}, explanation, self_correction{} }` — Done when: if the simulation has India's GDP growing at 8% but news reports a recession, Claude flags the divergence with an explanation
-- [ ] Write `workers/src/sync/publishDivergence.ts` — if `diverged = true`, inserts a row into `divergences` with the full delta and narrative; then applies `self_correction` to `country_states` to bring the live world back toward reality — Done when: divergences table gains a row after a mismatch is detected
-- [ ] Write `workers/src/sync/syncCountry.ts` — handles a single country: fetchNews → compareState → publishDivergence, exposed as `POST /api/sync/country` with `{ country_code }` body — Done when: calling the endpoint for `"IND"` fetches real India news, compares to simulated state, and writes to Supabase
+- [x] Add a GitHub Actions workflow at `.github/workflows/monthly-sync.yml` with `schedule: cron('0 0 1 * *')` (runs 1st of each month) — the Action loops through all country codes and calls `POST /api/sync/country` on the Worker once per country, sequentially — Done when: workflow file exists and a manual trigger (`workflow_dispatch`) successfully processes one test country
+- [x] Write `workers/src/sync/fetchNews.ts` — for each country, calls NewsAPI.org with `q=[country name] economy policy government` and returns the top 5 most relevant headlines + summaries — Done when: returns real headlines for India, USA, Germany
+- [x] Write `workers/src/sync/compareState.ts` — builds a Claude prompt comparing `country_states.indicators` to a summary of real news, returns: `{ diverged: bool, delta{}, explanation, self_correction{} }` — Done when: if the simulation has India's GDP growing at 8% but news reports a recession, Claude flags the divergence with an explanation
+- [x] Write `workers/src/sync/publishDivergence.ts` — if `diverged = true`, inserts a row into `divergences` with the full delta and narrative; then applies `self_correction` to `country_states` to bring the live world back toward reality — Done when: divergences table gains a row after a mismatch is detected
+- [x] Write `workers/src/sync/syncCountry.ts` — handles a single country: fetchNews → compareState → publishDivergence, exposed as `POST /api/sync/country` with `{ country_code }` body — Done when: calling the endpoint for `"IND"` fetches real India news, compares to simulated state, and writes to Supabase
 
 ---
 

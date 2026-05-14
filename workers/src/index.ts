@@ -1,5 +1,7 @@
 import { runSeed } from './seed.js';
 import { runAgent } from './agents/runAgents.js';
+import { syncCountry } from './sync/syncCountry.js';
+import { getSupabase } from './lib/supabase.js';
 
 export interface Env {
   GROQ_API_KEY: string;
@@ -26,11 +28,40 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
+    // ── Health ────────────────────────────────────────────────────────────────
     if (url.pathname === '/api/health') {
       return Response.json({ status: 'ok', service: 'realityshift-api' });
     }
 
-    // POST /api/seed — seed Supabase with World Bank data for all countries
+    // ── GET /api/countries — list all country codes in the live world ─────────
+    // Called by the GitHub Actions monthly-sync workflow to build its loop.
+    if (url.pathname === '/api/countries' && request.method === 'GET') {
+      const denied = requireSecret(request, env);
+      if (denied) return denied;
+      try {
+        const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
+        const worldId = url.searchParams.get('world_id') ?? 'live';
+        const { data } = await db
+          .from('country_states')
+          .select('country_code')
+          .eq('world_id', worldId)
+          .order('country_code');
+
+        const seen = new Set<string>();
+        const codes: string[] = [];
+        for (const row of (data ?? []) as { country_code: string }[]) {
+          if (!seen.has(row.country_code)) {
+            seen.add(row.country_code);
+            codes.push(row.country_code);
+          }
+        }
+        return Response.json({ codes });
+      } catch (e) {
+        return Response.json({ error: String(e) }, { status: 500 });
+      }
+    }
+
+    // ── POST /api/seed ────────────────────────────────────────────────────────
     if (url.pathname === '/api/seed' && request.method === 'POST') {
       const denied = requireSecret(request, env);
       if (denied) return denied;
@@ -42,9 +73,8 @@ export default {
       }
     }
 
-    // POST /api/agents/run — run agent for a single country
+    // ── POST /api/agents/run — run agent for one country ──────────────────────
     // Body: { world_id: string, country_code: string }
-    // Called once per country by GitHub Actions monthly sync.
     if (url.pathname === '/api/agents/run' && request.method === 'POST') {
       const denied = requireSecret(request, env);
       if (denied) return denied;
@@ -63,11 +93,25 @@ export default {
       }
     }
 
-    // POST /api/sync/country — Milestone 5
+    // ── POST /api/sync/country — monthly real-world sync for one country ──────
+    // Body: { country_code: string, world_id?: string }
+    // Only affects the live world — forks are silently skipped.
     if (url.pathname === '/api/sync/country' && request.method === 'POST') {
       const denied = requireSecret(request, env);
       if (denied) return denied;
-      return Response.json({ message: 'sync/country not yet implemented' }, { status: 501 });
+      try {
+        const { country_code, world_id = 'live' } = await parseBody<{
+          country_code: string;
+          world_id?: string;
+        }>(request);
+        if (!country_code) {
+          return Response.json({ error: 'country_code required' }, { status: 400 });
+        }
+        const result = await syncCountry(country_code, world_id, env);
+        return Response.json(result);
+      } catch (e) {
+        return Response.json({ error: String(e) }, { status: 500 });
+      }
     }
 
     return new Response('Not Found', { status: 404 });
