@@ -8,12 +8,13 @@ create extension if not exists vector;
 -- Worlds: canonical world state, branched per player fork
 -- ────────────────────────────────────────────────────────────────────────────
 create table if not exists worlds (
-  id           text primary key default gen_random_uuid()::text,
-  fork_of      text references worlds(id),
-  created_at   timestamptz not null default now(),
-  is_live      boolean not null default false,
-  player_id    uuid references auth.users(id),
-  forked_at_year int
+  id                   text primary key default gen_random_uuid()::text,
+  fork_of              text references worlds(id),
+  created_at           timestamptz not null default now(),
+  is_live              boolean not null default false,
+  player_id            uuid references auth.users(id),
+  forked_at_year       int,
+  player_country_code  text  -- ISO3 code of the country the player took over
 );
 
 -- The single live simulation world
@@ -134,5 +135,16 @@ create policy "players read own sessions" on game_sessions
 
 create policy "players write own sessions" on game_sessions
   for all using (player_id = auth.uid());
+
+-- Players read/write agent_decisions in their forks
+create policy "players read own fork decisions" on agent_decisions
+  for select using (
+    world_id in (select id from worlds where player_id = auth.uid())
+  );
+
+create policy "players write own fork decisions" on agent_decisions
+  for insert with check (
+    world_id in (select id from worlds where player_id = auth.uid())
+  );
 
 -- Service role bypasses RLS for background agents (set in Cloudflare Worker)

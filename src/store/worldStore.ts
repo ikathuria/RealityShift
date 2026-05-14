@@ -49,6 +49,8 @@ interface WorldStore {
   countryData: Record<string, CountryState>;
   choroplethMode: ChoroplethMode;
   choroplethValues: Map<string, number>;
+  /** Which world_id to query — 'live' by default; overridden when in a fork game */
+  activeWorldId: string;
 
   // Divergence dashboard
   recentDivergences: Divergence[];
@@ -59,6 +61,7 @@ interface WorldStore {
   selectCountry: (iso3: string | null) => void;
   loadCountry: (iso3: string) => Promise<void>;
   setChoroplethMode: (mode: ChoroplethMode) => void;
+  setActiveWorldId: (worldId: string) => void;
   loadChoropleth: () => Promise<void>;
   loadRecentDivergences: (limit?: number) => Promise<void>;
   loadCountryDecisions: (iso3: string) => Promise<void>;
@@ -74,6 +77,7 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
   countryData: {},
   choroplethMode: 'gdp_per_capita',
   choroplethValues: new Map(),
+  activeWorldId: 'live',
   recentDivergences: [],
   divergenceMagnitudes: new Map(),
   countryDecisions: {},
@@ -81,17 +85,18 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
   selectCountry: (iso3) => {
     set({ selectedCountry: iso3 });
     if (iso3) {
-      if (!get().countryData[iso3]) get().loadCountry(iso3);
-      if (!get().countryDecisions[iso3]) get().loadCountryDecisions(iso3);
+      get().loadCountry(iso3);
+      get().loadCountryDecisions(iso3);
     }
   },
 
   loadCountry: async (iso3) => {
     if (!supabase) return;
+    const worldId = get().activeWorldId;
     const { data, error } = await supabase
       .from('country_states')
       .select('*')
-      .eq('world_id', 'live')
+      .eq('world_id', worldId)
       .eq('country_code', iso3)
       .order('year', { ascending: false })
       .limit(1)
@@ -106,12 +111,17 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
     get().loadChoropleth();
   },
 
+  setActiveWorldId: (worldId) => {
+    set({ activeWorldId: worldId, countryData: {}, countryDecisions: {} });
+  },
+
   loadChoropleth: async () => {
     if (!supabase) return;
     const mode = get().choroplethMode;
+    const worldId = get().activeWorldId;
 
-    if (mode === 'divergence') {
-      // Use pre-loaded divergence magnitudes
+    if (mode === 'divergence' && worldId === 'live') {
+      // Use pre-loaded divergence magnitudes (live world only)
       set({ choroplethValues: new Map(get().divergenceMagnitudes) });
       return;
     }
@@ -119,13 +129,13 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
     const { data, error } = await supabase
       .from('country_states')
       .select('country_code, indicators')
-      .eq('world_id', 'live');
+      .eq('world_id', worldId);
 
     if (error || !data) return;
 
     const values = new Map<string, number>();
     for (const row of data as CountryState[]) {
-      const val = row.indicators[mode];
+      const val = row.indicators[mode === 'divergence' ? 'gdp_per_capita' : mode];
       if (typeof val === 'number') values.set(row.country_code, val);
     }
     set({ choroplethValues: values });
@@ -161,10 +171,11 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
 
   loadCountryDecisions: async (iso3) => {
     if (!supabase) return;
+    const worldId = get().activeWorldId;
     const { data, error } = await supabase
       .from('agent_decisions')
       .select('*')
-      .eq('world_id', 'live')
+      .eq('world_id', worldId)
       .eq('country_code', iso3)
       .order('year', { ascending: false })
       .limit(20);

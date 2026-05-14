@@ -194,12 +194,12 @@ Tasks:
 **Goal:** A logged-in player can take over any country from its agent and fork the world. The fork is a true parallel universe — no new real-world data enters it. Other country agents react to the player's decisions.
 
 Tasks:
-- [ ] Add Supabase Auth: email/password signup and login — Done when: player can create account and session persists across page refreshes
-- [ ] "Take Over" button on any CountryPanel — creates a new row in `worlds` (`fork_of = 'live'`, `forked_at_year = current`, `player_id = auth.uid`) and copies all `country_states` from the live world into the new `world_id` — Done when: clicking Take Over for India creates a fork world in Supabase with all 195 countries' states copied
-- [ ] Player policy editor: when playing a fork, the player can adjust policies, pass laws, and change budgets — same UI as before but writes to the forked `world_id` not the live world — Done when: player changes India's military budget in their fork without affecting the live world
-- [ ] "Simulate Year" button: when player confirms changes, runs `countryAgent` for all other countries in the fork (reacting to India's new state), updates their `country_states`, advances year — Done when: India cuts taxes → other country agents receive the updated India state and respond (trade partners adjust, adversaries react, etc.)
-- [ ] No news injection in forks: `runMonthlySync` only runs on `world_id = 'live'`; forks never receive real-world data — Done when: confirmed by code review that sync functions check `is_live` before running
-- [ ] Fork dashboard: player can see their fork's state vs. the live world on the same globe — a toggle between "Your Universe" and "Real World Simulation" — Done when: toggle switches globe data source between fork and live world states
+- [x] Add Supabase Auth: email/password signup and login — Done when: player can create account and session persists across page refreshes
+- [x] "Take Over" button on any CountryPanel — creates a new row in `worlds` (`fork_of = 'live'`, `forked_at_year = current`, `player_id = auth.uid`) and copies all `country_states` from the live world into the new `world_id` — Done when: clicking Take Over for India creates a fork world in Supabase with all 195 countries' states copied
+- [x] Player policy editor: when playing a fork, the player can adjust policies, pass laws, and change budgets — same UI as before but writes to the forked `world_id` not the live world — Done when: player changes India's military budget in their fork without affecting the live world
+- [x] "Simulate Year" button: when player confirms changes, runs `countryAgent` for all other countries in the fork (reacting to India's new state), updates their `country_states`, advances year — Done when: India cuts taxes → other country agents receive the updated India state and respond (trade partners adjust, adversaries react, etc.)
+- [x] No news injection in forks: `runMonthlySync` only runs on `world_id = 'live'`; forks never receive real-world data — Done when: confirmed by code review that sync functions check `is_live` before running
+- [x] Fork dashboard: player can see their fork's state vs. the live world on the same globe — a toggle between "Your Universe" and "Real World Simulation" — Done when: toggle switches globe data source between fork and live world states
 
 ---
 

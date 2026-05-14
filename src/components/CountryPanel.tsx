@@ -1,7 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useWorldStore } from '../store/worldStore';
 import type { CountryState } from '../store/worldStore';
+import { useAuthStore } from '../store/authStore';
+import { useGameStore } from '../store/gameStore';
 import DecisionLog from './DecisionLog';
+import AuthModal from './AuthModal';
 
 const INDICATOR_LABELS: Record<string, { label: string; unit: string; decimals: number }> = {
   gdp_per_capita:   { label: 'GDP per Capita',       unit: 'USD',    decimals: 0 },
@@ -50,13 +54,39 @@ function CountryData({ data }: { data: CountryState }) {
 type PanelTab = 'indicators' | 'decisions';
 
 export default function CountryPanel() {
-  const { selectedCountry, countryData, selectCountry } = useWorldStore();
+  const { selectedCountry, countryData, selectCountry, activeWorldId } = useWorldStore();
+  const { user, session } = useAuthStore();
+  const { createFork, enterFork } = useGameStore();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<PanelTab>('indicators');
+  const [showAuth, setShowAuth] = useState(false);
+  const [takingOver, setTakingOver] = useState(false);
+  const [takeoverError, setTakeoverError] = useState<string | null>(null);
+
   if (!selectedCountry) return null;
 
   const data = countryData[selectedCountry];
+  const isLive = activeWorldId === 'live';
+
+  const handleTakeOver = async () => {
+    if (!user || !session) { setShowAuth(true); return; }
+    setTakingOver(true);
+    setTakeoverError(null);
+    const result = await createFork(selectedCountry, session.access_token);
+    setTakingOver(false);
+    if (typeof result === 'string') { setTakeoverError(result); return; }
+    enterFork({ worldId: result.worldId, countryCode: selectedCountry, year: result.year, createdAt: new Date().toISOString() });
+    navigate(`/play/${result.worldId}`);
+  };
 
   return (
+    <>
+    {showAuth && (
+      <AuthModal
+        onClose={() => setShowAuth(false)}
+        onSuccess={() => { setShowAuth(false); handleTakeOver(); }}
+      />
+    )}
     <div style={{
       position: 'absolute', top: 0, right: 0, width: 300, height: '100vh',
       background: 'rgba(10,10,20,0.88)', backdropFilter: 'blur(8px)',
@@ -111,6 +141,36 @@ export default function CountryPanel() {
       ) : (
         <DecisionLog countryCode={selectedCountry} />
       )}
+
+      {/* Take Over button — only on live world */}
+      {isLive && (
+        <div style={{ marginTop: 20 }}>
+          {takeoverError && (
+            <div style={{
+              color: '#f87171', fontSize: 11, marginBottom: 8,
+              background: 'rgba(248,113,113,0.1)', padding: '6px 10px', borderRadius: 6,
+            }}>
+              {takeoverError}
+            </div>
+          )}
+          <button
+            onClick={handleTakeOver}
+            disabled={takingOver}
+            style={{
+              width: '100%', padding: '11px 0', borderRadius: 8, border: 'none',
+              background: takingOver ? 'rgba(255,255,255,0.08)' : 'rgba(99,102,241,0.8)',
+              color: '#fff', fontSize: 13, fontWeight: 700,
+              cursor: takingOver ? 'default' : 'pointer',
+            }}
+          >
+            {takingOver ? '⏳ Forking universe…' : `🎮 Take Over ${selectedCountry}`}
+          </button>
+          <div style={{ color: '#4b5563', fontSize: 11, textAlign: 'center', marginTop: 6 }}>
+            {user ? 'Forks the simulation — your parallel universe' : 'Sign in to take control'}
+          </div>
+        </div>
+      )}
     </div>
+    </>
   );
 }
