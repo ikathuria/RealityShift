@@ -1,0 +1,463 @@
+{
+  "USA": {
+    "country": "United States of America",
+    "iso3": "USA",
+    "political_leaning": "center-right (Republican majority)",
+    "current_government": "Republican Party; President Donald Trump (second term, 2025–). Controls Senate; House narrow Republican majority.",
+    "key_relationships": ["GBR", "CAN", "MEX", "DEU", "JPN", "CHN", "ISR", "UKR"],
+    "events": [
+      { "year": 2005, "event": "Hurricane Katrina devastates Gulf Coast; federal response widely criticized, exposing FEMA failures and deepening racial inequality debate.", "tags": ["disaster", "governance"] },
+      { "year": 2007, "event": "Housing bubble collapse begins; subprime mortgage market implodes, triggering the global financial crisis.", "tags": ["economy", "finance"] },
+      { "year": 2008, "event": "Barack Obama elected first African-American president; TARP ($700B bank bailout) signed by outgoing Bush.", "tags": ["politics", "economy", "finance"] },
+      { "year": 2009, "event": "American Recovery and Reinvestment Act ($787B stimulus) passed; unemployment peaks near 10%.", "tags": ["economy", "stimulus"] },
+      { "year": 2010, "event": "Affordable Care Act signed; Tea Party movement surges, Republicans win House in midterms.", "tags": ["healthcare", "politics"] },
+      { "year": 2011, "event": "Debt-ceiling crisis brings US to brink of default; S&P downgrades US credit rating for first time.", "tags": ["economy", "debt", "politics"] },
+      { "year": 2012, "event": "Obama re-elected; Hurricane Sandy causes $65B in damage; fiscal cliff averted at last minute.", "tags": ["politics", "disaster"] },
+      { "year": 2015, "event": "Iran nuclear deal (JCPOA) signed; TPP negotiations concluded; Supreme Court legalizes same-sex marriage nationwide.", "tags": ["foreign_policy", "trade", "social_policy"] },
+      { "year": 2016, "event": "Donald Trump elected president; Brexit vote shocks global markets; Fed begins rate-hike cycle.", "tags": ["politics", "foreign_policy"] },
+      { "year": 2017, "event": "Tax Cuts and Jobs Act reduces corporate tax rate from 35% to 21%; US withdraws from Paris Climate Agreement and TPP.", "tags": ["tax", "trade", "environment"] },
+      { "year": 2018, "event": "US-China trade war begins; tariffs on $250B of Chinese goods; steel/aluminum tariffs on allies.", "tags": ["trade", "foreign_policy"] },
+      { "year": 2020, "event": "COVID-19 pandemic; CARES Act ($2.2T relief); GDP falls 3.4%; Biden defeats Trump; 230,000 US deaths by election.", "tags": ["health", "economy", "politics"] },
+      { "year": 2021, "event": "January 6 Capitol attack; American Rescue Plan ($1.9T); bipartisan Infrastructure Investment and Jobs Act ($1.2T) passed.", "tags": ["politics", "economy", "infrastructure"] },
+      { "year": 2022, "event": "Inflation hits 9.1% (40-year high); Fed raises rates 425bps; Inflation Reduction Act ($369B climate/healthcare); Ukraine war support begins.", "tags": ["economy", "inflation", "foreign_policy"] },
+      { "year": 2023, "event": "Debt ceiling crisis resolved at 11th hour; banking stress (SVB/Signature failures); AI boom begins with ChatGPT.", "tags": ["economy", "finance", "technology"] },
+      { "year": 2024, "event": "Trump wins 2024 election; inflation cools to ~3%; Fed begins cutting rates; Gaza conflict strains Democratic coalition.", "tags": ["politics", "economy", "foreign_policy"] },
+      { "year": 2025, "event": "DOGE (Department of Government Efficiency) launches mass federal workforce cuts; broad tariffs imposed on trading partners; NATO commitment questioned.", "tags": ["governance", "trade", "foreign_policy"] }
+    ]
+  },
+
+  "CHN": {
+    "country": "China",
+    "iso3": "CHN",
+    "political_leaning": "authoritarian state-capitalist (CCP)",
+    "current_government": "Chinese Communist Party; General Secretary and President Xi Jinping (third term since 2022, no term limit).",
+    "key_relationships": ["USA", "RUS", "JPN", "KOR", "IND", "PAK", "ASEAN"],
+    "events": [
+      { "year": 2005, "event": "China's 11th Five-Year Plan prioritizes balanced growth, energy efficiency, and reducing rural-urban inequality; GDP growth 11.4%.", "tags": ["economy", "planning"] },
+      { "year": 2008, "event": "Beijing Olympics showcases China's rise; $586B stimulus launched after global financial crisis; Tibet protests suppressed.", "tags": ["foreign_policy", "economy", "governance"] },
+      { "year": 2010, "event": "China overtakes Japan as world's second-largest economy; Google withdraws from China over censorship and hacking.", "tags": ["economy", "technology", "governance"] },
+      { "year": 2012, "event": "Xi Jinping becomes CCP General Secretary; Bo Xilai scandal exposes factional power struggles.", "tags": ["politics", "governance"] },
+      { "year": 2013, "event": "Belt and Road Initiative announced; Shanghai Free Trade Zone launched; Xi begins anti-corruption campaign (1M+ officials eventually disciplined).", "tags": ["foreign_policy", "trade", "governance"] },
+      { "year": 2015, "event": "Stock market crashes 30% in two months; yuan devalued 3%; One Child Policy replaced with Two Child Policy.", "tags": ["economy", "finance", "social_policy"] },
+      { "year": 2017, "event": "Xi Jinping Thought enshrined in CCP constitution; 19th Party Congress consolidates Xi's power; South China Sea militarization accelerates.", "tags": ["politics", "governance", "foreign_policy"] },
+      { "year": 2018, "event": "National People's Congress removes presidential term limits; US-China trade war begins with $34B tariffs.", "tags": ["politics", "trade", "governance"] },
+      { "year": 2019, "event": "Hong Kong protests erupt over extradition bill; Huawei banned from US supply chains; GDP slows to 6.1%.", "tags": ["governance", "technology", "foreign_policy"] },
+      { "year": 2020, "event": "COVID-19 pandemic originates; strict zero-COVID lockdowns contain initial spread; Hong Kong National Security Law imposed.", "tags": ["health", "governance", "foreign_policy"] },
+      { "year": 2021, "event": "Common Prosperity campaign targets wealth inequality; tech crackdown (Alibaba $2.8B fine, DiDi delisted, gaming restrictions); Evergrande collapses.", "tags": ["economy", "technology", "social_policy"] },
+      { "year": 2022, "event": "Xi Jinping's third term confirmed; zero-COVID protests force policy reversal; real estate crisis deepens.", "tags": ["politics", "economy", "social_policy"] },
+      { "year": 2023, "event": "Post-COVID recovery disappoints; youth unemployment hits 21.3% (data suppressed after); deflation concerns; record $823B trade surplus.", "tags": ["economy", "trade"] },
+      { "year": 2024, "event": "Major stimulus package launched ($1.4T+) to combat deflation and property crisis; Taiwan Strait tensions escalate; BRI expands to 140+ countries.", "tags": ["economy", "foreign_policy"] },
+      { "year": 2025, "event": "US tariffs escalate to 145%+; China retaliates; decoupling accelerates; GDP growth target ~5% amid structural headwinds.", "tags": ["trade", "economy", "foreign_policy"] }
+    ]
+  },
+
+  "RUS": {
+    "country": "Russia",
+    "iso3": "RUS",
+    "political_leaning": "authoritarian nationalist (United Russia)",
+    "current_government": "President Vladimir Putin (fifth term since May 2024, in power since 2000 except 2008–2012). Single-party dominance of United Russia.",
+    "key_relationships": ["CHN", "UKR", "BLR", "USA", "DEU", "IRN", "PRK"],
+    "events": [
+      { "year": 2005, "event": "Russia-Ukraine gas dispute; Kremlin tightens state control over energy sector (Yukos/Khodorkovsky case completed).", "tags": ["energy", "governance", "foreign_policy"] },
+      { "year": 2007, "event": "Putin's Munich Security Conference speech denounces US 'unipolar world'; Russia suspends CFE arms treaty.", "tags": ["foreign_policy", "military"] },
+      { "year": 2008, "event": "Russia-Georgia War: Russia recognizes South Ossetia and Abkhazia; global financial crisis causes 7.8% GDP contraction.", "tags": ["military", "foreign_policy", "economy"] },
+      { "year": 2009, "event": "Medvedev presidency (Putin as PM); Russia-NATO 'reset' with Obama; gas supply to Europe briefly cut.", "tags": ["politics", "foreign_policy", "energy"] },
+      { "year": 2012, "event": "Putin returns to presidency; massive protests in Moscow suppressed; 'foreign agents' law targets NGOs.", "tags": ["politics", "governance"] },
+      { "year": 2014, "event": "Annexation of Crimea; war in Donbas begins; Western sanctions imposed; ruble collapses 50%; oil price halves.", "tags": ["military", "foreign_policy", "economy"] },
+      { "year": 2015, "event": "Russia intervenes militarily in Syria supporting Assad; S&P downgrades Russia to junk; Minsk II ceasefire signed.", "tags": ["military", "economy", "foreign_policy"] },
+      { "year": 2016, "event": "Alleged interference in US election; Russia excluded from G8; import-substitution policies accelerate.", "tags": ["foreign_policy", "governance"] },
+      { "year": 2018, "event": "Putin re-elected with 77%; Skripal poisoning leads to mass diplomat expulsions; pension reform sparks rare mass protests.", "tags": ["politics", "foreign_policy", "social_policy"] },
+      { "year": 2020, "event": "Constitution amended to allow Putin to rule until 2036; COVID pandemic; oil price war with Saudi Arabia crashes prices.", "tags": ["politics", "energy", "health"] },
+      { "year": 2021, "event": "Navalny imprisoned after poisoning; Russia masses troops on Ukraine border; NS2 pipeline completed.", "tags": ["governance", "foreign_policy", "energy"] },
+      { "year": 2022, "event": "Full-scale invasion of Ukraine; unprecedented Western sanctions freeze $300B in reserves; Finland and Sweden apply for NATO.", "tags": ["military", "foreign_policy", "economy"] },
+      { "year": 2023, "event": "Wagner mutiny (Prigozhin killed); war of attrition in Ukraine; 'war economy' drives 3.6% GDP growth; military budget reaches 6% of GDP.", "tags": ["military", "economy", "governance"] },
+      { "year": 2024, "event": "Putin wins fifth term (87%); Ukraine strikes deep into Russia; North Korean troops deployed to Russia; EU/US escalate weapons supplies.", "tags": ["politics", "military", "foreign_policy"] },
+      { "year": 2025, "event": "Ceasefire negotiations begin under US pressure; Russian economy strained by sanctions and military spending; dollar reserves partially restored via China/India trade.", "tags": ["economy", "military", "foreign_policy"] }
+    ]
+  },
+
+  "IND": {
+    "country": "India",
+    "iso3": "IND",
+    "political_leaning": "center-right nationalist",
+    "current_government": "Bharatiya Janata Party (BJP)-led NDA coalition; PM Narendra Modi (third term since June 2024, though BJP fell short of majority alone).",
+    "key_relationships": ["CHN", "PAK", "USA", "RUS", "BGD", "LKA", "NEP"],
+    "events": [
+      { "year": 2005, "event": "NREGA enacted: guarantees 100 days of paid rural employment per household; landmark social protection.", "tags": ["social_policy", "employment", "rural"] },
+      { "year": 2008, "event": "Mumbai 26/11 attacks kill 166; India-Pakistan relations freeze; US-India Civil Nuclear Agreement signed.", "tags": ["security", "foreign_policy"] },
+      { "year": 2009, "event": "UPA wins second term; Right to Education Act passed.", "tags": ["politics", "education"] },
+      { "year": 2011, "event": "Anna Hazare anti-corruption movement; India's population crosses 1.2B; GDP growth at 6.6% after strong decade.", "tags": ["governance", "social_policy", "economy"] },
+      { "year": 2014, "event": "Modi/BJP wins landslide majority (282/543 seats); 'Make in India' and 'Swachh Bharat' initiatives launched.", "tags": ["politics", "economy", "governance"] },
+      { "year": 2016, "event": "Surgical strikes across LoC in Kashmir after Uri attack; November demonetization of Rs. 500/1000 notes disrupts economy.", "tags": ["military", "economy", "security"] },
+      { "year": 2017, "event": "GST (Goods and Services Tax) implemented July 1, unifying India's fragmented indirect tax system.", "tags": ["economy", "tax"] },
+      { "year": 2019, "event": "BJP wins 303 seats; Article 370 revoked in Jammu & Kashmir, stripping special status; Citizenship Amendment Act (CAA) passed, sparking protests.", "tags": ["politics", "governance", "social_policy"] },
+      { "year": 2020, "event": "COVID-19: world's strictest lockdown announced with 4 hours notice; economy contracts 5.8%; Galwan border clash with China kills 20 soldiers; Huawei and 200+ Chinese apps banned.", "tags": ["health", "economy", "military", "foreign_policy"] },
+      { "year": 2021, "event": "Second COVID wave devastates India (Delta variant); farmers' protest against three farm laws forces repeal by Modi government.", "tags": ["health", "social_policy", "governance"] },
+      { "year": 2022, "event": "India remains 'neutral' on Ukraine war, continues buying discounted Russian oil; becomes world's fifth largest economy (overtaking UK).", "tags": ["economy", "foreign_policy", "energy"] },
+      { "year": 2023, "event": "G20 presidency; Chandrayaan-3 soft-lands near Moon's south pole; India overtakes China as world's most populous country (1.44B).", "tags": ["foreign_policy", "technology", "demographics"] },
+      { "year": 2024, "event": "2024 general election: BJP wins 240 seats (below majority alone); NDA coalition government formed; Ram Mandir consecrated in Ayodhya.", "tags": ["politics", "social_policy"] },
+      { "year": 2025, "event": "India-China border normalization talks advance; India-Pakistan tensions simmer; 'Viksit Bharat' (Developed India by 2047) roadmap published; GDP growth ~6.5%.", "tags": ["foreign_policy", "economy"] }
+    ]
+  },
+
+  "GBR": {
+    "country": "United Kingdom",
+    "iso3": "GBR",
+    "political_leaning": "centre-left (Labour majority)",
+    "current_government": "Labour Party; Prime Minister Keir Starmer (since July 2024, 412/650 seat majority).",
+    "key_relationships": ["USA", "DEU", "FRA", "IRL", "UKR", "AUS", "CAN"],
+    "events": [
+      { "year": 2005, "event": "7/7 London bombings kill 52; UK hosts G8 at Gleneagles; Blair wins third term.", "tags": ["security", "politics"] },
+      { "year": 2007, "event": "Gordon Brown becomes PM; Northern Rock becomes first UK bank run in 150 years; starts Great Recession in UK.", "tags": ["politics", "economy", "finance"] },
+      { "year": 2008, "event": "UK bank bailouts: RBS and Lloyds partly nationalised; GDP shrinks 4.2% in 2009.", "tags": ["economy", "finance"] },
+      { "year": 2010, "event": "Conservative-Lib Dem coalition under Cameron begins austerity; VAT raised to 20%; public spending cut 25%.", "tags": ["politics", "economy", "austerity"] },
+      { "year": 2012, "event": "London Olympics; Scotland independence referendum announced; austerity cuts deepen.", "tags": ["politics", "social_policy"] },
+      { "year": 2014, "event": "Scotland votes 55–45 to remain in UK; Conservative majority government elected 2015.", "tags": ["politics"] },
+      { "year": 2016, "event": "Brexit referendum: 52% vote Leave; Cameron resigns; Theresa May becomes PM; pound falls 15%.", "tags": ["politics", "foreign_policy", "economy"] },
+      { "year": 2019, "event": "Boris Johnson becomes PM with 'Get Brexit Done' mandate; wins 80-seat majority; Withdrawal Agreement signed.", "tags": ["politics", "foreign_policy"] },
+      { "year": 2020, "event": "UK formally leaves EU; COVID-19: 130,000 UK deaths; furlough scheme protects 11M jobs; vaccine rollout leads the world.", "tags": ["foreign_policy", "health", "economy"] },
+      { "year": 2021, "event": "UK-EU Trade and Cooperation Agreement takes effect; COP26 hosted in Glasgow; supply chain crisis, fuel shortages.", "tags": ["foreign_policy", "environment", "economy"] },
+      { "year": 2022, "event": "Johnson resigns over Partygate; Liz Truss 'mini-budget' crashes pound and gilt markets; Sunak becomes PM; inflation hits 11.1%.", "tags": ["politics", "economy", "governance"] },
+      { "year": 2023, "event": "UK joins CPTPP trade bloc; Windsor Framework resolves NI Brexit dispute; strikes across public sector over pay.", "tags": ["trade", "foreign_policy", "labour"] },
+      { "year": 2024, "event": "Labour wins landslide election (412 seats); Keir Starmer becomes PM; pledges to repair EU relations and build 1.5M homes.", "tags": ["politics", "social_policy", "foreign_policy"] },
+      { "year": 2025, "event": "UK-EU summit on defence and trade cooperation; NHS crisis deepens; growth plan announced with planning reforms.", "tags": ["foreign_policy", "healthcare", "economy"] }
+    ]
+  },
+
+  "DEU": {
+    "country": "Germany",
+    "iso3": "DEU",
+    "political_leaning": "centre-right (CDU/CSU-SPD coalition)",
+    "current_government": "CDU/CSU-SPD grand coalition; Chancellor Friedrich Merz (CDU, since March 2025).",
+    "key_relationships": ["FRA", "POL", "USA", "CHN", "RUS", "GBR", "UKR"],
+    "events": [
+      { "year": 2005, "event": "Angela Merkel becomes Germany's first female Chancellor heading CDU/CSU-SPD grand coalition.", "tags": ["politics"] },
+      { "year": 2008, "event": "Germany's export-led economy hit by global crisis; Merkel government's €500B bank guarantee stabilizes system.", "tags": ["economy", "finance"] },
+      { "year": 2010, "event": "German-led EU austerity imposed on Greece; Germany leads eurozone crisis management; 'Schuldenbremse' (debt brake) enshrined in Basic Law.", "tags": ["economy", "foreign_policy"] },
+      { "year": 2011, "event": "Fukushima triggers German nuclear phase-out decision (Energiewende); last nuclear plants to close by 2022.", "tags": ["energy", "environment"] },
+      { "year": 2015, "event": "Germany accepts 890,000 asylum seekers ('Wir schaffen das'); Volkswagen Dieselgate scandal; refugee crisis reshapes politics.", "tags": ["social_policy", "governance"] },
+      { "year": 2016, "event": "AfD surges in state elections; Berlin truck attack; Brexit shakes EU unity.", "tags": ["politics", "security"] },
+      { "year": 2018, "event": "SPD joins another grand coalition; IG Metall wins 28-hour week; Nord Stream 2 construction begins.", "tags": ["politics", "labour", "energy"] },
+      { "year": 2021, "event": "Merkel retires after 16 years; SPD's Olaf Scholz leads 'traffic light' coalition (SPD-Greens-FDP).", "tags": ["politics"] },
+      { "year": 2022, "event": "Russia invades Ukraine; Germany's Zeitenwende (historic foreign policy U-turn): €100B defence fund; gas dependency exposed; LNG terminals fast-tracked.", "tags": ["military", "energy", "foreign_policy"] },
+      { "year": 2023, "event": "Germany enters recession (-0.3%); last nuclear plants shut; coalition disputes over debt brake paralyse government.", "tags": ["economy", "energy", "politics"] },
+      { "year": 2024, "event": "Scholz coalition collapses over budget dispute; snap elections called; AfD polls second nationally; Germany's industrial competitiveness crisis.", "tags": ["politics", "economy"] },
+      { "year": 2025, "event": "CDU/CSU-SPD coalition formed under Merz; debt brake reformed to allow defence spending; Bundeswehr modernisation accelerates.", "tags": ["politics", "military", "economy"] }
+    ]
+  },
+
+  "FRA": {
+    "country": "France",
+    "iso3": "FRA",
+    "political_leaning": "centrist (Renaissance-led coalition)",
+    "current_government": "Emmanuel Macron (President, third term unlikely — constitutionally barred after 2027); PM François Bayrou leads centrist coalition since Jan 2025.",
+    "key_relationships": ["DEU", "GBR", "USA", "ITA", "ESP", "MAR", "UKR"],
+    "events": [
+      { "year": 2005, "event": "French suburbs riots (banlieues) expose integration failures; French voters reject EU Constitution in referendum.", "tags": ["social_policy", "foreign_policy", "governance"] },
+      { "year": 2007, "event": "Nicolas Sarkozy elected on modernisation platform; begins labour market reforms.", "tags": ["politics", "economy"] },
+      { "year": 2008, "event": "France takes G8/EU presidency during financial crisis; Sarkozy brokers EU response.", "tags": ["economy", "foreign_policy"] },
+      { "year": 2012, "event": "François Hollande elected on anti-austerity platform; 75% top tax rate briefly introduced; Mali intervention.", "tags": ["politics", "economy", "military"] },
+      { "year": 2015, "event": "Charlie Hebdo and November Paris attacks kill 147; state of emergency declared; France joins Syria air campaign.", "tags": ["security", "military"] },
+      { "year": 2017, "event": "Emmanuel Macron elected president (En Marche!); defeats Le Pen 66–34%; La République En Marche wins legislative majority.", "tags": ["politics"] },
+      { "year": 2018, "event": "Gilets jaunes (Yellow Vests) protests over fuel taxes and inequality; Macron makes €10B concessions.", "tags": ["social_policy", "economy", "governance"] },
+      { "year": 2020, "event": "COVID-19 kills 60,000+ by year end; France receives €40B from EU Recovery Fund.", "tags": ["health", "economy"] },
+      { "year": 2022, "event": "Macron re-elected over Le Pen (58–42%); loses legislative majority; pension reform raised retirement age to 64.", "tags": ["politics", "social_policy"] },
+      { "year": 2023, "event": "Pension reform passed via Article 49.3 (bypassing parliament); nationwide strikes and protests; New Caledonia unrest.", "tags": ["social_policy", "governance"] },
+      { "year": 2024, "event": "Snap elections called after EU vote rout; hung parliament; three PMs in one year; Paris Olympics held successfully.", "tags": ["politics", "governance"] },
+      { "year": 2025, "event": "Bayrou government focuses on deficit reduction (6.1% of GDP); France leads European defence spending push; nuclear energy investment.", "tags": ["economy", "military", "energy"] }
+    ]
+  },
+
+  "JPN": {
+    "country": "Japan",
+    "iso3": "JPN",
+    "political_leaning": "centre-right (LDP coalition)",
+    "current_government": "Liberal Democratic Party (LDP); PM Sanae Takaichi (since late 2024 LDP leadership election — or PM Ishiba; LDP in coalition with Komeito).",
+    "key_relationships": ["USA", "CHN", "KOR", "AUS", "RUS", "PRK"],
+    "events": [
+      { "year": 2006, "event": "Shinzo Abe becomes PM (first term); constitutional revision pushed; GDP growth modest at 2.0%.", "tags": ["politics"] },
+      { "year": 2009, "event": "DPJ ends 54 years of LDP dominance; Yukio Hatoyama PM; Japan's Lost Decade deepens.", "tags": ["politics", "economy"] },
+      { "year": 2011, "event": "Tōhoku earthquake and tsunami: 19,000 dead; Fukushima nuclear disaster triggers all reactor shutdowns; JPY surges to 76/$.", "tags": ["disaster", "energy", "economy"] },
+      { "year": 2012, "event": "Abe returns to power with Abenomics: 3 arrows (monetary easing, fiscal spending, structural reform); LDP wins landslide.", "tags": ["politics", "economy"] },
+      { "year": 2013, "event": "Bank of Japan launches unprecedented QE (60–70T yen/year); Abe visits Yasukuni Shrine straining China/Korea ties.", "tags": ["economy", "foreign_policy"] },
+      { "year": 2015, "event": "Abe reinterprets constitution to allow collective self-defence; Japan's population falls for fifth consecutive year.", "tags": ["military", "demographics"] },
+      { "year": 2016, "event": "Bank of Japan introduces negative interest rates; Abe and Obama visit Pearl Harbor and Hiroshima; Japan joins Trans-Pacific Partnership.", "tags": ["economy", "foreign_policy", "trade"] },
+      { "year": 2019, "event": "Japan-Korea trade dispute escalates; Reiwa era begins as Emperor Naruhito ascends; consumption tax raised to 10%.", "tags": ["foreign_policy", "economy"] },
+      { "year": 2020, "event": "COVID-19 causes 2020 Olympic postponement; GDP falls 4.3%; Abe resigns citing health; Suga becomes PM.", "tags": ["health", "economy", "politics"] },
+      { "year": 2021, "event": "Tokyo Olympics held behind closed doors; Kishida Fumio becomes PM; Japan considers first strike capability.", "tags": ["politics", "military"] },
+      { "year": 2022, "event": "Abe assassinated; Japan doubles defence budget to 2% of GDP by 2027; Japan joins G7 Russia sanctions.", "tags": ["politics", "military", "foreign_policy"] },
+      { "year": 2023, "event": "Japan issues 40-year bonds to fund defence; BOJ hints at policy pivot; inflation above 3% for first time in decades.", "tags": ["economy", "military"] },
+      { "year": 2024, "event": "BOJ raises rates for first time since 2007 (0.25%); yen briefly at 160/$; Kishida resigns; LDP leadership election.", "tags": ["economy", "politics"] },
+      { "year": 2025, "event": "Japan deepens security ties with USA, Australia, Philippines vs. China; wage growth sustains at 5%+; ageing crisis worsens.", "tags": ["military", "economy", "demographics"] }
+    ]
+  },
+
+  "BRA": {
+    "country": "Brazil",
+    "iso3": "BRA",
+    "political_leaning": "centre-left (PT/Lula coalition)",
+    "current_government": "Workers' Party (PT); President Luiz Inácio Lula da Silva (third term since January 2023).",
+    "key_relationships": ["USA", "CHN", "ARG", "URY", "PER", "RUS"],
+    "events": [
+      { "year": 2005, "event": "Mensalão scandal: Lula's PT involved in vote-buying scheme; PT loses credibility but Lula survives.", "tags": ["governance", "politics"] },
+      { "year": 2006, "event": "Lula re-elected; pre-salt oil discovery announced (massive offshore reserves); Bolsa Família expands.", "tags": ["politics", "energy", "social_policy"] },
+      { "year": 2008, "event": "Brazil gains investment grade rating; joins BRICS; financial crisis impact is mild — 'Brazil didn't need the lifeboat'.", "tags": ["economy", "foreign_policy"] },
+      { "year": 2010, "event": "Dilma Rousseff elected; Brazil grows 7.5% (fastest in 25 years); World Cup and Olympics host rights secured.", "tags": ["politics", "economy"] },
+      { "year": 2013, "event": "Mass protests (Jornadas de Junho): millions on streets over corruption and public service costs.", "tags": ["governance", "social_policy"] },
+      { "year": 2014, "event": "Lava Jato (Car Wash) operation begins exposing Petrobras corruption ($2B+); Brazil hosts World Cup amid protests; recession begins.", "tags": ["governance", "economy"] },
+      { "year": 2016, "event": "Dilma Rousseff impeached over fiscal accounting; Michel Temer takes over; Olympics held in Rio; austerity measures.", "tags": ["politics", "economy", "governance"] },
+      { "year": 2018, "event": "Jair Bolsonaro elected on anti-corruption, anti-PT platform; real falls; Lula imprisoned on corruption charges.", "tags": ["politics"] },
+      { "year": 2019, "event": "Amazon deforestation surges 30%; Brazil withdraws from Paris Agreement commitments; pension reform passes.", "tags": ["environment", "social_policy", "foreign_policy"] },
+      { "year": 2020, "event": "Brazil suffers 2nd highest COVID deaths (600,000+); Bolsonaro dismisses pandemic; GDP falls 4.1%.", "tags": ["health", "economy", "governance"] },
+      { "year": 2022, "event": "Lula defeats Bolsonaro 50.9–49.1% in closest election ever; Bolsonaro supporters storm congress in January 2023.", "tags": ["politics"] },
+      { "year": 2023, "event": "Lula reorients foreign policy (BRICS, Global South, Amazon protection); fiscal framework passes markets; deforestation drops 50%.", "tags": ["foreign_policy", "environment", "economy"] },
+      { "year": 2024, "event": "Brazil assumes G20 presidency; BRL weakens on fiscal concerns; COP30 awarded to Belém; Brazil leads Ukraine peace talks.", "tags": ["foreign_policy", "economy", "environment"] },
+      { "year": 2025, "event": "COP30 preparations in Amazonia; fiscal deficit concerns; China remains top trade partner; Brazil pushes for BRICS expansion.", "tags": ["environment", "economy", "foreign_policy"] }
+    ]
+  },
+
+  "AUS": {
+    "country": "Australia",
+    "iso3": "AUS",
+    "political_leaning": "centre-left (Labor majority)",
+    "current_government": "Australian Labor Party; Prime Minister Anthony Albanese (second term since May 2025 election).",
+    "key_relationships": ["USA", "GBR", "JPN", "CHN", "NZL", "IND", "PNG"],
+    "events": [
+      { "year": 2007, "event": "Kevin Rudd wins ending 11 years of Howard Liberal rule; Kyoto Protocol ratified; apology to Stolen Generations.", "tags": ["politics", "environment", "social_policy"] },
+      { "year": 2008, "event": "Australia avoids recession (only developed nation to do so) thanks to China commodity demand and $42B stimulus.", "tags": ["economy"] },
+      { "year": 2010, "event": "Julia Gillard deposes Rudd; minority government with Greens; resources super-profits tax dispute.", "tags": ["politics", "economy"] },
+      { "year": 2013, "event": "Tony Abbott wins on axing carbon tax; 'Stop the Boats' asylum policy; Rudd briefly returns then Labor loses.", "tags": ["politics", "environment", "social_policy"] },
+      { "year": 2014, "event": "Carbon tax repealed; Australia joins US-led airstrikes in Iraq/Syria; MH370 and MH17 crises affect Australia.", "tags": ["environment", "military", "foreign_policy"] },
+      { "year": 2017, "event": "Malcolm Turnbull replaced by Scott Morrison; Chinese influence concerns grow; same-sex marriage legalised.", "tags": ["politics", "foreign_policy", "social_policy"] },
+      { "year": 2020, "event": "Black Summer bushfires (33 dead, 18M hectares burned); COVID managed early with state lockdowns; China trade dispute begins.", "tags": ["environment", "health", "trade", "foreign_policy"] },
+      { "year": 2021, "event": "AUKUS security pact announced (nuclear submarines with US/UK); China trade war escalates; vaccine rollout delayed.", "tags": ["military", "foreign_policy"] },
+      { "year": 2022, "event": "Anthony Albanese elected; climate legislation (43% reduction by 2030); China ties slowly repair.", "tags": ["politics", "environment", "foreign_policy"] },
+      { "year": 2023, "event": "Voice to Parliament referendum defeated; AUKUS submarine deal progresses; interest rates peak at 4.35%.", "tags": ["social_policy", "military", "economy"] },
+      { "year": 2024, "event": "Australia pushes for Pacific climate finance; housing affordability crisis; immigration hits record 518,000.", "tags": ["environment", "social_policy", "demographics"] },
+      { "year": 2025, "event": "Labor re-elected; net zero by 2050 remains target; AUKUS Virginia-class subs timeline firmed; cost of living central issue.", "tags": ["politics", "military", "economy", "environment"] }
+    ]
+  },
+
+  "CAN": {
+    "country": "Canada",
+    "iso3": "CAN",
+    "political_leaning": "centre-right (Conservative majority anticipated)",
+    "current_government": "Liberal Party (minority) under PM Mark Carney since March 2025; federal election expected mid-2025 likely bringing Conservatives under Pierre Poilievre.",
+    "key_relationships": ["USA", "GBR", "FRA", "MEX", "CHN", "UKR"],
+    "events": [
+      { "year": 2006, "event": "Stephen Harper wins minority Conservative government ending 13 years of Liberal rule.", "tags": ["politics"] },
+      { "year": 2008, "event": "Harper wins majority; Canada's housing-backed mortgages crisis averted by regulation; commodity boom.", "tags": ["economy", "politics"] },
+      { "year": 2015, "event": "Justin Trudeau wins majority on 'sunny ways' platform; Canada 2030 climate plan; Syrian refugee intake (25,000).", "tags": ["politics", "environment", "social_policy"] },
+      { "year": 2016, "event": "Carbon price introduced; Trans Mountain pipeline approved; CETA with EU ratified.", "tags": ["energy", "environment", "trade"] },
+      { "year": 2018, "event": "USMCA replaces NAFTA; legalization of recreational cannabis; steel tariff fight with US.", "tags": ["trade", "social_policy", "foreign_policy"] },
+      { "year": 2019, "event": "Trudeau re-elected minority; SNC-Lavalin scandal; US-Canada relations tense over tariffs.", "tags": ["politics", "governance", "trade"] },
+      { "year": 2020, "event": "COVID-19: CERB income support ($2,000/month) reaches 9M Canadians; WE Charity scandal; border closed with US.", "tags": ["health", "economy", "governance"] },
+      { "year": 2021, "event": "Trudeau wins snap election (another minority); vaccine mandate for federal workers; COP26 commitment.", "tags": ["politics", "health", "environment"] },
+      { "year": 2022, "event": "Freedom Convoy blocks Ottawa; Emergencies Act invoked (first time); inflation hits 8.1%; Bank of Canada raises rates 400bps.", "tags": ["social_policy", "governance", "economy"] },
+      { "year": 2023, "event": "Canada-India diplomatic crisis (Sikh leader assassination); wildfires burn 18M hectares; housing crisis worsens.", "tags": ["foreign_policy", "environment", "social_policy"] },
+      { "year": 2024, "event": "Trudeau faces caucus revolt; NDP withdraws supply agreement; Chrystia Freeland resigns; Conservatives lead polls by 20pts.", "tags": ["politics"] },
+      { "year": 2025, "event": "Mark Carney becomes PM; Trump threatens 25% tariffs and annexation rhetoric; Canada responds with counter-tariffs and trade diversification.", "tags": ["politics", "trade", "foreign_policy"] }
+    ]
+  },
+
+  "KOR": {
+    "country": "South Korea",
+    "iso3": "KOR",
+    "political_leaning": "centre-right (PPP, under impeachment crisis)",
+    "current_government": "People Power Party (PPP); President Yoon Suk-yeol impeached December 2024; acting President Han Duck-soo; presidential election pending 2025.",
+    "key_relationships": ["USA", "JPN", "CHN", "PRK", "AUS"],
+    "events": [
+      { "year": 2006, "event": "Ban Ki-moon becomes UN Secretary-General; Korea-US FTA negotiations begin.", "tags": ["foreign_policy"] },
+      { "year": 2008, "event": "Global financial crisis; Lee Myung-bak (conservative) elected; Korean exports contract sharply.", "tags": ["economy", "politics"] },
+      { "year": 2010, "event": "KORUS FTA signed; Cheonan naval vessel sunk by North Korea (46 dead); Yeonpyeong island shelling.", "tags": ["foreign_policy", "military", "trade"] },
+      { "year": 2013, "event": "Park Geun-hye becomes first female president; tensions with Japan over comfort women and Dokdo.", "tags": ["politics", "foreign_policy"] },
+      { "year": 2016, "event": "Park Geun-hye impeached over Choi Soon-sil scandal; millions protest in candlelight revolution; THAAD deployment agreed.", "tags": ["politics", "governance", "military"] },
+      { "year": 2017, "event": "Moon Jae-in elected; Korean détente with North Korea; China retaliates economically over THAAD.", "tags": ["politics", "foreign_policy"] },
+      { "year": 2018, "event": "Panmunjom Declaration (Moon-Kim summit); Trump-Kim Singapore summit; Winter Olympics diplomacy.", "tags": ["foreign_policy", "military"] },
+      { "year": 2019, "event": "Japan-Korea trade war: Japan restricts chip materials; Korea removes Japan from white list; GSOMIA almost cancelled.", "tags": ["foreign_policy", "trade", "technology"] },
+      { "year": 2021, "event": "K-Culture (BTS, Squid Game) global dominance; IPEF membership; semiconductor dominance (Samsung, SK Hynix).", "tags": ["economy", "technology", "foreign_policy"] },
+      { "year": 2022, "event": "Yoon Suk-yeol (conservative) narrowly elected; Korea joins Chip 4 Alliance; North Korea fires record 37 missiles.", "tags": ["politics", "technology", "military"] },
+      { "year": 2023, "event": "Korea-Japan relations normalised (Camp David trilateral summit); birth rate falls to 0.72 (world lowest).", "tags": ["foreign_policy", "demographics"] },
+      { "year": 2024, "event": "Yoon declares then quickly reverses martial law (December 3); impeached by National Assembly; political crisis.", "tags": ["politics", "governance"] },
+      { "year": 2025, "event": "Presidential election; economic uncertainty; North Korea-Russia arms deal; semiconductor competition with TSMC intensifies.", "tags": ["politics", "economy", "military", "technology"] }
+    ]
+  },
+
+  "MEX": {
+    "country": "Mexico",
+    "iso3": "MEX",
+    "political_leaning": "centre-left (Morena)",
+    "current_government": "Morena party; President Claudia Sheinbaum (since October 2024, first female president, won with 59% of vote).",
+    "key_relationships": ["USA", "CAN", "GTM", "BLZ", "CUB"],
+    "events": [
+      { "year": 2006, "event": "Felipe Calderón wins disputed election; launches 'war on drugs' deploying military against cartels.", "tags": ["politics", "security"] },
+      { "year": 2008, "event": "Drug violence surges: 6,837 killed; financial crisis hits Mexico hard (GDP falls 6% in 2009).", "tags": ["security", "economy"] },
+      { "year": 2012, "event": "PRI returns to power with Enrique Peña Nieto; structural reforms: energy, telecom, education, finance.", "tags": ["politics", "economy"] },
+      { "year": 2013, "event": "Energy reform opens oil sector to foreign investment after 75 years of Pemex monopoly.", "tags": ["energy", "economy"] },
+      { "year": 2014, "event": "43 Ayotzinapa student teachers disappear; government response fuels national crisis.", "tags": ["governance", "security"] },
+      { "year": 2017, "event": "Major earthquakes kill 300+ in Mexico City; NAFTA renegotiation begins.", "tags": ["disaster", "trade"] },
+      { "year": 2018, "event": "AMLO (López Obrador) wins 53%; begins 'Fourth Transformation'; USMCA agreed replacing NAFTA.", "tags": ["politics", "trade"] },
+      { "year": 2019, "event": "AMLO cancels $13B new Mexico City airport; homicide rate hits record 34,582; nearshoring boom begins.", "tags": ["governance", "security", "economy"] },
+      { "year": 2020, "event": "COVID kills 190,000+ officially (true toll estimated 3×); GDP falls 8.3%; remittances hit record $40B.", "tags": ["health", "economy"] },
+      { "year": 2022, "event": "Mexico surpasses China as top US import source (nearshoring); energy reform defeated; inflation 8.7%.", "tags": ["trade", "energy", "economy"] },
+      { "year": 2023, "event": "Mexico becomes largest trade partner to US; Jalisco and Sinaloa cartels at war; fentanyl crisis strains US relations.", "tags": ["trade", "security", "foreign_policy"] },
+      { "year": 2024, "event": "Claudia Sheinbaum elected; judicial reform passes (judges directly elected); Trump threatens 25% tariffs.", "tags": ["politics", "governance", "trade"] },
+      { "year": 2025, "event": "Negotiating USMCA review under Trump tariff threats; nearshoring investment continues; security cooperation with US tense.", "tags": ["trade", "foreign_policy", "economy"] }
+    ]
+  },
+
+  "IDN": {
+    "country": "Indonesia",
+    "iso3": "IDN",
+    "political_leaning": "centre (nationalist coalition)",
+    "current_government": "Gerindra-led coalition; President Prabowo Subianto (since October 2024, won with 58.6%); ex-general who ran against Jokowi twice.",
+    "key_relationships": ["AUS", "CHN", "USA", "MYS", "SGP", "TLS"],
+    "events": [
+      { "year": 2005, "event": "Indian Ocean tsunami recovery continues; Aceh peace deal signed ending 30-year separatist conflict.", "tags": ["disaster", "governance"] },
+      { "year": 2008, "event": "Indonesia resilient in global crisis; Islamic banking grows; GDP maintains 6%+ growth.", "tags": ["economy", "finance"] },
+      { "year": 2009, "event": "Susilo Bambang Yudhoyono re-elected; Indonesia joins G20; counter-terrorism successes.", "tags": ["politics", "security"] },
+      { "year": 2014, "event": "Joko Widodo (Jokowi) elected — first non-elite, non-military president; infrastructure push begins.", "tags": ["politics", "infrastructure"] },
+      { "year": 2016, "event": "Blasphemy conviction of Jakarta's first Chinese-Christian governor Ahok inflames identity politics.", "tags": ["governance", "social_policy"] },
+      { "year": 2019, "event": "Jokowi re-elected; capital relocation from Jakarta to Nusantara (Borneo) announced; Papua unrest.", "tags": ["politics", "governance"] },
+      { "year": 2020, "event": "COVID kills 57,000+ officially; Omnibus Job Creation Law passes amid strikes; nickel export ban extended.", "tags": ["health", "economy", "trade"] },
+      { "year": 2022, "event": "Indonesia hosts G20; nickel refining boom (EV battery supply chain); palm oil export ban causes global food crisis.", "tags": ["economy", "trade", "foreign_policy"] },
+      { "year": 2023, "event": "Indonesia becomes world's largest nickel producer; general election campaign begins; Nusantara capital construction.", "tags": ["economy", "governance"] },
+      { "year": 2024, "event": "Prabowo Subianto wins election with Jokowi's son as VP candidate; concerns over democratic backsliding.", "tags": ["politics", "governance"] },
+      { "year": 2025, "event": "Indonesia deepens ties with China (BRI) while maintaining US defence relationship; food sovereignty programme; aims for $1T GDP by 2030.", "tags": ["foreign_policy", "economy"] }
+    ]
+  },
+
+  "TUR": {
+    "country": "Turkey (Türkiye)",
+    "iso3": "TUR",
+    "political_leaning": "authoritarian nationalist (AKP)",
+    "current_government": "Justice and Development Party (AKP); President Recep Tayyip Erdoğan (in power since 2003, executive presidency since 2018, re-elected 2023).",
+    "key_relationships": ["SYR", "GRC", "ARM", "RUS", "USA", "DEU", "IRQ"],
+    "events": [
+      { "year": 2005, "event": "EU accession talks officially open; Turkey's economy booms averaging 6% growth 2002–2008.", "tags": ["foreign_policy", "economy"] },
+      { "year": 2007, "event": "AKP wins 47% in elections; Erdoğan allies with Gülen movement; military power constrained.", "tags": ["politics", "governance"] },
+      { "year": 2010, "event": "Constitutional referendum passed weakening military courts; Gaza flotilla raid strains Israel ties.", "tags": ["governance", "foreign_policy"] },
+      { "year": 2013, "event": "Gezi Park protests: largest anti-government demonstrations; Erdoğan calls protesters 'çapulcuları'; Gülen split begins.", "tags": ["governance", "social_policy"] },
+      { "year": 2015, "event": "HDP enters parliament (13%); peace process with Kurds collapses; ISIS attack in Suruç; Russia jet shot down.", "tags": ["politics", "security", "foreign_policy"] },
+      { "year": 2016, "event": "Failed military coup (July 15); 250+ killed; Gülen movement designated terrorist (FETÖ); 150,000+ arrested/fired.", "tags": ["governance", "security"] },
+      { "year": 2017, "event": "Constitutional referendum: executive presidency system passes narrowly (51.4%); EU accession talks effectively frozen.", "tags": ["politics", "governance", "foreign_policy"] },
+      { "year": 2019, "event": "Turkey buys Russian S-400 missiles; expelled from F-35 program; military operation in northern Syria (Olive Branch, Peace Spring).", "tags": ["military", "foreign_policy"] },
+      { "year": 2021, "event": "Inflation spirals to 85% as Erdoğan refuses rate hikes; lira loses 44% in one year.", "tags": ["economy"] },
+      { "year": 2023, "event": "Kahramanmaraş earthquake kills 50,000+; Erdoğan narrowly wins re-election (52%) despite poor response; inflation briefly 85%.", "tags": ["disaster", "politics", "economy"] },
+      { "year": 2024, "event": "CHP wins municipal elections in Istanbul, Ankara, İzmir; lira stabilises as orthodox monetary policy adopted; IMF programme.", "tags": ["politics", "economy"] },
+      { "year": 2025, "event": "Turkey mediates Russia-Ukraine talks; plays key NATO role while maintaining Russia ties; EU sanctions waiver sought for trade.", "tags": ["foreign_policy", "economy"] }
+    ]
+  },
+
+  "SAU": {
+    "country": "Saudi Arabia",
+    "iso3": "SAU",
+    "political_leaning": "absolute monarchy (Al Saud)",
+    "current_government": "Absolute monarchy; King Salman bin Abdulaziz Al Saud (since 2015); Crown Prince Mohammed bin Salman (MBS) de facto ruler as PM since 2022.",
+    "key_relationships": ["USA", "IRN", "YEM", "EGY", "ARE", "IRQ", "CHN"],
+    "events": [
+      { "year": 2005, "event": "King Abdullah takes throne; oil at $60/barrel and rising; women granted right to vote in municipal elections (first phase).", "tags": ["politics", "energy", "social_policy"] },
+      { "year": 2008, "event": "Oil hits $147/barrel; Saudi current account surplus reaches $132B; sovereign wealth fund SIF expands.", "tags": ["energy", "economy"] },
+      { "year": 2011, "event": "Arab Spring: Saudi Arabia sends troops to Bahrain to suppress protests; $130B domestic social spending pledge.", "tags": ["foreign_policy", "social_policy", "governance"] },
+      { "year": 2014, "event": "Oil price collapses from $115 to $45; Saudi Arabia increases production (OPEC war for market share against US shale).", "tags": ["energy", "economy"] },
+      { "year": 2015, "event": "King Salman accedes; Saudi-led coalition launches Yemen war (Operation Decisive Storm); Vision 2030 framework begins.", "tags": ["politics", "military", "economy"] },
+      { "year": 2016, "event": "Vision 2030 launched by MBS: diversify economy from oil; Saudi Aramco IPO planned; Ritz-Carlton anti-corruption detentions.", "tags": ["economy", "governance"] },
+      { "year": 2017, "event": "MBS named Crown Prince; women granted right to drive; movie cinemas reopened after 35 years; Qatar blockade.", "tags": ["social_policy", "foreign_policy"] },
+      { "year": 2018, "event": "Jamal Khashoggi murdered in Istanbul consulate; international condemnation; Saudi Aramco IPO delayed; women begin driving.", "tags": ["governance", "foreign_policy", "social_policy"] },
+      { "year": 2020, "event": "COVID collapses oil demand; second oil price war (with Russia); Saudi GDP falls 4.1%; VAT tripled to 15%.", "tags": ["energy", "economy"] },
+      { "year": 2022, "event": "Oil revenues soar on Ukraine-driven price spike; OPEC+ cuts production defying US pressure; Saudi-Iran rapprochement via China.", "tags": ["energy", "economy", "foreign_policy"] },
+      { "year": 2023, "event": "Saudi-Iran diplomatic normalisation (China-brokered); Yemen ceasefire; Aramco invests in Chinese refining; BRICS invited to join.", "tags": ["foreign_policy"] },
+      { "year": 2024, "event": "Hosting COP16 biodiversity; NEOM megacity behind schedule; Vision 2030 targets revised; oil revenues under pressure at $80/barrel.", "tags": ["environment", "economy", "governance"] },
+      { "year": 2025, "event": "Normalisation with Israel stalled by Gaza war; continued LIV Golf/sports-washing strategy; oil production capacity 12.5Mbpd.", "tags": ["foreign_policy", "energy"] }
+    ]
+  },
+
+  "ZAF": {
+    "country": "South Africa",
+    "iso3": "ZAF",
+    "political_leaning": "centre-left coalition (GNU)",
+    "current_government": "Government of National Unity (GNU); President Cyril Ramaphosa (ANC) continues as president but ANC governs with DA and other parties after losing majority in 2024.",
+    "key_relationships": ["CHN", "USA", "GBR", "ZIM", "MOZ", "NAM", "RUS"],
+    "events": [
+      { "year": 2005, "event": "South Africa hosts 2010 World Cup bid won; land redistribution debate intensifies; AIDS crisis: 5.5M infected.", "tags": ["governance", "health", "social_policy"] },
+      { "year": 2007, "event": "Jacob Zuma defeats Thabo Mbeki in ANC leadership election at Polokwane.", "tags": ["politics"] },
+      { "year": 2008, "event": "Mbeki ousted by ANC; global crisis plus power cuts (load-shedding) cause GDP to stall; xenophobic violence.", "tags": ["politics", "economy", "social_policy"] },
+      { "year": 2010, "event": "FIFA World Cup hosted successfully; South Africa joins BRICS.", "tags": ["foreign_policy", "economy"] },
+      { "year": 2012, "event": "Marikana massacre: 34 platinum miners shot by police; Zuma corruption scandals multiply.", "tags": ["governance", "security", "economy"] },
+      { "year": 2015, "event": "#FeesMustFall protests; Zuma fires finance minister (rand falls 9% in one day).", "tags": ["social_policy", "governance", "economy"] },
+      { "year": 2017, "event": "S&P and Moody's downgrade SA to junk; 'state capture' inquiry begins exposing Zuma-Gupta network.", "tags": ["economy", "governance"] },
+      { "year": 2018, "event": "Cyril Ramaphosa replaces Zuma as president; 'New Dawn' declared; land reform debate intensifies.", "tags": ["politics", "governance", "social_policy"] },
+      { "year": 2021, "event": "July unrest (Zuma jailing riots): 350+ dead, $3.4B damage; COVID third wave; rolling blackouts become permanent feature.", "tags": ["governance", "security", "energy"] },
+      { "year": 2022, "event": "Load-shedding reaches Stage 6 (12hrs/day); SA refuses to condemn Russia's Ukraine invasion at UN; 33% unemployment rate.", "tags": ["energy", "foreign_policy", "economy"] },
+      { "year": 2023, "event": "BRICS summit in Johannesburg (SA hosts); US warns of arms to Russia; Ramaphosa survives Phala Phala scandal.", "tags": ["foreign_policy", "governance"] },
+      { "year": 2024, "event": "ANC loses majority for first time since 1994 (40%); Government of National Unity formed with DA; load-shedding ends temporarily.", "tags": ["politics", "energy"] },
+      { "year": 2025, "event": "GNU tests coalition management; energy plan improves via private generation; G20 presidency; ICJ genocide case against Israel strains US ties.", "tags": ["governance", "energy", "foreign_policy"] }
+    ]
+  },
+
+  "NGA": {
+    "country": "Nigeria",
+    "iso3": "NGA",
+    "political_leaning": "centre (APC — pragmatic)",
+    "current_government": "All Progressives Congress (APC); President Bola Tinubu (since May 2023).",
+    "key_relationships": ["GBR", "USA", "CHN", "BEN", "NER", "CMR", "GHA"],
+    "events": [
+      { "year": 2005, "event": "Nigeria reaches debt relief agreement with Paris Club ($18B); Obasanjo government; oil revenues boom.", "tags": ["economy", "governance"] },
+      { "year": 2007, "event": "Umaru Yar'Adua elected (disputed); Niger Delta militancy surges, cutting oil output 25%.", "tags": ["politics", "energy", "security"] },
+      { "year": 2009, "event": "Boko Haram insurgency begins in Maiduguri; central bank doubles capital requirements saving banks.", "tags": ["security", "finance"] },
+      { "year": 2011, "event": "Goodluck Jonathan elected; post-election violence kills 800; subsidy removal riots; Boko Haram attacks escalate.", "tags": ["politics", "security", "economy"] },
+      { "year": 2014, "event": "Nigeria rebases GDP: overtakes South Africa as continent's largest economy; Boko Haram kidnaps 276 Chibok schoolgirls.", "tags": ["economy", "security"] },
+      { "year": 2015, "event": "Muhammadu Buhari wins — first peaceful democratic transfer of power; Boko Haram partially pushed back; oil crash hits revenues.", "tags": ["politics", "security", "energy"] },
+      { "year": 2016, "event": "Recession (-1.6%): oil collapse, forex crisis, CBN fixes naira; food inflation surges.", "tags": ["economy", "energy"] },
+      { "year": 2020, "event": "#EndSARS protests against police brutality; Lekki Tollgate killings; COVID-19; oil revenues crash.", "tags": ["governance", "security", "health", "economy"] },
+      { "year": 2021, "event": "Twitter/X banned for 7 months after deleting Buhari's post; insecurity worsens across Nigeria; inflation 18%.", "tags": ["governance", "security"] },
+      { "year": 2023, "event": "Tinubu elected; naira devalued, fuel subsidy removed (from ₦184 to ₦600+/litre); inflation hits 33%; currency crashes 70%.", "tags": ["politics", "economy"] },
+      { "year": 2024, "event": "Mass 'hunger protests' across Nigeria; inflation peaks 35%; CBN raises rates to 26.75%; naira briefly stabilises.", "tags": ["economy", "governance"] },
+      { "year": 2025, "event": "Nigeria pushes for ECOWAS cohesion after Niger/Mali/Burkina coups; oil theft reduction; IMF programme discussions; LNG expansion.", "tags": ["foreign_policy", "energy", "economy"] }
+    ]
+  },
+
+  "PAK": {
+    "country": "Pakistan",
+    "iso3": "PAK",
+    "political_leaning": "centre-right coalition (PML-N / PPP)",
+    "current_government": "Pakistan Muslim League-N (PML-N) led coalition; PM Shehbaz Sharif (second term since February 2024 election); Asif Zardari as President. Military retains dominant behind-the-scenes role.",
+    "key_relationships": ["CHN", "IND", "AFG", "USA", "SAU", "IRN"],
+    "events": [
+      { "year": 2005, "event": "Kashmir earthquake kills 73,000; Musharraf military regime; US aid to Pakistan surges post-9/11.", "tags": ["disaster", "foreign_policy"] },
+      { "year": 2007, "event": "Benazir Bhutto returns and is assassinated; Emergency Rule declared by Musharraf; lawyers' movement.", "tags": ["politics", "security", "governance"] },
+      { "year": 2008, "event": "PPP wins elections; Musharraf resigns; Asif Zardari becomes president; Mumbai 26/11 strains India ties; financial crisis hits.", "tags": ["politics", "foreign_policy", "economy"] },
+      { "year": 2011, "event": "Osama bin Laden killed in Abbottabad; US-Pakistan relations crater; Raymond Davis affair; Salala checkpoint attack.", "tags": ["foreign_policy", "security"] },
+      { "year": 2013, "event": "PML-N wins; Nawaz Sharif PM (first democratic transfer of power); CPEC ($46B China-Pakistan Economic Corridor) agreed.", "tags": ["politics", "economy", "foreign_policy"] },
+      { "year": 2016, "event": "Panama Papers implicate Nawaz Sharif; CPEC construction accelerates; TTP insurgency worsens.", "tags": ["governance", "economy", "security"] },
+      { "year": 2018, "event": "Imran Khan wins election with military backing; Nawaz Sharif jailed; PTI government begins.", "tags": ["politics", "governance"] },
+      { "year": 2021, "event": "Afghanistan falls to Taliban; 3M+ Afghan refugees in Pakistan; PTI government economic crisis deepens.", "tags": ["foreign_policy", "economy"] },
+      { "year": 2022, "event": "Imran Khan removed via no-confidence vote; catastrophic floods cover 1/3 of country, 1,700 dead; IMF bailout ($6B).", "tags": ["politics", "disaster", "economy"] },
+      { "year": 2023, "event": "Imran Khan arrested, convicted; PTI banned; economy in freefall (inflation 38%); Shehbaz Sharif PM caretaker.", "tags": ["governance", "economy"] },
+      { "year": 2024, "event": "Elections held; PTI wins most seats but military-backed coalition installed; Imran Khan remains imprisoned.", "tags": ["politics", "governance"] },
+      { "year": 2025, "event": "IMF extended fund facility; India-Pakistan tensions over Kashmir re-escalate; CPEC second phase negotiations; TTP attacks from Afghanistan.", "tags": ["economy", "foreign_policy", "security"] }
+    ]
+  },
+
+  "UKR": {
+    "country": "Ukraine",
+    "iso3": "UKR",
+    "political_leaning": "centre (Servant of the People party)",
+    "current_government": "Servant of the People party; President Volodymyr Zelensky (since April 2019; election postponed due to war under martial law).",
+    "key_relationships": ["RUS", "USA", "DEU", "GBR", "POL", "BLR", "HUN"],
+    "events": [
+      { "year": 2005, "event": "Orange Revolution outcome: Yushchenko wins re-run presidential election over Yanukovych.", "tags": ["politics", "governance"] },
+      { "year": 2008, "event": "Russia-Georgia war warns Ukraine; NATO membership action plan denied at Bucharest summit.", "tags": ["military", "foreign_policy"] },
+      { "year": 2010, "event": "Yanukovych wins presidential election; Ukraine declared 'non-bloc' (no NATO); Russia lease on Sevastopol naval base extended to 2042.", "tags": ["politics", "foreign_policy"] },
+      { "year": 2013, "event": "Euromaidan begins: protests over Yanukovych's EU Association Agreement rejection in favour of Russia.", "tags": ["politics", "foreign_policy", "governance"] },
+      { "year": 2014, "event": "Yanukovych flees; Russia annexes Crimea; Donbas war begins; IMF $17B programme; economy contracts 10%.", "tags": ["politics", "military", "economy", "foreign_policy"] },
+      { "year": 2015, "event": "Minsk II agreements; continued Donbas conflict; Ukraine-EU DCFTA enters force; anti-corruption reforms begin.", "tags": ["foreign_policy", "governance", "economy"] },
+      { "year": 2019, "event": "Zelensky elected 73% on anti-corruption platform; impeachment inquiry into Trump over Ukraine arms call.", "tags": ["politics", "foreign_policy"] },
+      { "year": 2021, "event": "Russia masses 100,000 troops on Ukraine border; Zelensky pushes for NATO MAP; US warns of imminent invasion.", "tags": ["military", "foreign_policy"] },
+      { "year": 2022, "event": "Full-scale Russian invasion (Feb 24): Ukraine defends Kyiv, recaptures Kherson and Kharkiv oblasts; $100B+ in Western military/economic aid.", "tags": ["military", "economy", "foreign_policy"] },
+      { "year": 2023, "event": "Ukrainian counter-offensive falls short; deep strikes into Russia using drones; NATO membership promised 'when conditions allow'; economy grows 5.3%.", "tags": ["military", "economy", "foreign_policy"] },
+      { "year": 2024, "event": "Russia captures Avdiivka; North Korean troops join Russian forces; Trump's election clouds US support; F-16s arrive.", "tags": ["military", "foreign_policy"] },
+      { "year": 2025, "event": "Ceasefire negotiations under Trump pressure; territorial concessions discussed; Ukraine demands security guarantees; reconstruction plan ($500B) published.", "tags": ["military", "foreign_policy", "economy"] }
+    ]
+  }
+}
