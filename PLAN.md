@@ -219,11 +219,11 @@ Tasks:
 **Goal:** The globe is the primary game surface — it reacts to simulation events, policy changes, and divergences in real time.
 
 Tasks:
-- [ ] Choropleth overlays: GDP, Happiness Index, Military Spend, Divergence from Reality — Done when: each overlay re-colors the globe within 500ms
-- [ ] Animated events: when an agent emits a diplomatic/military/trade event, draw an animated arc between the two countries — Done when: trade deals show a brief gold arc, sanctions show a red arc
-- [ ] Country pulse on player action: when player confirms a policy change, their country glows briefly — Done when: visible animation triggers within 200ms of confirmation
-- [ ] Camera fly-to: selecting a country smoothly flies the globe to center it — Done when: transitions complete in ~1.5 seconds
-- [ ] Country hover tooltip: flag, name, current simulated GDP, approval rating, top historical parallel — Done when: 300ms hover shows tooltip
+- [x] Choropleth overlays: GDP, Happiness Index, Military Spend, Divergence from Reality — Done when: each overlay re-colors the globe within 500ms
+- [x] Animated events: when an agent emits a diplomatic/military/trade event, draw an animated arc between the two countries — Done when: trade deals show a brief gold arc, sanctions show a red arc
+- [x] Country pulse on player action: when player confirms a policy change, their country glows briefly — Done when: visible animation triggers within 200ms of confirmation
+- [x] Camera fly-to: selecting a country smoothly flies the globe to center it — Done when: transitions complete in ~1.5 seconds
+- [x] Country hover tooltip: flag, name, current simulated GDP, approval rating, top historical parallel — Done when: 300ms hover shows tooltip
 
 ---
 

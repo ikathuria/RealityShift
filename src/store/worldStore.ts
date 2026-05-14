@@ -71,11 +71,15 @@ interface WorldStore {
   // World events feed
   worldEvents: WorldEvent[];
 
+  // Globe visual feedback
+  pulseCountry: string | null;
+
   // Actions
   selectCountry: (iso3: string | null) => void;
   loadCountry: (iso3: string) => Promise<void>;
   setChoroplethMode: (mode: ChoroplethMode) => void;
   setActiveWorldId: (worldId: string) => void;
+  setPulseCountry: (iso3: string | null) => void;
   loadChoropleth: () => Promise<void>;
   loadRecentDivergences: (limit?: number) => Promise<void>;
   loadCountryDecisions: (iso3: string) => Promise<void>;
@@ -97,6 +101,9 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
   divergenceMagnitudes: new Map(),
   countryDecisions: {},
   worldEvents: [],
+  pulseCountry: null,
+
+  setPulseCountry: (iso3) => set({ pulseCountry: iso3 }),
 
   selectCountry: (iso3) => {
     set({ selectedCountry: iso3 });

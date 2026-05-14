@@ -33,7 +33,7 @@ export default function GamePage() {
   const navigate = useNavigate();
   const { session } = useAuthStore();
   const { activeFork, playerForks, loadPlayerForks, enterFork, exitFork, simulateYear, isSimulating, simulateLog } = useGameStore();
-  const { selectedCountry, countryData, worldEvents, loadWorldEvents } = useWorldStore();
+  const { selectedCountry, countryData, worldEvents, loadWorldEvents, setPulseCountry } = useWorldStore();
 
   // Guard: must be logged in
   useEffect(() => {
@@ -114,6 +114,24 @@ export default function GamePage() {
           ) : (
             <div style={{ color: '#6b7280', fontSize: 13 }}>Loading country data…</div>
           )}
+
+          {/* Save Changes button — pulses the player's country on the globe */}
+          <button
+            onClick={async () => {
+              await useGameStore.getState().savePolicyDraft();
+              setPulseCountry(activeFork.countryCode);
+            }}
+            disabled={isSimulating}
+            style={{
+              width: '100%', padding: '9px 0', borderRadius: 8, border: 'none',
+              background: 'rgba(255,255,255,0.07)',
+              color: '#d1d5db', fontSize: 13, fontWeight: 600,
+              cursor: isSimulating ? 'default' : 'pointer',
+              marginTop: 4, marginBottom: 2,
+            }}
+          >
+            💾 Save Changes
+          </button>
         </div>
 
         {/* Simulate button */}
