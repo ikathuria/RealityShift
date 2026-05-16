@@ -52,7 +52,7 @@ export async function fetchAllCountriesIndicator(
   key: keyof CountryIndicators
 ): Promise<Map<string, number>> {
   const code = CODES[key];
-  const url = `${BASE}/all/indicator/${code}?format=json&mrv=5&per_page=500`;
+  const url = `${BASE}/all/indicator/${code}?format=json&mrv=1&per_page=500`;
   const res = await fetch(url);
   if (!res.ok) return new Map();
   const [, data] = (await res.json()) as [unknown, (WBPoint & { countryiso3code: string })[] | null];

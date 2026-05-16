@@ -6,12 +6,14 @@ import {
   Color,
   Cartesian3,
   PolylineGlowMaterialProperty,
+  ColorMaterialProperty,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
   defined,
   Entity,
-  createWorldTerrainAsync,
-  CesiumTerrainProvider,
+  ConstantProperty,
+  ArcType,
+  EllipsoidTerrainProvider,
 } from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 import { useWorldStore } from '../store/worldStore';
@@ -77,6 +79,34 @@ const ARC_COLORS: Record<string, Color> = {
   alliance_broken:    Color.HOTPINK.withAlpha(0.85),
   conflict_risk:      Color.RED.withAlpha(0.95),
 };
+
+// ─── ISO 3166-1 numeric → alpha-3 lookup ─────────────────────────────────────
+// Needed because world-atlas TopoJSON entities use numeric IDs (no ISO_A3).
+// We enrich each entity after load so the rest of the code stays unchanged.
+const NUMERIC_TO_ISO3: Record<string, string> = {
+  '4':'AFG','8':'ALB','12':'DZA','24':'AGO','32':'ARG','36':'AUS','40':'AUT',
+  '50':'BGD','56':'BEL','64':'BTN','68':'BOL','76':'BRA','100':'BGR','116':'KHM',
+  '120':'CMR','124':'CAN','144':'LKA','152':'CHL','156':'CHN','170':'COL',
+  '180':'COD','188':'CRI','192':'CUB','203':'CZE','208':'DNK','214':'DOM',
+  '218':'ECU','818':'EGY','222':'SLV','231':'ETH','246':'FIN','250':'FRA',
+  '276':'DEU','288':'GHA','300':'GRC','320':'GTM','324':'GIN','332':'HTI',
+  '340':'HND','356':'IND','360':'IDN','364':'IRN','368':'IRQ','372':'IRL',
+  '376':'ISR','380':'ITA','388':'JAM','392':'JPN','400':'JOR','398':'KAZ',
+  '404':'KEN','408':'PRK','410':'KOR','414':'KWT','418':'LAO','422':'LBN',
+  '430':'LBR','434':'LBY','458':'MYS','484':'MEX','504':'MAR','508':'MOZ',
+  '496':'MNG','104':'MMR','516':'NAM','524':'NPL','528':'NLD','554':'NZL',
+  '558':'NIC','566':'NGA','578':'NOR','586':'PAK','591':'PAN','598':'PNG',
+  '600':'PRY','604':'PER','608':'PHL','616':'POL','620':'PRT','630':'PRI',
+  '634':'QAT','642':'ROU','643':'RUS','682':'SAU','686':'SEN','694':'SLE',
+  '706':'SOM','710':'ZAF','724':'ESP','729':'SDN','752':'SWE','756':'CHE',
+  '760':'SYR','764':'THA','792':'TUR','800':'UGA','804':'UKR','784':'ARE',
+  '826':'GBR','840':'USA','858':'URY','860':'UZB','862':'VEN','704':'VNM',
+  '887':'YEM','894':'ZMB','716':'ZWE','702':'SGP','191':'HRV','703':'SVK',
+  '348':'HUN','233':'EST','428':'LVA','440':'LTU','643':'RUS',
+};
+
+// entity.id (numeric string) → ISO3 — populated after GeoJSON load
+const entityIso3Map = new Map<string, string>();
 
 // ─── Admin-1 GeoJSON (cached at module level) ────────────────────────────────
 // Natural Earth 50m admin-1 state/province boundaries via jsDelivr CDN
@@ -162,9 +192,12 @@ function drawArc(viewer: Viewer, event: WorldEvent, durationMs = 4000): void {
 
 // ─── Choropleth helpers ───────────────────────────────────────────────────────
 function choroplethColor(value: number | undefined, min: number, max: number): Color {
-  if (value === undefined || max === min) return Color.GRAY.withAlpha(0.6);
-  const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
-  return Color.fromHsl((1 - t) * 0.33, 0.8, 0.45, 0.75);
+  if (value === undefined || max === min) return Color.fromCssColorString('#0f172a').withAlpha(0.85);
+  // Log scale so mid-range countries get distinct colors (linear scale clusters everything near green)
+  const logMin = Math.log1p(min);
+  const logMax = Math.log1p(max);
+  const t = Math.max(0, Math.min(1, (Math.log1p(value) - logMin) / (logMax - logMin)));
+  return Color.fromHsl((1 - t) * 0.33, 0.80, 0.45, 0.92);
 }
 
 // ─── Tooltip overlay ─────────────────────────────────────────────────────────
@@ -259,15 +292,12 @@ export default function Globe() {
     const vals = Array.from(choroplethValues.values());
     const min  = Math.min(...vals);
     const max  = Math.max(...vals);
-
     for (const entity of source.entities.values) {
-      const iso3 = (entity.properties as Record<string, { getValue: () => string }>)
-        ?.['ISO_A3']?.getValue();
+      const iso3 = entityIso3Map.get(entity.id);
       const val  = iso3 ? choroplethValues.get(iso3) : undefined;
       const col  = choroplethColor(val, min, max);
       if (entity.polygon) {
-        entity.polygon.material = col as unknown as import('cesium').MaterialProperty;
-        entity.polygon.outlineColor = Color.WHITE.withAlpha(0.3) as unknown as import('cesium').Property;
+        entity.polygon.material = new ColorMaterialProperty(col);
       }
     }
   }, [choroplethValues]);
@@ -295,14 +325,13 @@ export default function Globe() {
     const max    = Math.max(...vals);
 
     for (const entity of source.entities.values) {
-      const iso3 = (entity.properties as Record<string, { getValue: () => string }>)
-        ?.['ISO_A3']?.getValue();
+      const iso3 = entityIso3Map.get(entity.id);
       if (iso3 !== pulseCountry || !entity.polygon) continue;
-      entity.polygon.material = Color.WHITE.withAlpha(0.95) as unknown as import('cesium').MaterialProperty;
+      entity.polygon.material = new ColorMaterialProperty(Color.WHITE.withAlpha(0.95));
       const restoreColor = choroplethColor(choroplethValues.get(iso3), min, max);
       setTimeout(() => {
         if (entity.polygon) {
-          entity.polygon.material = restoreColor as unknown as import('cesium').MaterialProperty;
+          entity.polygon.material = new ColorMaterialProperty(restoreColor);
         }
         setPulseCountry(null);
       }, 550);
@@ -377,31 +406,34 @@ export default function Globe() {
       selectionIndicator:    false,
       timeline:              false,
       creditContainer:       document.createElement('div'),
+      // Flat ellipsoid — prevents terrain tiles from depth-occluding polygon fills
+      terrainProvider:       new EllipsoidTerrainProvider(),
     });
     viewerRef.current = viewer;
 
-    createWorldTerrainAsync()
-      .then((t: CesiumTerrainProvider) => { if (viewerRef.current) viewerRef.current.terrainProvider = t; })
-      .catch(() => {});
 
-    // Load country-level GeoJSON
+    // world-atlas TopoJSON: simplified geometry + numeric ISO IDs.
+    // GeoJsonDataSource hardcodes arcType=RHUMB which overflows on large polygons (CesiumJS 1.141).
+    // Fix: switch fill to GEODESIC + disable outline entirely before adding to the scene.
+    // ISO_A3 is added via numeric lookup so choropleth/click code stays unchanged.
     GeoJsonDataSource.load(
       'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json',
-      { stroke: Color.WHITE.withAlpha(0.4), fill: Color.GRAY.withAlpha(0.6), strokeWidth: 1 }
+      { stroke: Color.WHITE.withAlpha(0.2), fill: Color.fromCssColorString('#1e293b').withAlpha(0.75), strokeWidth: 0.5 }
     ).then(source => {
-      viewer.dataSources.add(source);
+      if (viewerRef.current?.isDestroyed()) return;
+      entityIso3Map.clear();
+      for (const entity of source.entities.values) {
+        const iso3 = NUMERIC_TO_ISO3[entity.id];
+        if (iso3) entityIso3Map.set(entity.id, iso3);
+        if (entity.polygon) {
+          entity.polygon.arcType = new ConstantProperty(ArcType.GEODESIC);
+          entity.polygon.outline = new ConstantProperty(false);
+        }
+      }
+      viewerRef.current!.dataSources.add(source);
       sourceRef.current = source;
       applyColors();
-    }).catch(() =>
-      GeoJsonDataSource.load(
-        'https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson',
-        { stroke: Color.WHITE.withAlpha(0.4), fill: Color.GRAY.withAlpha(0.6), strokeWidth: 1 }
-      ).then(source => {
-        viewer.dataSources.add(source);
-        sourceRef.current = source;
-        applyColors();
-      })
-    );
+    }).catch(err => console.error('[Globe] GeoJSON load failed:', err));
 
     const handler = new ScreenSpaceEventHandler(viewer.scene.canvas);
     handlerRef.current = handler;
@@ -436,7 +468,7 @@ export default function Globe() {
       }
 
       // Otherwise treat as country click
-      const iso3 = props?.['ISO_A3']?.getValue() ?? props?.['iso_a3']?.getValue();
+      const iso3 = entityIso3Map.get(entity.id) ?? props?.['ISO_A3']?.getValue() ?? props?.['iso_a3']?.getValue();
       if (iso3) {
         useWorldStore.getState().selectCountry(iso3);
         useRegionStore.getState().selectRegion(null);
@@ -451,7 +483,7 @@ export default function Globe() {
       if (!defined(picked) || !(picked.id instanceof Entity)) { setTooltip(null); return; }
       const entity = picked.id as Entity;
       const props  = entity.properties as Record<string, { getValue: () => string }> | undefined;
-      const iso3   = props?.['ISO_A3']?.getValue() ?? props?.['iso_a3']?.getValue();
+      const iso3   = entityIso3Map.get(entity.id) ?? props?.['ISO_A3']?.getValue() ?? props?.['iso_a3']?.getValue();
       if (!iso3) { setTooltip(null); return; }
       const x = evt.endPosition.x;
       const y = evt.endPosition.y;

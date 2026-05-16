@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { fetchAllCountriesIndicator } from '../data/worldbank';
+import type { CountryIndicators } from '../data/worldbank';
 
 export interface CountryState {
   world_id: string;
@@ -139,28 +141,34 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
   },
 
   loadChoropleth: async () => {
-    if (!supabase) return;
     const mode = get().choroplethMode;
     const worldId = get().activeWorldId;
 
     if (mode === 'divergence' && worldId === 'live') {
-      // Use pre-loaded divergence magnitudes (live world only)
       set({ choroplethValues: new Map(get().divergenceMagnitudes) });
       return;
     }
 
-    const { data, error } = await supabase
-      .from('country_states')
-      .select('country_code, indicators')
-      .eq('world_id', worldId);
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('country_states')
+        .select('country_code, indicators')
+        .eq('world_id', worldId);
 
-    if (error || !data) return;
-
-    const values = new Map<string, number>();
-    for (const row of data as CountryState[]) {
-      const val = row.indicators[mode === 'divergence' ? 'gdp_per_capita' : mode];
-      if (typeof val === 'number') values.set(row.country_code, val);
+      if (!error && data && (data as CountryState[]).length > 0) {
+        const values = new Map<string, number>();
+        for (const row of data as CountryState[]) {
+          const val = row.indicators[mode === 'divergence' ? 'gdp_per_capita' : mode];
+          if (typeof val === 'number') values.set(row.country_code, val);
+        }
+        set({ choroplethValues: values });
+        return;
+      }
     }
+
+    // Fall back to live World Bank API when DB is empty or unavailable
+    const wbKey = (mode === 'divergence' ? 'gdp_per_capita' : mode) as keyof CountryIndicators;
+    const values = await fetchAllCountriesIndicator(wbKey);
     set({ choroplethValues: values });
   },
 
