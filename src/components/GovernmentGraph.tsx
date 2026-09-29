@@ -1,3 +1,11 @@
+/* eslint-disable react-hooks/refs, react-hooks/set-state-in-effect --
+   Imperative d3-force integration: the force simulation owns the node/link
+   arrays and mutates x/y/vx/vy in place, so they live in refs (nodesRef,
+   linksRef, viewRef, sizeRef, panRef) and the component re-renders from a
+   `setTick` counter rather than from React state. Reading those refs during
+   render, syncing latest values into refs for the window-level pointer
+   handlers, and clearing the selection when the country changes are all
+   intentional here — not the accidental patterns these rules guard against. */
 import { useEffect, useRef, useState } from 'react';
 import {
   forceSimulation,
