@@ -11,7 +11,7 @@ import { GLOBE_COUNTRIES } from '../data/countries';
  * and doubles as the discoverable entry point to the country panel, which is
  * where "Take Over" lives.
  */
-export default function CountrySearch() {
+export default function CountrySearch({ fullWidth = false }: { fullWidth?: boolean } = {}) {
   const { selectCountry, selectedCountry } = useWorldStore();
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
@@ -85,7 +85,7 @@ export default function CountrySearch() {
   const listboxId = 'country-search-listbox';
 
   return (
-    <div ref={wrapRef} style={{ position: 'relative', width: 232 }}>
+    <div ref={wrapRef} style={{ position: 'relative', width: fullWidth ? '100%' : 232 }}>
       <input
         type="text"
         role="combobox"

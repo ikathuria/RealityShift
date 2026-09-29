@@ -2,6 +2,14 @@ import { runSeed } from './seed.js';
 import { runAgent } from './agents/runAgents.js';
 import { syncCountry } from './sync/syncCountry.js';
 import { getSupabase } from './lib/supabase.js';
+import { buildSharePage, shareTitle } from './social/share.js';
+import { postToInstagram, buildCaption, instagramConfigured } from './social/instagram.js';
+import {
+  fetchCountryIndicators as fetchDcCountry,
+  fetchGlobalIndicator as fetchDcGlobal,
+  DC_VARIABLES,
+  type DcKey,
+} from './data/dataCommons.js';
 
 export interface Env {
   GROQ_API_KEY: string;
@@ -10,6 +18,99 @@ export interface Env {
   NEWS_API_KEY: string;
   WORKER_SECRET: string;
   ANTHROPIC_API_KEY?: string;
+  // ── Sharing + social (optional; features no-op until set) ──
+  /** Public origin of the frontend SPA, e.g. https://ikathuria.github.io/RealityShift */
+  SITE_URL?: string;
+  /** Public B2 base for reading media indexes, e.g. https://cdn.example.com/bucket */
+  MEDIA_PUBLIC_BASE?: string;
+  /** Instagram Graph API — a Business/Creator IG user id and a long-lived token. */
+  IG_USER_ID?: string;
+  IG_ACCESS_TOKEN?: string;
+  /** Data Commons REST v2 key (free, no quota — https://docs.datacommons.org/api).
+   *  When unset, the /api/datacommons/* routes return empty data so the UI degrades. */
+  DATA_COMMONS_API_KEY?: string;
+}
+
+const DEFAULT_SITE_URL = 'https://ikathuria.github.io/RealityShift';
+
+interface ForkShareData {
+  title: string;
+  description: string;
+  imageUrl: string;
+  canonicalUrl: string;
+  countryCode: string | null;
+  simDate: string | null;
+  cutoff: string | null;
+  worldTitle: string | null;
+}
+
+/** First front-page image URL for a world, read from its public media index (if any). */
+async function firstFrontPage(
+  env: Env,
+  worldId: string,
+): Promise<{ imageUrl: string | null; simDate: string | null; cutoff: string | null }> {
+  if (!env.MEDIA_PUBLIC_BASE) return { imageUrl: null, simDate: null, cutoff: null };
+  try {
+    const base = env.MEDIA_PUBLIC_BASE.replace(/\/$/, '');
+    const res = await fetch(`${base}/index/${worldId}/media.json`, { cf: { cacheTtl: 300 } } as RequestInit);
+    if (!res.ok) return { imageUrl: null, simDate: null, cutoff: null };
+    const idx = (await res.json()) as {
+      media?: Array<{ kind?: string; b2_url?: string; sim_date?: string; provenance?: { real_world_data_cutoff?: string } }>;
+    };
+    const fp = idx.media?.find(m => m.kind === 'front_page') ?? idx.media?.[0];
+    return {
+      imageUrl: fp?.b2_url ?? null,
+      simDate: fp?.sim_date ?? null,
+      cutoff: fp?.provenance?.real_world_data_cutoff ?? null,
+    };
+  } catch {
+    return { imageUrl: null, simDate: null, cutoff: null };
+  }
+}
+
+/** Assemble everything a share page / social post needs for a published world. */
+async function getForkShareData(env: Env, worldId: string): Promise<ForkShareData | null> {
+  const siteUrl = (env.SITE_URL ?? DEFAULT_SITE_URL).replace(/\/$/, '');
+  const canonicalUrl = `${siteUrl}/wall/${worldId}`;
+  const fallbackImage = `${siteUrl}/earth-cartoon.png`;
+
+  let countryCode: string | null = null;
+  let forkedYear: number | null = null;
+  let worldTitle: string | null = null;
+
+  try {
+    const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
+    const { data } = await db
+      .from('worlds')
+      .select('player_country_code, forked_at_year, title, is_public, is_live')
+      .eq('id', worldId)
+      .single();
+    const row = data as
+      | { player_country_code: string | null; forked_at_year: number | null; title: string | null; is_public: boolean; is_live: boolean }
+      | null;
+    // Only fork-specific previews for published (or live) worlds; others get the generic card.
+    if (row && (row.is_public || row.is_live)) {
+      countryCode = row.player_country_code;
+      forkedYear = row.forked_at_year;
+      worldTitle = row.title;
+    }
+  } catch {
+    // Fall through to a generic preview.
+  }
+
+  const fp = await firstFrontPage(env, worldId);
+  const country = countryCode ?? 'A nation';
+  return {
+    title: shareTitle(country, forkedYear, worldTitle),
+    description:
+      'A continuous AI wargame across ~195 countries. Fork it on demand and read the news from a world that never happened — with verifiable provenance.',
+    imageUrl: fp.imageUrl ?? fallbackImage,
+    canonicalUrl,
+    countryCode,
+    simDate: fp.simDate,
+    cutoff: fp.cutoff,
+    worldTitle,
+  };
 }
 
 /** Countries with curated history — eligible for full agent simulation */
@@ -38,13 +139,86 @@ async function parseBody<T>(request: Request): Promise<T> {
   return request.json() as Promise<T>;
 }
 
+// ── Data Commons proxy helpers ──────────────────────────────────────────────
+/** Edge-cache TTL for Data Commons responses; real-world stats move ~yearly. */
+const DC_TTL = 86_400; // 24h
+
+/** JSON response with permissive CORS (SPA is served from a different origin). */
+function dcResponse(data: unknown, ttl: number, status = 200): Response {
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Cache-Control': ttl > 0 ? `public, max-age=${ttl}` : 'no-store',
+  };
+  if (data === null) return new Response(null, { status: 204, headers });
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...headers, 'Content-Type': 'application/json' },
+  });
+}
+
+async function dcCacheGet(request: Request): Promise<Response | null> {
+  return (await caches.default.match(request)) ?? null;
+}
+
+/** Build the response, stash a clone in the edge cache, and return it. */
+function dcCachePut(request: Request, data: unknown, ttl: number, ctx: ExecutionContext): Response {
+  const res = dcResponse(data, ttl);
+  ctx.waitUntil(caches.default.put(request, res.clone()));
+  return res;
+}
+
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     // ── Health ────────────────────────────────────────────────────────────────
     if (url.pathname === '/api/health') {
       return Response.json({ status: 'ok', service: 'realityshift-api' });
+    }
+
+    // ── Data Commons proxy (browser-facing, key hidden, edge-cached) ──────────
+    // Google's open knowledge graph — the same data behind data.un.org. The API
+    // key is free but must stay server-side, so the SPA calls these instead of
+    // Data Commons directly. Real-world stats change ~yearly, so we cache hard.
+    if (url.pathname.startsWith('/api/datacommons/')) {
+      if (request.method === 'OPTIONS') return dcResponse(null, 0);
+
+      // GET /api/datacommons/country?iso3=USA -> { indicators: { key: number|null } }
+      if (url.pathname === '/api/datacommons/country' && request.method === 'GET') {
+        const iso3 = (url.searchParams.get('iso3') ?? '').toUpperCase();
+        if (!/^[A-Z]{3}$/.test(iso3)) {
+          return dcResponse({ error: 'iso3 (3-letter code) required' }, 0, 400);
+        }
+        if (!env.DATA_COMMONS_API_KEY) return dcResponse({ indicators: null, reason: 'not_configured' }, 300);
+        const cached = await dcCacheGet(request);
+        if (cached) return cached;
+        try {
+          const indicators = await fetchDcCountry(iso3, env.DATA_COMMONS_API_KEY);
+          return dcCachePut(request, { indicators, source: 'Data Commons (data.un.org)' }, DC_TTL, ctx);
+        } catch (e) {
+          return dcResponse({ error: String(e) }, 0, 502);
+        }
+      }
+
+      // GET /api/datacommons/global?metric=life_expectancy -> { values: { ISO3: number } }
+      if (url.pathname === '/api/datacommons/global' && request.method === 'GET') {
+        const metric = url.searchParams.get('metric') ?? '';
+        if (!(metric in DC_VARIABLES)) {
+          return dcResponse({ error: `unknown metric; one of ${Object.keys(DC_VARIABLES).join(', ')}` }, 0, 400);
+        }
+        if (!env.DATA_COMMONS_API_KEY) return dcResponse({ values: {}, reason: 'not_configured' }, 300);
+        const cached = await dcCacheGet(request);
+        if (cached) return cached;
+        try {
+          const values = await fetchDcGlobal(metric as DcKey, env.DATA_COMMONS_API_KEY);
+          return dcCachePut(request, { values, source: 'Data Commons (data.un.org)' }, DC_TTL, ctx);
+        } catch (e) {
+          return dcResponse({ error: String(e) }, 0, 502);
+        }
+      }
+
+      return dcResponse({ error: 'Not Found' }, 0, 404);
     }
 
     // ── GET /api/countries — list all country codes in the live world ─────────
@@ -342,6 +516,86 @@ ${items}
       }
     }
 
+    // ── GET /share/:worldId — server-rendered OG preview for social crawlers ──
+    // Humans are redirected to the SPA wall; crawlers read the meta tags.
+    if (url.pathname.startsWith('/share/') && request.method === 'GET') {
+      const worldId = decodeURIComponent(url.pathname.slice('/share/'.length)).replace(/\/$/, '');
+      if (!worldId) return new Response('Not Found', { status: 404 });
+      const data = await getForkShareData(env, worldId);
+      if (!data) return new Response('Not Found', { status: 404 });
+      return new Response(buildSharePage(data), {
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'public, max-age=600',
+        },
+      });
+    }
+
+    // ── POST /api/social/instagram/post — publish one world's front page ──────
+    // Secret-protected (CI / cron / manual). No-ops when IG creds are unset.
+    // Body: { world_id: string }
+    if (url.pathname === '/api/social/instagram/post' && request.method === 'POST') {
+      const denied = requireSecret(request, env);
+      if (denied) return denied;
+      try {
+        const { world_id } = await parseBody<{ world_id: string }>(request);
+        if (!world_id) return Response.json({ error: 'world_id required' }, { status: 400 });
+        if (!instagramConfigured(env)) {
+          return Response.json({ skipped: true, reason: 'IG_USER_ID / IG_ACCESS_TOKEN not set' });
+        }
+        const data = await getForkShareData(env, world_id);
+        if (!data || data.imageUrl.endsWith('/earth-cartoon.png')) {
+          return Response.json({ error: 'No public front-page image found for this world' }, { status: 404 });
+        }
+        const result = await postToInstagram(env, {
+          imageUrl: data.imageUrl,
+          caption: buildCaption({
+            country: data.countryCode ?? 'A nation',
+            simDate: data.simDate,
+            worldTitle: data.worldTitle,
+            cutoff: data.cutoff,
+          }),
+        });
+        return Response.json(result, { status: result.ok || result.skipped ? 200 : 502 });
+      } catch (e) {
+        return Response.json({ error: String(e) }, { status: 500 });
+      }
+    }
+
     return new Response('Not Found', { status: 404 });
+  },
+
+  // ── Cron: auto-post the newest published world's front page to Instagram ────
+  // Wired via [triggers].crons in wrangler.toml. No-ops until IG creds are set.
+  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    if (!instagramConfigured(env)) return;
+    ctx.waitUntil(
+      (async () => {
+        try {
+          const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
+          const { data } = await db
+            .from('worlds')
+            .select('id')
+            .eq('is_public', true)
+            .order('published_at', { ascending: false })
+            .limit(1);
+          const world = (data as { id: string }[] | null)?.[0];
+          if (!world) return;
+          const share = await getForkShareData(env, world.id);
+          if (!share || share.imageUrl.endsWith('/earth-cartoon.png')) return;
+          await postToInstagram(env, {
+            imageUrl: share.imageUrl,
+            caption: buildCaption({
+              country: share.countryCode ?? 'A nation',
+              simDate: share.simDate,
+              worldTitle: share.worldTitle,
+              cutoff: share.cutoff,
+            }),
+          });
+        } catch {
+          // Best-effort; a failed post should not throw out of the cron.
+        }
+      })(),
+    );
   },
 };

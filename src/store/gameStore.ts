@@ -9,6 +9,8 @@ export interface Fork {
   countryCode: string;
   year: number;
   createdAt: string;
+  isPublic?: boolean;
+  title?: string | null;
 }
 
 interface SimulateResult {
@@ -31,6 +33,7 @@ interface GameStore {
   setPolicyDraft: (updates: Record<string, number>) => void;
   savePolicyDraft: () => Promise<void>;
   simulateYear: (jwt: string) => Promise<void>;
+  publishFork: (worldId: string, isPublic: boolean, title?: string) => Promise<void>;
 }
 
 const INDICATOR_KEYS = new Set([
@@ -49,7 +52,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!supabase) return;
     const { data } = await supabase
       .from('worlds')
-      .select('id, forked_at_year, created_at, player_country_code')
+      .select('id, forked_at_year, created_at, player_country_code, is_public, title')
       .eq('player_id', userId)
       .eq('is_live', false)
       .order('created_at', { ascending: false });
@@ -60,13 +63,42 @@ export const useGameStore = create<GameStore>((set, get) => ({
       forked_at_year: number;
       created_at: string;
       player_country_code: string;
+      is_public?: boolean;
+      title?: string | null;
     }[]).map(w => ({
       worldId: w.id,
       countryCode: w.player_country_code,
       year: w.forked_at_year,
       createdAt: w.created_at,
+      isPublic: w.is_public ?? false,
+      title: w.title ?? null,
     }));
     set({ playerForks: forks });
+  },
+
+  publishFork: async (worldId, isPublic, title) => {
+    if (!supabase) return;
+    // Optimistic local update so the toggle feels instant.
+    set(s => ({
+      playerForks: s.playerForks.map(f =>
+        f.worldId === worldId ? { ...f, isPublic, title: title ?? f.title ?? null } : f,
+      ),
+      activeFork: s.activeFork?.worldId === worldId
+        ? { ...s.activeFork, isPublic, title: title ?? s.activeFork.title ?? null }
+        : s.activeFork,
+    }));
+    try {
+      await supabase
+        .from('worlds')
+        .update({
+          is_public: isPublic,
+          title: title?.trim() ? title.trim() : null,
+          published_at: isPublic ? new Date().toISOString() : null,
+        })
+        .eq('id', worldId);
+    } catch {
+      // Best-effort; the optimistic state stands. A reload re-syncs from the DB.
+    }
   },
 
   createFork: async (countryCode, jwt) => {

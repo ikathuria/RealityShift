@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchMediaIndex, type MediaEntry } from '../lib/mediaIndex';
 import { countryName } from '../data/countries';
+import { useIsMobile } from '../lib/useIsMobile';
 import ProvenancePanel from './ProvenancePanel';
 
 /**
@@ -14,6 +15,7 @@ import ProvenancePanel from './ProvenancePanel';
 export default function BroadcastPlayer({ worldId = 'live' }: { worldId?: string }) {
   const [broadcasts, setBroadcasts] = useState<MediaEntry[] | null>(null);
   const [active, setActive] = useState(0);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     let live = true;
@@ -58,7 +60,7 @@ export default function BroadcastPlayer({ worldId = 'live' }: { worldId?: string
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(260px, 1fr)', gap: 20, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 2fr) minmax(260px, 1fr)', gap: 20, alignItems: 'start' }}>
         <div>
           <video
             key={entry.b2_url}

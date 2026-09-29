@@ -113,6 +113,35 @@ function deltaMagnitude(delta: Record<string, number>): number {
   return Object.values(delta).reduce((acc, v) => acc + Math.abs(v), 0);
 }
 
+/**
+ * Deterministic baseline state for a country, seeded from its ISO code.
+ * Used to seed the map before real data arrives and — importantly — as a
+ * fallback whenever Supabase is unconfigured, unreachable, or returns nothing,
+ * so a selected country always resolves to data instead of an endless spinner.
+ */
+function syntheticCountryState(worldId: string, code: string): CountryState {
+  let hash = 0;
+  for (let i = 0; i < code.length; i++) hash = (hash * 31 + code.charCodeAt(i)) & 0xffffff;
+  return {
+    world_id: worldId,
+    country_code: code,
+    year: 2024,
+    indicators: {
+      gdp_per_capita: 5000 + (hash % 65000),
+      population: 500000 + ((hash * 13) % 80000000),
+      tax_rate: +(12 + (hash % 20)).toFixed(1),
+      military_spend: +(0.8 + ((hash * 7) % 35) / 10).toFixed(2),
+      education_spend: +(2.0 + ((hash * 11) % 40) / 10).toFixed(2),
+      healthcare_spend: +(3.0 + ((hash * 17) % 60) / 10).toFixed(2),
+      unemployment: +(3.5 + ((hash * 23) % 90) / 10).toFixed(1),
+    },
+    policies: {},
+    relations: {},
+    agent_memory_summary: null,
+    last_updated: new Date().toISOString(),
+  };
+}
+
 export const useWorldStore = create<WorldStore>((set, get) => ({
   selectedCountry: null,
   countryData: {},
@@ -142,18 +171,38 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
       set(s => ({ countryData: { ...s.countryData, [iso3]: DEMO_2026_REALITY_STATES[iso3] } }));
       return;
     }
-    if (!supabase) return;
     const worldId = get().activeWorldId;
-    const { data, error } = await supabase
-      .from('country_states')
-      .select('*')
-      .eq('world_id', worldId)
-      .eq('country_code', iso3)
-      .order('year', { ascending: false })
-      .limit(1)
-      .single();
-    if (!error && data) {
-      set(s => ({ countryData: { ...s.countryData, [iso3]: data as CountryState } }));
+
+    // Fallback so the country panel always resolves, even with no DB / a failed
+    // request. If data is already present (e.g. from loadAllCountries), keep it.
+    const resolveFallback = () => {
+      if (get().countryData[iso3]) return;
+      set(s => ({
+        countryData: { ...s.countryData, [iso3]: syntheticCountryState(worldId, iso3) },
+      }));
+    };
+
+    if (!supabase) {
+      resolveFallback();
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('country_states')
+        .select('*')
+        .eq('world_id', worldId)
+        .eq('country_code', iso3)
+        .order('year', { ascending: false })
+        .limit(1)
+        .single();
+      if (!error && data) {
+        set(s => ({ countryData: { ...s.countryData, [iso3]: data as CountryState } }));
+      } else {
+        resolveFallback();
+      }
+    } catch {
+      resolveFallback();
     }
   },
 
@@ -162,43 +211,25 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
     const map: Record<string, CountryState> = worldId === '2026-demo' ? { ...DEMO_2026_REALITY_STATES } : {};
 
     if (supabase) {
-      const { data, error } = await supabase
-        .from('country_states')
-        .select('*')
-        .eq('world_id', worldId);
+      try {
+        const { data, error } = await supabase
+          .from('country_states')
+          .select('*')
+          .eq('world_id', worldId);
 
-      if (!error && data && (data as CountryState[]).length > 0) {
-        for (const row of data as CountryState[]) {
-          if (!map[row.country_code]) map[row.country_code] = row;
+        if (!error && data && (data as CountryState[]).length > 0) {
+          for (const row of data as CountryState[]) {
+            if (!map[row.country_code]) map[row.country_code] = row;
+          }
         }
+      } catch {
+        // Network/DB failure — fall through to synthetic baselines below.
       }
     }
 
     // Populate all remaining ISO-3 countries from COUNTRY_NAMES with baseline indicators
     for (const code of Object.keys(COUNTRY_NAMES)) {
-      if (!map[code]) {
-        let hash = 0;
-        for (let i = 0; i < code.length; i++) hash = (hash * 31 + code.charCodeAt(i)) & 0xffffff;
-
-        map[code] = {
-          world_id: worldId,
-          country_code: code,
-          year: 2024,
-          indicators: {
-            gdp_per_capita: 5000 + (hash % 65000),
-            population: 500000 + ((hash * 13) % 80000000),
-            tax_rate: +(12 + (hash % 20)).toFixed(1),
-            military_spend: +(0.8 + ((hash * 7) % 35) / 10).toFixed(2),
-            education_spend: +(2.0 + ((hash * 11) % 40) / 10).toFixed(2),
-            healthcare_spend: +(3.0 + ((hash * 17) % 60) / 10).toFixed(2),
-            unemployment: +(3.5 + ((hash * 23) % 90) / 10).toFixed(1),
-          },
-          policies: {},
-          relations: {},
-          agent_memory_summary: null,
-          last_updated: new Date().toISOString(),
-        };
-      }
+      if (!map[code]) map[code] = syntheticCountryState(worldId, code);
     }
 
     set({ countryData: map, countriesTracked: Object.keys(map).length });

@@ -33,7 +33,7 @@ export default function CountryTable() {
 
   useEffect(() => {
     loadAllCountries();
-  }, []);
+  }, [loadAllCountries]);
 
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState<SortField>('gdp_per_capita');

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useIsMobile } from '../lib/useIsMobile';
 import { useAuthStore } from '../store/authStore';
 import { useGameStore } from '../store/gameStore';
 import { useWorldStore } from '../store/worldStore';
@@ -8,6 +9,7 @@ import CountryPanel from '../components/CountryPanel';
 import PolicyEditor from '../components/PolicyEditor';
 import WorldEventsFeed from '../components/WorldEventsFeed';
 import RegionPanel from '../components/RegionPanel';
+import PublishToHall from '../components/PublishToHall';
 import { useRegionStore } from '../store/regionStore';
 
 function SimulateLog({ log }: { log: { country: string; status: string; error?: string }[] }) {
@@ -33,6 +35,7 @@ function SimulateLog({ log }: { log: { country: string; status: string; error?: 
 export default function GamePage() {
   const { worldId } = useParams<{ worldId: string }>();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { session } = useAuthStore();
   const { activeFork, playerForks, loadPlayerForks, enterFork, exitFork, simulateYear, isSimulating, simulateLog } = useGameStore();
   const { selectedCountry, countryData, worldEvents, loadWorldEvents, setPulseCountry } = useWorldStore();
@@ -42,7 +45,7 @@ export default function GamePage() {
   useEffect(() => {
     if (!session) { navigate('/'); return; }
     if (session.user) loadPlayerForks(session.user.id);
-  }, [session]);
+  }, [session, navigate, loadPlayerForks]);
 
   // Find and enter the fork
   useEffect(() => {
@@ -53,10 +56,10 @@ export default function GamePage() {
       enterFork(fork);
       loadWorldEvents(worldId, 30);
     }
-  }, [worldId, playerForks]);
+  }, [worldId, playerForks, activeFork?.worldId, enterFork, loadWorldEvents]);
 
   // Cleanup on unmount
-  useEffect(() => () => exitFork(), []);
+  useEffect(() => () => exitFork(), [exitFork]);
 
   if (!activeFork) {
     return (
@@ -72,10 +75,12 @@ export default function GamePage() {
   const playerData = countryData[activeFork.countryCode];
 
   return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh', background: 'var(--bg-deep-space)', color: '#fff' }}>
-      {/* Left sidebar */}
+    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', width: '100vw', height: '100vh', background: 'var(--bg-deep-space)', color: '#fff' }}>
+      {/* Command sidebar — a full-width top panel on mobile, left rail on desktop */}
       <div className="game-panel" style={{
-        width: 340, flexShrink: 0, borderRadius: 0, borderTop: 0, borderLeft: 0, borderBottom: 0,
+        width: isMobile ? '100%' : 340, flexShrink: 0, borderRadius: 0, borderTop: 0, borderLeft: 0,
+        borderBottom: isMobile ? undefined : 0,
+        maxHeight: isMobile ? '48vh' : undefined,
         display: 'flex', flexDirection: 'column', overflowY: 'auto',
       }}>
 
@@ -152,6 +157,9 @@ export default function GamePage() {
 
           <SimulateLog log={simulateLog} />
 
+          {/* Opt-in: publish this fork to the public Hall of Worlds */}
+          <PublishToHall fork={activeFork} />
+
           {/* World events in this fork */}
           {worldEvents.length > 0 && (
             <div style={{ marginTop: 16 }}>
@@ -165,7 +173,7 @@ export default function GamePage() {
       </div>
 
       {/* Globe */}
-      <div style={{ flex: 1, position: 'relative' }}>
+      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
         <Globe />
         {selectedCountry && !selectedRegion && <CountryPanel />}
         {selectedRegion && <RegionPanel />}

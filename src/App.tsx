@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { useWorldStore } from './store/worldStore';
@@ -6,9 +6,35 @@ import { readVisitorContext } from './lib/locale';
 import Globe from './components/Globe';
 import CountryPanel from './components/CountryPanel';
 import AppHeader from './components/AppHeader';
-import WorldDashboard from './pages/WorldDashboard';
-import WallPage from './pages/WallPage';
-import GamePage from './pages/GamePage';
+
+// Secondary routes are split out of the initial bundle so the landing globe
+// paints as fast as possible. Each loads on first navigation to its route.
+const WorldDashboard = lazy(() => import('./pages/WorldDashboard'));
+const WallPage = lazy(() => import('./pages/WallPage'));
+const GamePage = lazy(() => import('./pages/GamePage'));
+const VerifyPage = lazy(() => import('./pages/VerifyPage'));
+const HallOfWorldsPage = lazy(() => import('./pages/HallOfWorldsPage'));
+const GovernmentPage = lazy(() => import('./pages/GovernmentPage'));
+
+function RouteFallback() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        background: 'var(--bg-deep-space, #0b1020)',
+        color: '#e6ebff',
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: 14,
+        opacity: 0.7,
+      }}
+    >
+      Loading…
+    </div>
+  );
+}
 
 function GlobePage() {
   const { globeReady, selectedCountry, selectCountry } = useWorldStore();
@@ -40,19 +66,24 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = init();
     return unsubscribe;
-  }, []);
+  }, [init]);
 
   return (
     // basename tracks Vite's base so routes resolve both at '/' in dev and
     // under the '/RealityShift/' subpath GitHub Pages serves from.
     <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <Routes>
-        <Route path="/" element={<GlobePage />} />
-        <Route path="/world" element={<WorldDashboard />} />
-        <Route path="/wall" element={<WallPage />} />
-        <Route path="/wall/:worldId" element={<WallPage />} />
-        <Route path="/play/:worldId" element={<GamePage />} />
-      </Routes>
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
+          <Route path="/" element={<GlobePage />} />
+          <Route path="/world" element={<WorldDashboard />} />
+          <Route path="/wall" element={<WallPage />} />
+          <Route path="/wall/:worldId" element={<WallPage />} />
+          <Route path="/play/:worldId" element={<GamePage />} />
+          <Route path="/verify" element={<VerifyPage />} />
+          <Route path="/hall" element={<HallOfWorldsPage />} />
+          <Route path="/gov/:code" element={<GovernmentPage />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

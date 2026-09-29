@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { fetchMediaIndex, type MediaEntry } from '../lib/mediaIndex';
 import { countryName } from '../data/countries';
 
@@ -129,8 +130,12 @@ export default function FrontPageWall({ worldId = 'live' }: { worldId?: string }
         ))}
       </div>
 
-      {/* Full-Screen Theater Lightbox Box for Newspaper Reading */}
-      {selectedImage && (
+      {/* Full-Screen Theater Lightbox Box for Newspaper Reading.
+          Portalled to <body>: the wall's .game-panel ancestor sets a
+          backdrop-filter, which (like transform/filter) makes it the containing
+          block for position:fixed descendants — so an inline overlay is trapped
+          inside the panel instead of covering the viewport. */}
+      {selectedImage && createPortal(
         <div
           onClick={() => setSelectedImage(null)}
           style={{
@@ -218,7 +223,8 @@ export default function FrontPageWall({ worldId = 'live' }: { worldId?: string }
               />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

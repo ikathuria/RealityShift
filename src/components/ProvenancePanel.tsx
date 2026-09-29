@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import type { MediaEntry } from '../lib/mediaIndex';
 import { countryName } from '../data/countries';
 
@@ -54,6 +55,15 @@ export default function ProvenancePanel({ entry }: { entry: MediaEntry }) {
           fields above are bound into it and can't be altered without breaking verification.
           Integrity, not authentication; not C2PA.
         </div>
+        <Link
+          to="/verify"
+          style={{
+            display: 'inline-block', marginTop: 10, fontSize: 'var(--font-size-xs)',
+            color: 'var(--accent-text)', textDecoration: 'none', fontWeight: 600,
+          }}
+        >
+          🔏 Verify in your browser →
+        </Link>
       </div>
     </div>
   );

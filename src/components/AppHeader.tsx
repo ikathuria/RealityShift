@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import CountrySearch from './CountrySearch';
 import { formatLocalTime, readVisitorContext } from '../lib/locale';
+import { useIsMobile } from '../lib/useIsMobile';
 
 /**
  * Orientation bar for the globe view.
@@ -16,6 +17,7 @@ import { formatLocalTime, readVisitorContext } from '../lib/locale';
 export default function AppHeader() {
   const visitor = useMemo(() => readVisitorContext(), []);
   const [clock, setClock] = useState(() => formatLocalTime());
+  const isMobile = useIsMobile();
 
   // Minute resolution is enough; a per-second tick would re-render for nothing.
   useEffect(() => {
@@ -27,13 +29,24 @@ export default function AppHeader() {
     <header
       style={{
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 30,
-        display: 'flex', alignItems: 'center', gap: 16,
-        padding: '14px 20px',
+        display: 'flex',
+        // Below the breakpoint the bar can't fit logo + clock + search + two
+        // buttons on one line, so it stacks into rows instead of pushing the
+        // search box and nav off the right edge (unreachable, body scroll locked).
+        flexDirection: isMobile ? 'column' : 'row',
+        alignItems: isMobile ? 'stretch' : 'center',
+        gap: isMobile ? 10 : 16,
+        padding: isMobile ? '10px 12px' : '14px 20px',
         background: 'linear-gradient(to bottom, rgba(7,9,19,0.95), rgba(7,9,19,0))',
         pointerEvents: 'none',
       }}
     >
-      <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+      {/* Row 1: brand + sun clock */}
+      <div style={{
+        pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 12,
+        width: isMobile ? '100%' : 'auto',
+        justifyContent: isMobile ? 'space-between' : 'flex-start',
+      }}>
         <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
             fontSize: 26,
@@ -64,37 +77,55 @@ export default function AppHeader() {
             </div>
           </div>
         </Link>
+
+        {/* Visitor Location & Sun Clock Badge */}
+        <div className="game-badge" style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          padding: '4px 10px',
+          marginLeft: isMobile ? 0 : 8,
+        }}>
+          <span aria-hidden>{visitor.isDay ? '☀️' : '🌙'}</span>
+          <span>
+            {visitor.country ?? visitor.timeZone} · {clock}
+          </span>
+        </div>
       </div>
 
-      {/* Visitor Location & Sun Clock Badge */}
-      <div className="game-badge" style={{
-        pointerEvents: 'auto',
-        display: 'flex', alignItems: 'center', gap: 6,
-        padding: '4px 10px',
-        marginLeft: 8,
+      {/* Right group: desktop pushes to the right on the same row; mobile becomes
+          rows 2-3 (full-width search, then the two nav buttons split evenly). */}
+      <div style={{
+        pointerEvents: 'auto', display: 'flex', gap: 12,
+        marginLeft: isMobile ? 0 : 'auto',
+        width: isMobile ? '100%' : 'auto',
+        flexDirection: isMobile ? 'column' : 'row',
+        alignItems: isMobile ? 'stretch' : 'center',
       }}>
-        <span aria-hidden>{visitor.isDay ? '☀️' : '🌙'}</span>
-        <span>
-          {visitor.country ?? visitor.timeZone} · {clock}
-        </span>
-      </div>
-
-      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12, pointerEvents: 'auto' }}>
-        <CountrySearch />
-        <Link
-          to="/wall"
-          className="game-button game-button-dark"
-          style={{ height: 36, padding: '0 14px', fontSize: 12 }}
-        >
-          🗞️ FRONT PAGES
-        </Link>
-        <Link
-          to="/world"
-          className="game-button game-button-cyan"
-          style={{ height: 36, padding: '0 16px', fontSize: 12 }}
-        >
-          📊 DASHBOARD →
-        </Link>
+        <CountrySearch fullWidth={isMobile} />
+        <div style={{ display: 'flex', gap: 12, width: isMobile ? '100%' : 'auto' }}>
+          {!isMobile && (
+            <Link
+              to="/hall"
+              className="game-button game-button-dark"
+              style={{ height: 36, padding: '0 14px', fontSize: 12, justifyContent: 'center', whiteSpace: 'nowrap' }}
+            >
+              🏛️ HALL
+            </Link>
+          )}
+          <Link
+            to="/wall"
+            className="game-button game-button-dark"
+            style={{ height: 36, padding: '0 14px', fontSize: 12, flex: isMobile ? 1 : undefined, justifyContent: 'center', whiteSpace: 'nowrap' }}
+          >
+            🗞️ FRONT PAGES
+          </Link>
+          <Link
+            to="/world"
+            className="game-button game-button-cyan"
+            style={{ height: 36, padding: '0 16px', fontSize: 12, flex: isMobile ? 1 : undefined, justifyContent: 'center', whiteSpace: 'nowrap' }}
+          >
+            📊 DASHBOARD →
+          </Link>
+        </div>
       </div>
     </header>
   );

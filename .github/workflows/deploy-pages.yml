@@ -29,6 +29,14 @@ jobs:
 
       - run: npm ci
 
+      # Quality gate: never deploy code that fails typecheck, lint, or tests.
+      - name: Typecheck
+        run: npx tsc -b
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+
       # The frontend bakes VITE_* values in at build time, so they must be
       # present here. All are safe to expose in a browser bundle: the Supabase
       # anon key is protected by row-level security, and the media index URL is

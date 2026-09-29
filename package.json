@@ -1,17 +1,22 @@
 {
-  "name": "vite-init",
+  "name": "realityshift",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "check": "tsc -b && eslint . && vitest run && vite build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
     "cesium": "^1.141.0",
+    "d3-force": "^3.0.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.15.1",
@@ -20,6 +25,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/d3-force": "^3.0.10",
     "@types/geojson": "^7946.0.16",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
@@ -29,8 +38,10 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "jsdom": "^30.0.1",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "vitest": "^3.2.7"
   }
 }

@@ -263,8 +263,8 @@ export default function Globe() {
     }
   }, []);
 
-  useEffect(() => { loadChoropleth(); }, []);
-  useEffect(() => { applyColors(); }, [choroplethValues]);
+  useEffect(() => { loadChoropleth(); }, [loadChoropleth]);
+  useEffect(() => { applyColors(); }, [choroplethValues, applyColors]);
 
   // ── Camera fly-to when a country is selected ─────────────────────────────
   // Fixed altitude, deliberately: viewer.flyTo(entity) frames the polygon tightly
@@ -308,7 +308,7 @@ export default function Globe() {
       }, 550);
       break;
     }
-  }, [pulseCountry]);
+  }, [pulseCountry, setPulseCountry]);
 
   // ── Draw event arcs for newly-arrived world events ────────────────────────
   useEffect(() => {
@@ -545,10 +545,12 @@ export default function Globe() {
       sourceRef.current = null;
       regionSrcRef.current = null;
     };
-  }, []);
+    // applyColors/loadRegions/unloadRegions are stable useCallback([]) refs, so
+    // listing them keeps this viewer-init effect running exactly once on mount.
+  }, [applyColors, loadRegions, unloadRegions]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%', background: '#000' }} />
       {globeStatus !== 'ready' && <GlobeStatus status={globeStatus} />}
       {tooltip && <Tooltip tip={tooltip} />}

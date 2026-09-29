@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useIsMobile } from '../lib/useIsMobile';
 import { useWorldStore } from '../store/worldStore';
 import { countryName } from '../data/countries';
+import { hasGovernment } from '../data/government';
 import type { CountryState } from '../store/worldStore';
 import { useAuthStore } from '../store/authStore';
 import { useGameStore } from '../store/gameStore';
 import DecisionLog from './DecisionLog';
 import AuthModal from './AuthModal';
+import { useCountryEnrichment } from '../lib/useCountryEnrichment';
+import { DC_KEYS, DC_INDICATOR_META } from '../data/dataCommons';
 
 const INDICATOR_LABELS: Record<string, { label: string; unit: string; decimals: number }> = {
   gdp_per_capita:   { label: 'GDP per Capita',       unit: 'USD',    decimals: 0 },
@@ -62,7 +66,43 @@ function IndicatorRow({ name, value }: { name: string; value: number | undefined
   );
 }
 
-function CountryData({ data }: { data: CountryState }) {
+/**
+ * Real-world baselines from Data Commons (data.un.org), complementing the sim's
+ * economic indicators above. Renders nothing until at least one value loads, so
+ * the panel is unchanged when the enrichment proxy is unconfigured.
+ */
+function EnrichmentSection({ iso3 }: { iso3: string }) {
+  const { data, loading } = useCountryEnrichment(iso3);
+  const hasAny = data && DC_KEYS.some(k => typeof data[k] === 'number');
+  if (loading && !hasAny) return null;
+  if (!hasAny) return null;
+
+  return (
+    <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px dashed rgba(255,255,255,0.15)' }}>
+      <div className="game-badge game-badge-cyan" style={{ marginBottom: 10 }}>
+        🌍 REAL-WORLD BASELINE
+      </div>
+      {DC_KEYS.map(key => {
+        const value = data![key];
+        if (typeof value !== 'number') return null;
+        const meta = DC_INDICATOR_META[key];
+        return (
+          <div key={key} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+            <span style={{ color: 'var(--text-secondary)', fontSize: 11, fontWeight: 600 }}>{meta.label}</span>
+            <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 12, color: '#fff' }}>
+              {`${value.toFixed(meta.decimals)} ${meta.unit}`.trim()}
+            </span>
+          </div>
+        );
+      })}
+      <div style={{ color: 'var(--text-muted)', fontSize: 9, marginTop: 6, fontFamily: 'var(--font-heading)' }}>
+        SOURCE: DATA COMMONS · DATA.UN.ORG
+      </div>
+    </div>
+  );
+}
+
+function CountryData({ data, iso3 }: { data: CountryState; iso3: string }) {
   return (
     <div style={{ fontSize: 13, lineHeight: 1.6 }}>
       <div style={{
@@ -84,6 +124,7 @@ function CountryData({ data }: { data: CountryState }) {
       {Object.keys(INDICATOR_LABELS).map(key => (
         <IndicatorRow key={key} name={key} value={data.indicators[key]} />
       ))}
+      <EnrichmentSection iso3={iso3} />
     </div>
   );
 }
@@ -95,6 +136,7 @@ export default function CountryPanel() {
   const { user, session } = useAuthStore();
   const { createFork, enterFork } = useGameStore();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [tab, setTab] = useState<PanelTab>('indicators');
   const [showAuth, setShowAuth] = useState(false);
   const [takingOver, setTakingOver] = useState(false);
@@ -127,7 +169,12 @@ export default function CountryPanel() {
     <div
       className="game-panel"
       style={{
-        position: 'absolute', top: 76, right: 16, width: 330, maxHeight: 'calc(100vh - 96px)',
+        position: 'absolute',
+        // Mobile: a bottom sheet, so it never collides with the now-taller
+        // stacked header at the top. Desktop: the top-right dossier card.
+        ...(isMobile
+          ? { left: 0, right: 0, bottom: 0, top: 'auto', width: '100%', maxHeight: '72vh', borderRadius: '16px 16px 0 0' }
+          : { top: 76, right: 16, width: 330, maxHeight: 'calc(100vh - 96px)' }),
         color: '#fff', padding: '18px 16px', overflowY: 'auto',
         boxSizing: 'border-box',
         zIndex: 35,
@@ -175,9 +222,20 @@ export default function CountryPanel() {
       {tab === 'indicators' ? (
         !data
           ? <div style={{ color: 'var(--text-muted)', fontSize: 13, textAlign: 'center', padding: 20 }}>Loading indicators…</div>
-          : <CountryData data={data} />
+          : <CountryData data={data} iso3={selectedCountry} />
       ) : (
         <DecisionLog countryCode={selectedCountry} />
+      )}
+
+      {/* View Government graph — only for countries with a hand-authored power map */}
+      {hasGovernment(selectedCountry) && (
+        <button
+          onClick={() => navigate(`/gov/${selectedCountry}`)}
+          className="game-button game-button-dark"
+          style={{ width: '100%', padding: '10px 0', fontSize: 12, marginTop: 14 }}
+        >
+          🏛️ VIEW GOVERNMENT GRAPH
+        </button>
       )}
 
       {/* Take Over button — only on live world */}

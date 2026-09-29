@@ -8,8 +8,8 @@ import CountryLeaderboard from '../components/CountryLeaderboard';
 import CountryTable from '../components/CountryTable';
 import CountryPanel from '../components/CountryPanel';
 import RegionPanel from '../components/RegionPanel';
+import TimelineScrubber from '../components/TimelineScrubber';
 import { useRegionStore } from '../store/regionStore';
-import { countryName } from '../data/countries';
 
 const WORKER_URL = (import.meta.env.VITE_AI_PROXY_URL as string | undefined) ?? '';
 
@@ -45,49 +45,6 @@ function TopDivergences({ divs }: { divs: Divergence[] }) {
   );
 }
 
-function DivergenceTimeline({ divs }: { divs: Divergence[] }) {
-  if (!divs.length) return null;
-
-  return (
-    <div style={{ position: 'relative', paddingLeft: 20 }}>
-      {/* Vertical line */}
-      <div style={{
-        position: 'absolute', left: 7, top: 0, bottom: 0,
-        width: 3, background: 'var(--accent-cyan)',
-      }} />
-
-      {divs.slice(0, 20).map(d => {
-        const mag = Object.values(d.delta).reduce((s, v) => s + Math.abs(v), 0);
-        const dot = mag > 5 ? 'var(--accent-magenta)' : mag > 2 ? 'var(--accent-yellow)' : 'var(--accent-green)';
-        return (
-          <div key={d.id} className="game-card" style={{ position: 'relative', marginBottom: 12, marginLeft: 6 }}>
-            {/* Dot */}
-            <div style={{
-              position: 'absolute', left: -24, top: 12,
-              width: 10, height: 10, borderRadius: '50%',
-              background: dot, border: '2px solid #000',
-              boxShadow: `0 0 8px ${dot}`,
-            }} />
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
-              <span className="game-font-heading" style={{ fontWeight: 800, fontSize: 13, color: 'var(--accent-yellow)' }}>
-                {countryName(d.country_code)}
-              </span>
-              <span style={{ color: 'var(--text-muted)', fontSize: 10, fontFamily: 'var(--font-heading)' }}>
-                {new Date(d.published_at).toLocaleDateString('en-GB', {
-                  day: 'numeric', month: 'short', year: 'numeric',
-                })}
-              </span>
-            </div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 11, margin: '4px 0 0', lineHeight: 1.45 }}>
-              {d.narrative.split('\n\nNews used:')[0].slice(0, 120)}…
-            </p>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 export default function WorldDashboard() {
   const {
     recentDivergences,
@@ -109,7 +66,7 @@ export default function WorldDashboard() {
     loadRecentDivergences(50);
     loadWorldEvents('live', 40);
     loadCountriesTracked('live');
-  }, []);
+  }, [loadAllCountries, loadRecentDivergences, loadWorldEvents, loadCountriesTracked]);
 
   // Latest simulated year, derived from the loaded divergences
   const simYear = recentDivergences.length
@@ -199,7 +156,7 @@ export default function WorldDashboard() {
             : activeTab === 'ranks'
               ? <CountryLeaderboard />
               : activeTab === 'timeline'
-                ? <DivergenceTimeline divs={recentDivergences} />
+                ? <TimelineScrubber divs={recentDivergences} />
                 : <WorldEventsFeed events={worldEvents} />}
         </div>
       </div>

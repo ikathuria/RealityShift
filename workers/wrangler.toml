@@ -10,6 +10,22 @@ compatibility_flags = ["nodejs_compat"]
 # SUPABASE_SERVICE_KEY =
 # NEWS_API_KEY =
 # WORKER_SECRET =
+#
+# Sharing + social (optional — features no-op until set):
+# SITE_URL =            # frontend origin, e.g. https://ikathuria.github.io/RealityShift
+# MEDIA_PUBLIC_BASE =   # public B2 base for reading media indexes (front-page images)
+# IG_USER_ID =          # Instagram Business/Creator user id (secret)
+# IG_ACCESS_TOKEN =     # long-lived Instagram Graph API token (secret)
+#
+# Data Commons (free open API — request a key at https://docs.datacommons.org/api).
+# The /api/datacommons/* routes return empty data (UI degrades) until this is set:
+#   wrangler secret put DATA_COMMONS_API_KEY
+# DATA_COMMONS_API_KEY =
+
+# Instagram auto-posting cron. Harmless until IG_USER_ID + IG_ACCESS_TOKEN are
+# set (scheduled() returns immediately when they are absent). Daily at 15:00 UTC.
+[triggers]
+crons = ["0 15 * * *"]
 
 # No [[routes]] block: the Worker is served from its workers.dev subdomain
 # (https://realityshift-api.<subdomain>.workers.dev). A custom-domain route needs
