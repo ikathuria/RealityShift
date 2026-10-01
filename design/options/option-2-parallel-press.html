@@ -1,0 +1,40 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Option 2 · Parallel Press</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="_base.css">
+<style>
+:root{--ink:#16130F;--paper:#F1EADA;--paper-2:#E6DCC6;--red:#C8261C;--mute:#5E564A}
+body{font:16px/1.5 'Source Serif 4',serif;color:var(--ink);background:var(--paper)}
+.stage{background:var(--paper)}
+.top{position:relative;flex-direction:column;align-items:stretch;gap:6px;border-bottom:4px double var(--ink);padding:18px 24px 10px}
+.mast{font:900 clamp(40px,7vw,88px)/.9 'Fraunces';letter-spacing:-.02em;text-align:center}
+.date{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font:600 11px 'IBM Plex Mono';letter-spacing:.12em;text-transform:uppercase;border-top:1px solid var(--ink);padding-top:6px}
+.date a{border-bottom:2px solid var(--red)}
+.globe{left:4%;top:230px;width:540px;height:540px;filter:grayscale(1) contrast(1.15) sepia(.35);border:2px solid var(--ink)}
+.cap{position:absolute;left:4%;top:780px;width:540px;font:italic 14px 'Source Serif 4';color:var(--mute)}
+.panel{top:230px;width:420px;right:5%}
+.kick{font:600 12px 'IBM Plex Mono';letter-spacing:.14em;text-transform:uppercase;color:var(--red)}
+h1{font:900 54px/.95 'Fraunces';margin:6px 0 10px;letter-spacing:-.02em}
+.deck{font:italic 20px/1.35 'Source Serif 4';margin:0 0 14px;padding-bottom:14px;border-bottom:1px solid var(--ink)}
+.cols{columns:2;column-gap:20px;column-rule:1px solid #16130F44;font-size:14.5px}
+.cols p{margin:0 0 8px}.cols p:first-child::first-letter{font:900 44px/.8 'Fraunces';float:left;margin:4px 6px 0 0;color:var(--red)}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}td{padding:5px 0;border-bottom:1px dotted var(--ink)}td:last-child{text-align:right;font:600 13px 'IBM Plex Mono'}
+.cta{width:100%;height:52px;background:var(--red);color:#fff;border:0;font:700 19px 'Fraunces';letter-spacing:.01em}
+.feed{left:auto;right:5%;bottom:auto;top:auto;position:relative}
+.ticker{position:absolute;left:0;right:0;bottom:0;background:var(--ink);color:var(--paper);font:600 13px 'IBM Plex Mono';padding:10px 24px;white-space:nowrap;overflow:hidden}
+.ticker b{color:#fff;background:var(--red);padding:2px 8px;margin-right:14px}
+@media (max-width:760px){.cap{position:relative;left:auto;top:auto;width:auto;margin:0 16px 16px}.ticker{position:relative}h1{font-size:42px}.cols{columns:1}}
+</style></head><body><div class="stage">
+<header class="top"><div class="mast">The Reality Shift</div><div class="date"><span>Sim year 2026 · Live world</span><span><a href="#">Hall</a> · <a href="#">Front pages</a> · <a href="#">Dashboard</a></span></div></header>
+<div class="globe" role="img" aria-label="Globe, printed in halftone"></div>
+<p class="cap hide-sm">The live world as of this edition. Take over any nation and the presses split.</p>
+<main class="panel">
+ <div class="kick">National dossier · United States</div>
+ <h1>Washington bets $52B on chips</h1>
+ <p class="deck">The AI government signs the Semiconductor Sovereignty Act as unemployment dips to 3.6%.</p>
+ <div class="cols"><p>The administration's agent cited the 1958 National Defense Education Act as its closest historical parallel.</p><p>Fourteen small modular reactor permits will power the next generation of data centres.</p></div>
+ <table><tr><td>GDP per capita</td><td>$82,500 ▲</td></tr><tr><td>Education spend</td><td>5.30% ▲</td></tr><tr><td>Unemployment</td><td>3.6% ▼</td></tr></table>
+ <button class="cta">Seize the presses: take over the US</button>
+</main>
+<div class="ticker"><b>LATE EDITION</b>US–India Semiconductor Accord signed in Bengaluru &nbsp;·&nbsp; UK and US deploy North Atlantic surveillance grid &nbsp;·&nbsp; China and Russia expand Arctic payment clearance</div>
+</div></body></html>

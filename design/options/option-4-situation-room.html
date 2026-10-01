@@ -1,0 +1,33 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Option 4 · Situation Room</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;800&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="_base.css">
+<style>
+:root{--bg:#0B0F17;--panel:#111826;--line:#26324A;--text:#E4E8EF;--mute:#8A96AB;--amber:#FFB020;--red:#FF4D4D}
+body{font:14px/1.5 'IBM Plex Mono',monospace;color:var(--text);background:var(--bg)}
+.stage{background:var(--bg);background-image:linear-gradient(#ffffff08 1px,transparent 1px),linear-gradient(90deg,#ffffff08 1px,transparent 1px);background-size:40px 40px}
+.top{border-bottom:1px solid var(--line);background:#0B0F17ee}
+.logo{font:800 18px 'Archivo';letter-spacing:.14em}.logo b{color:var(--amber)}
+.mono{color:var(--mute);font-size:12px}
+.nav{font:600 12px 'IBM Plex Mono';letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.globe{left:8%;top:16%;width:600px;height:600px;filter:grayscale(1) brightness(.75) sepia(1) hue-rotate(5deg) saturate(2.2);opacity:.85}
+.ring{position:absolute;left:calc(8% + 160px);top:calc(16% + 200px);width:90px;height:90px;border:2px solid var(--amber);border-radius:50%}
+.ring::after{content:"USA · 38.9N 77.0W";position:absolute;left:100px;top:30px;white-space:nowrap;color:var(--amber);font-size:11px}
+.panel{background:var(--panel);border:1px solid var(--line)}
+.stamp{display:flex;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--line);font-size:11px;color:var(--mute)}
+.stamp b{color:var(--amber);border:1px solid var(--amber);padding:0 6px;font-weight:600}
+h1{font:800 28px 'Archivo';margin:14px 14px 4px;letter-spacing:.01em}
+.brief{margin:0 14px 12px;color:var(--mute);font-size:12.5px;border-left:2px solid var(--amber);padding-left:10px}
+.data{margin:0 14px}.data .row{padding:7px 0;border-bottom:1px dashed var(--line)}.data .row span:first-child{color:var(--mute)}
+.cta{margin:14px;width:calc(100% - 28px);height:48px;background:var(--amber);color:var(--bg);border:0;font:800 14px 'Archivo';letter-spacing:.14em;text-transform:uppercase}
+.log{font-size:12px;border:1px solid var(--line);background:var(--panel);padding:10px 12px}
+.log time{color:var(--amber);margin-right:8px}
+</style></head><body><div class="stage">
+<div class="globe" role="img" aria-label="Globe, monochrome amber"></div><div class="ring hide-sm" aria-hidden="true"></div>
+<header class="top"><span class="logo">REALITY<b>/</b>SHIFT</span><span class="mono hide-sm">LIVE WORLD · SIM-Y 2026 · 195 AGENTS ONLINE</span><span class="sp"></span><a class="nav" href="#">Hall</a><a class="nav" href="#">Front pages</a><a class="nav" href="#">Dashboard</a></header>
+<main class="panel"><div class="stamp"><span>DOSSIER 840 / USA</span><b>AI-CONTROLLED</b></div>
+<h1>United States</h1><p class="brief">Agent enacted Semiconductor Sovereignty Act. Parallel: 1958 NDEA (0.88).</p>
+<div class="data"><div class="row"><span>GDP / capita</span><span>$82,500 ▲1.1%</span></div><div class="row"><span>Education</span><span>5.30% ▲0.40</span></div><div class="row"><span>Military</span><span>2.90% ▲0.15</span></div><div class="row"><span>Unemployment</span><span>3.6% ▼0.10</span></div></div>
+<button class="cta">Assume command</button></main>
+<aside class="feed"><div class="log"><time>T+00:02</time>USA → IND · TRADE · Semiconductor accord signed, Bengaluru</div><div class="log"><time>T+00:41</time>GBR → USA · MILITARY · N. Atlantic surveillance grid</div></aside>
+</div></body></html>

@@ -1,0 +1,39 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Option 3 · Fork Signal</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="_base.css">
+<style>
+:root{--void:#0A0A0C;--ash:#9A9AA6;--bone:#F2F1EC;--real:#3DD9C5;--fork:#FF5A1F}
+body{font:15px/1.5 'Space Grotesk',sans-serif;color:var(--bone);background:var(--void)}
+.stage{background:linear-gradient(90deg,#0d1716 0 50%,#1a0f0a 50%)}
+.split{position:absolute;left:50%;top:0;bottom:390px;width:2px;background:linear-gradient(var(--real),var(--fork))}
+.globe{width:420px;height:420px;top:13%}
+.g1{left:calc(25% - 210px);filter:hue-rotate(0deg) saturate(.7)}
+.g2{left:calc(75% - 210px);filter:hue-rotate(-40deg) saturate(1.6) contrast(1.1)}
+.lbl{position:absolute;top:10%;font:700 12px 'JetBrains Mono';letter-spacing:.2em}
+.l1{left:6%;color:var(--real)}.l2{left:calc(50% + 40px);color:var(--fork)}
+.logo{font:700 22px 'Space Grotesk';letter-spacing:-.01em}.logo span{color:var(--fork)}
+.nav{font:500 14px 'Space Grotesk';color:var(--ash)}
+.hero{position:absolute;left:50%;transform:translateX(-50%);bottom:28px;text-align:center;width:min(1000px,92%)}
+.hero h1{font:700 clamp(40px,5.4vw,72px)/.95 'Space Grotesk';letter-spacing:-.03em;margin:0}
+.hero h1 em{font-style:normal;color:var(--fork)}
+.hero p{color:var(--ash);margin:10px 0 18px}
+.cta{height:52px;padding:0 26px;background:var(--fork);color:var(--void);border:0;font:700 16px 'Space Grotesk'}
+.cta2{height:52px;padding:0 22px;background:none;color:var(--bone);border:1.5px solid var(--ash);font:500 16px 'Space Grotesk';margin-left:8px}
+.panel{top:auto;bottom:250px;right:24px;width:300px;background:#120c09ee;border:1.5px solid var(--fork);padding:14px;font:500 13px 'JetBrains Mono'}
+.panel h2{font:700 20px 'Space Grotesk';margin:0 0 10px}
+.d{display:grid;grid-template-columns:1fr auto auto;gap:6px 12px;align-items:baseline}
+.d .r{color:var(--real)}.d .f{color:var(--fork)}
+.d .h{color:var(--ash);font-size:10px;letter-spacing:.14em}
+.drift{margin-top:12px;height:8px;background:linear-gradient(90deg,var(--real),var(--fork));position:relative}.drift i{position:absolute;left:62%;top:-5px;width:3px;height:18px;background:var(--bone)}
+@media (max-width:760px){.stage{background:var(--void)}.split,.g1,.lbl{display:none}.hero{position:relative;left:auto;transform:none;margin:16px auto;bottom:auto}}
+</style></head><body><div class="stage">
+<div class="split" aria-hidden="true"></div>
+<span class="lbl l1">REALITY · 2026</span><span class="lbl l2">FORK #A7F3 · 2026</span>
+<div class="globe g1" role="img" aria-label="Globe, real world"></div><div class="globe g2" role="img" aria-label="Globe, forked world"></div>
+<header class="top"><span class="logo">reality<span>/</span>shift</span><span class="sp"></span><a class="nav" href="#">Hall</a><a class="nav" href="#">Front pages</a><a class="nav" href="#">Dashboard</a></header>
+<aside class="panel"><h2>United States</h2><div class="d"><span class="h">METRIC</span><span class="h">REAL</span><span class="h">FORK</span>
+<span>GDP/cap</span><span class="r">$81.6K</span><span class="f">$82.5K</span><span>Education</span><span class="r">4.90%</span><span class="f">5.30%</span><span>Unemploy.</span><span class="r">3.7%</span><span class="f">3.6%</span></div>
+<div class="drift" aria-label="Divergence 62%"><i></i></div><div style="color:var(--ash);margin-top:6px">Drift from reality: 62%</div></aside>
+<main class="hero"><h1>One world is real.<br><em>The other one is yours.</em></h1><p>Take over any country and the world forks. No real-world data enters your universe again.</p><button class="cta">Fork the United States</button><button class="cta2">See the drift</button></main>
+</div></body></html>

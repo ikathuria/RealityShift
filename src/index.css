@@ -4,10 +4,10 @@
   --font-sans: var(--font-body);
 
   /* Text colours, tuned for high contrast arcade HUDs */
-  --text-primary: #ffffff;   /* 19.69:1 */
-  --text-secondary: #cbd5e1; /* slate-300 */
-  --text-muted: #94a3b8;     /* slate-400 */
-  --text-faint: #64748b;     /* slate-500 */
+  --text-primary: var(--rs-text-on-dark);
+  --text-secondary: #C9CFDC;
+  --text-muted: var(--rs-muted-on-dark);
+  --text-faint: #8992A6;
 
   /* Type scale. Roles are fixed so new UI doesn't invent sizes:
      xs  = uppercase labels, metadata, timestamps
@@ -25,19 +25,19 @@
      `panel` is for inline surfaces inside an opaque parent (dashboard cards);
      `floating` is for anything overlaying the globe, where the blur is what
      keeps text legible against arbitrary map colour underneath. */
-  --surface-base: #0a0a14;
+  --surface-base: var(--rs-space);
   --surface-panel: rgba(255, 255, 255, 0.04);
   --surface-panel-strong: rgba(255, 255, 255, 0.08);
-  --surface-floating: rgba(10, 10, 20, 0.82);
-  --surface-floating-blur: blur(10px);
-  --border-subtle: 1px solid rgba(255, 255, 255, 0.08);
-  --border-strong: 1px solid rgba(255, 255, 255, 0.14);
-  --radius-panel: 10px;
-  --shadow-floating: 0 8px 28px rgba(0, 0, 0, 0.55);
+  --surface-floating: var(--rs-hud);
+  --surface-floating-blur: none;
+  --border-subtle: 1px solid var(--rs-hud-line);
+  --border-strong: var(--rs-border);
+  --radius-panel: var(--rs-radius-lg);
+  --shadow-floating: var(--rs-shadow-lg);
 
   /* Accent — the one interactive colour. */
-  --accent: #6366f1;
-  --accent-text: #a5b4fc;
+  --accent: var(--rs-sun);
+  --accent-text: var(--rs-sun);
 }
 
 *, *::before, *::after {
@@ -50,7 +50,7 @@ html, body, #root {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #000;
+  background: var(--rs-space);
 }
 
 body {
@@ -68,6 +68,6 @@ body {
 /* Visible keyboard focus. The globe is mouse-only, so every other control
    needs to be reachable and obviously focused. */
 :focus-visible {
-  outline: 2px solid #818cf8;
-  outline-offset: 2px;
+  outline: var(--rs-focus);
+  outline-offset: var(--rs-focus-offset);
 }

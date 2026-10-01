@@ -1,0 +1,66 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Option 5 · Arcade Fork</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@500;700;800&family=JetBrains+Mono:wght@600;700&display=swap">
+<link rel="stylesheet" href="_base.css">
+<style>
+/* Arcade Cartography's ink + board-game surfaces, carrying Fork Signal's
+   real-vs-fork duality: teal = reality, coral = your fork, sun = act. */
+:root{--ink:#0B0F19;--paper:#FFFDF6;--real:#21B8A6;--real-bg:#123B49;--fork:#FF6B3D;--fork-bg:#4A1F2A;--sun:#FFD60A;--mute:#5B6170}
+body{font:15px/1.45 'Plus Jakarta Sans',sans-serif;color:var(--ink);background:var(--ink)}
+.stage{background:linear-gradient(90deg,var(--real-bg) 0 50%,var(--fork-bg) 50%)}
+.stage::before{content:"";position:absolute;inset:0;background-image:radial-gradient(#ffffff1c 1.5px,transparent 1.5px);background-size:22px 22px}
+/* the fork: a zig-zag seam, like a torn map */
+.seam{position:absolute;left:calc(50% - 10px);top:0;bottom:0;width:20px;background:linear-gradient(135deg,var(--real-bg) 25%,transparent 25%) -10px 0/20px 20px,linear-gradient(225deg,var(--real-bg) 25%,transparent 25%) -10px 0/20px 20px;filter:drop-shadow(3px 0 0 var(--ink))}
+.globe{width:440px;height:440px;top:110px;border:5px solid var(--ink);box-shadow:10px 10px 0 var(--ink)}
+.g1{left:calc(25% - 250px)}
+.g2{left:calc(75% - 190px);filter:hue-rotate(-35deg) saturate(1.5)}
+.chip{position:absolute;top:96px;font:700 13px 'JetBrains Mono';letter-spacing:.1em;padding:6px 12px;border:3px solid var(--ink);border-radius:10px;box-shadow:3px 3px 0 var(--ink);z-index:2}
+.c1{left:calc(25% - 250px);background:var(--real);color:var(--ink)}
+.c2{left:calc(75% - 190px);background:var(--fork);color:var(--ink)}
+.logo{font:700 30px/1 'Fredoka';color:var(--sun);-webkit-text-stroke:1.5px var(--ink);text-shadow:3px 3px 0 var(--ink)}
+.logo b{color:var(--fork)}
+.btn{height:44px;padding:0 18px;border:3px solid var(--ink);border-radius:12px;background:var(--paper);font:700 15px 'Fredoka';box-shadow:0 4px 0 var(--ink);display:inline-flex;align-items:center;position:relative;z-index:2}
+.top{z-index:2}
+.hero{position:absolute;left:50%;transform:translateX(-50%);bottom:28px;width:min(980px,92%);text-align:center;z-index:2}
+.hero h1{font:700 clamp(38px,5vw,66px)/1 'Fredoka';color:#fff;margin:0;text-shadow:4px 4px 0 var(--ink);-webkit-text-stroke:2px var(--ink);paint-order:stroke fill}
+.hero h1 em{font-style:normal;color:var(--fork)}
+.hero p{color:#E9ECF2;margin:10px 0 16px;font-weight:600}
+.cta{height:58px;padding:0 28px;border:3px solid var(--ink);border-radius:14px;background:var(--sun);font:700 22px 'Fredoka';box-shadow:0 6px 0 var(--ink)}
+.cta:active{transform:translateY(4px);box-shadow:0 2px 0 var(--ink)}
+.panel{top:auto;bottom:250px;right:24px;width:330px;background:var(--paper);border:3px solid var(--ink);border-radius:18px;box-shadow:8px 8px 0 var(--ink);padding:16px;z-index:2}
+.flag{width:44px;height:33px;border:3px solid var(--ink);border-radius:6px;background:linear-gradient(#B22234 0 15%,#fff 15% 29%,#B22234 29% 43%,#fff 43% 57%,#B22234 57% 71%,#fff 71% 85%,#B22234 85%);position:relative;flex:none}
+.flag::after{content:"";position:absolute;inset:0 55% 45% 0;background:#3C3B6E}
+h2{font:700 26px/1 'Fredoka';margin:0}
+.eyebrow{font:800 11px 'Plus Jakarta Sans';letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.vs{display:grid;grid-template-columns:1fr auto auto;gap:6px 10px;align-items:center;margin:14px 0 10px;font-weight:700;font-size:13px}
+.vs .h{font:800 10px 'Plus Jakarta Sans';letter-spacing:.08em;color:var(--mute)}
+.pill{font:700 12px 'JetBrains Mono';padding:2px 8px;border:2px solid var(--ink);border-radius:7px;text-align:right}
+.r{background:#C9F2EC}.f{background:#FFD9CB}
+.drift{display:flex;align-items:center;gap:10px;font-weight:800;font-size:12px}
+.bar{flex:1;height:14px;border:2.5px solid var(--ink);border-radius:8px;background:linear-gradient(90deg,var(--real),var(--fork));position:relative}
+.bar i{position:absolute;left:62%;top:-6px;width:8px;height:22px;margin-left:-4px;background:var(--sun);border:2.5px solid var(--ink);border-radius:3px}
+.pin{position:absolute;width:30px;height:30px;border:3px solid var(--ink);border-radius:9px;z-index:1}
+@media (max-width:760px){
+ .stage{background:var(--fork-bg)}.seam,.g1,.c1,.pin{display:none}
+ .chip{position:relative;top:auto;left:auto!important;align-self:center;margin-bottom:-10px}
+ .hero{position:relative;left:auto;transform:none;bottom:auto;margin:20px auto}
+ .panel{bottom:auto;right:auto}
+}
+</style></head><body><div class="stage">
+<div class="seam" aria-hidden="true"></div>
+<span class="chip c1">REALITY · 2026</span><span class="chip c2">YOUR FORK · 2026</span>
+<div class="globe g1" role="img" aria-label="Globe, the real world"></div>
+<div class="globe g2" role="img" aria-label="Globe, your forked world"></div>
+<div class="pin hide-sm" style="left:calc(25% - 120px);top:250px;background:var(--real)"></div>
+<div class="pin hide-sm" style="left:calc(75% - 60px);top:250px;background:var(--fork);box-shadow:0 0 0 6px #FF6B3D66"></div>
+<header class="top"><span class="logo">Reality<b>/</b>Shift</span><span class="sp"></span><a class="btn" href="#">Hall</a><a class="btn" href="#">Front pages</a><a class="btn" href="#">Dashboard</a></header>
+<aside class="panel">
+ <div style="display:flex;gap:12px;align-items:center"><div class="flag"></div><div><div class="eyebrow">National dossier · USA</div><h2>United States</h2></div></div>
+ <div class="vs"><span class="h">STAT</span><span class="h">REAL</span><span class="h">FORK</span>
+  <span>GDP per capita</span><span class="pill r">$81.6K</span><span class="pill f">$82.5K</span>
+  <span>Education</span><span class="pill r">4.90%</span><span class="pill f">5.30%</span>
+  <span>Unemployment</span><span class="pill r">3.7%</span><span class="pill f">3.6%</span></div>
+ <div class="drift"><span>Drift</span><div class="bar" aria-label="62% drift from reality"><i></i></div><span>62%</span></div>
+</aside>
+<main class="hero"><h1>One world is real.<br><em>The other one is yours.</em></h1><p>Take over any country and the world forks. No real-world data enters your universe again.</p><button class="cta">Take over the United States!</button></main>
+</div></body></html>

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RealityShift UI Directions</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Source+Serif+4:wght@400;600&family=Fredoka:wght@600;700&family=Plus+Jakarta+Sans:wght@500;700&display=swap">
+<style>
+  :root { --page:#f4f3ef; --ink:#15171c; --muted:#5d6068; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page:#101114; --ink:#eceae4; --muted:#9a9ca3; } }
+  :root[data-theme="dark"] { --page:#101114; --ink:#eceae4; --muted:#9a9ca3; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--page); color:var(--ink); font:15px/1.5 'IBM Plex Sans',system-ui,sans-serif; }
+  main { max-width:1180px; margin:0 auto; padding:48px 16px 80px; }
+  h1 { font:700 32px/1.1 'Space Grotesk'; margin:0 0 8px; }
+  .lede { color:var(--muted); max-width:62ch; margin:0 0 48px; }
+  section { display:grid; grid-template-columns:280px 1fr; gap:32px; padding:40px 0; border-top:1px solid color-mix(in srgb,var(--ink) 15%,transparent); }
+  @media (max-width:820px){ section { grid-template-columns:1fr; } }
+  .label { font:600 12px 'IBM Plex Mono'; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  h2 { font:700 22px/1.2 'Space Grotesk'; margin:6px 0 10px; }
+  .notes p { margin:0 0 10px; color:var(--muted); font-size:14px; }
+  .notes dl { font-size:13px; margin:0; } .notes dt { font-weight:600; margin-top:8px; } .notes dd { margin:0; color:var(--muted); }
+  .stage { position:relative; border-radius:6px; overflow:hidden; min-height:430px; }
+  .bar { display:flex; align-items:center; gap:14px; padding:14px 18px; flex-wrap:wrap; }
+  .bar .sp { flex:1; }
+  .panel { position:absolute; right:18px; top:70px; width:300px; max-width:calc(100% - 36px); }
+  @media (max-width:520px){ .panel { position:relative; right:auto; top:auto; margin:0 18px 18px; } .stage{min-height:0} }
+  .row { display:flex; justify-content:space-between; align-items:baseline; }
+
+  /* A — Situation room */
+  .a { background:radial-gradient(circle at 30% 60%, #1b2a3a 0, #0b0f17 60%); color:#e6e9ef; font-family:'IBM Plex Sans'; }
+  .a .grid { position:absolute; inset:0; background-image:linear-gradient(#ffffff0a 1px,transparent 1px),linear-gradient(90deg,#ffffff0a 1px,transparent 1px); background-size:48px 48px; }
+  .a .bar { position:relative; border-bottom:1px solid #ffffff1f; background:#0b0f17cc; }
+  .a .logo { font:700 17px 'Space Grotesk'; letter-spacing:.02em; } .a .logo b { color:#FFB020; }
+  .a .mono { font:400 12px 'IBM Plex Mono'; color:#8a93a3; }
+  .a .nav { font:600 13px 'IBM Plex Sans'; color:#c3c9d4; }
+  .a .panel { background:#0f141e; border:1px solid #ffffff26; }
+  .a .stamp { display:flex; justify-content:space-between; font:600 11px 'IBM Plex Mono'; padding:8px 14px; border-bottom:1px solid #ffffff26; color:#8a93a3; }
+  .a .stamp span:last-child { color:#FFB020; border:1px solid #FFB020; padding:0 6px; }
+  .a h3 { font:700 26px 'Space Grotesk'; margin:12px 14px 10px; }
+  .a .data { margin:0 14px; font:400 13px 'IBM Plex Mono'; }
+  .a .data .row { padding:6px 0; border-bottom:1px dashed #ffffff1f; } .a .data .row span:first-child { color:#8a93a3; }
+  .a .cta { margin:14px; display:block; width:calc(100% - 28px); height:44px; background:#FFB020; color:#0b0f17; border:0; font:700 14px 'Space Grotesk'; letter-spacing:.04em; text-transform:uppercase; }
+
+  /* B — Newsroom broadsheet */
+  .b { background:#efe9dc; color:#1c1a17; font-family:'Source Serif 4'; }
+  .b .bar { border-bottom:3px double #1c1a17; justify-content:center; flex-direction:column; gap:2px; padding:18px; }
+  .b .logo { font:800 34px/1 'Fraunces'; letter-spacing:-.01em; }
+  .b .dateline { font:600 11px 'IBM Plex Mono'; letter-spacing:.1em; text-transform:uppercase; display:flex; gap:18px; flex-wrap:wrap; justify-content:center; }
+  .b .map { position:absolute; left:18px; top:110px; bottom:18px; right:340px; background:repeating-linear-gradient(45deg,#e2dac8 0 2px,transparent 2px 9px); border:1px solid #1c1a17; }
+  @media (max-width:520px){ .b .map{display:none} }
+  .b .panel { top:110px; background:#f8f4ea; border:1px solid #1c1a17; padding:14px 16px; }
+  .b .kicker { font:600 11px 'IBM Plex Mono'; letter-spacing:.1em; text-transform:uppercase; color:#b3261e; }
+  .b h3 { font:800 30px/1.05 'Fraunces'; margin:4px 0 8px; }
+  .b .deck { font-style:italic; font-size:14px; margin:0 0 10px; border-bottom:1px solid #1c1a17; padding-bottom:10px; }
+  .b .data .row { font-size:14px; padding:3px 0; } .b .data .row span:last-child { font:600 13px 'IBM Plex Mono'; }
+  .b .cta { margin-top:14px; width:100%; height:44px; background:#1c1a17; color:#f8f4ea; border:0; font:600 15px 'Source Serif 4'; }
+
+  /* C — Refined arcade */
+  .c { background:linear-gradient(#3c8fd8,#1f5fa8); color:#fff; font-family:'Plus Jakarta Sans'; }
+  .c .blob { position:absolute; left:-60px; bottom:-120px; width:560px; height:420px; border-radius:50%; background:#5cc46a; border:4px solid #0b0f19; }
+  .c .bar { position:relative; }
+  .c .logo { font:700 24px 'Fredoka'; color:#FFE600; text-shadow:2px 2px 0 #0b0f19; }
+  .c .pill { background:#0b0f19; color:#fff; font:700 13px 'Plus Jakarta Sans'; padding:8px 14px; border-radius:8px; }
+  .c .panel { background:#fff; color:#0b0f19; border:3px solid #0b0f19; border-radius:12px; box-shadow:5px 5px 0 #0b0f19; padding:16px; }
+  .c h3 { font:700 28px 'Fredoka'; margin:0 0 10px; }
+  .c .stat { margin-bottom:10px; font-size:13px; font-weight:700; }
+  .c .meter { height:10px; background:#e8eaf0; border:2px solid #0b0f19; border-radius:6px; margin-top:4px; overflow:hidden; }
+  .c .meter i { display:block; height:100%; background:#0b0f19; }
+  .c .meter.hot i { background:#FFE600; border-right:2px solid #0b0f19; }
+  .c .cta { width:100%; height:48px; margin-top:6px; background:#FFE600; border:3px solid #0b0f19; border-radius:10px; box-shadow:3px 3px 0 #0b0f19; font:700 18px 'Fredoka'; }
+</style>
+</head>
+<body>
+<main>
+  <div class="label">RealityShift · design exploration</div>
+  <h1>Three directions for the globe view</h1>
+  <p class="lede">Each mock shows the same screen: the top bar and the United States dossier. The numbers are sample values. Pick one, or mix parts, and I'll roll it through the theme tokens.</p>
+
+  <section>
+    <div class="notes">
+      <div class="label">Direction A</div>
+      <h2>Situation room</h2>
+      <p>Cold War command centre. Serious and strategic, so the AI agents feel like advisers, not toys.</p>
+      <dl><dt>Type</dt><dd>Space Grotesk, IBM Plex Mono</dd><dt>Accent</dt><dd>Signal amber #FFB020, used only for things you can act on</dd><dt>Signature</dt><dd>A dossier stamped like a classified file, with ruled mono rows</dd></dl>
+    </div>
+    <div class="stage a"><div class="grid"></div>
+      <div class="bar"><span class="logo">REALITY<b>/</b>SHIFT</span><span class="mono">SIM-Y 2024 · 17:14 UTC-4</span><span class="sp"></span><span class="nav">Hall</span><span class="nav">Front pages</span><span class="nav">Dashboard</span></div>
+      <div class="panel">
+        <div class="stamp"><span>FILE 840 / USA</span><span>LIVE</span></div>
+        <h3>United States</h3>
+        <div class="data">
+          <div class="row"><span>GDP / capita</span><span>$85,370</span></div>
+          <div class="row"><span>Population</span><span>335.0M</span></div>
+          <div class="row"><span>Tax revenue</span><span>15.0% GDP</span></div>
+          <div class="row"><span>Military</span><span>2.90% GDP</span></div>
+          <div class="row"><span>Unemployment</span><span>4.1%</span></div>
+        </div>
+        <button class="cta">Assume command</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="notes">
+      <div class="label">Direction B</div>
+      <h2>Broadsheet</h2>
+      <p>Builds on the front-page newspapers you already generate, so every screen reads like tomorrow's paper about your world.</p>
+      <dl><dt>Type</dt><dd>Fraunces, Source Serif 4, Plex Mono datelines</dd><dt>Accent</dt><dd>Press red #B3261E, kickers only</dd><dt>Signature</dt><dd>A masthead top bar with the sim year as the dateline</dd></dl>
+    </div>
+    <div class="stage b">
+      <div class="bar"><span class="logo">The Reality Shift</span><span class="dateline"><span>Sim year 2024</span><span>Hall</span><span>Front pages</span><span>Dashboard</span></span></div>
+      <div class="map"></div>
+      <div class="panel">
+        <div class="kicker">National dossier</div>
+        <h3>United States</h3>
+        <p class="deck">Growth holds as defence outlays edge toward 3%.</p>
+        <div class="data">
+          <div class="row"><span>GDP per capita</span><span>$85,370</span></div>
+          <div class="row"><span>Population</span><span>335.0M</span></div>
+          <div class="row"><span>Military</span><span>2.90% GDP</span></div>
+          <div class="row"><span>Unemployment</span><span>4.1%</span></div>
+        </div>
+        <button class="cta">Take over the United States</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="notes">
+      <div class="label">Direction C</div>
+      <h2>Refined arcade</h2>
+      <p>Keeps today's playful cartoon globe and Fredoka, but goes flat and ink-outlined like a board game: one yellow accent and no neon glows.</p>
+      <dl><dt>Type</dt><dd>Fredoka, Plus Jakarta Sans</dd><dt>Accent</dt><dd>Yellow #FFE600, with ink #0B0F19 outlines</dd><dt>Signature</dt><dd>Chunky offset shadows on the dossier only</dd></dl>
+    </div>
+    <div class="stage c"><div class="blob"></div>
+      <div class="bar"><span class="logo">Reality Shift</span><span class="sp"></span><span class="pill">Hall</span><span class="pill">Front pages</span><span class="pill">Dashboard</span></div>
+      <div class="panel">
+        <h3>United States</h3>
+        <div class="stat"><div class="row"><span>GDP per capita</span><span>$85.4K</span></div><div class="meter hot"><i style="width:88%"></i></div></div>
+        <div class="stat"><div class="row"><span>Military</span><span>2.9%</span></div><div class="meter"><i style="width:36%"></i></div></div>
+        <div class="stat"><div class="row"><span>Unemployment</span><span>4.1%</span></div><div class="meter"><i style="width:16%"></i></div></div>
+        <button class="cta">Take over!</button>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

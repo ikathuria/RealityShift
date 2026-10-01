@@ -1,0 +1,107 @@
+/* RealityShift brand tokens: "Arcade Fork".
+ * Source of truth for colour, type, space, shape and motion. BRAND.md explains
+ * how to use them; components consume these variables and never raw hex/px.
+ *
+ * The one rule that carries the brand: TEAL = REALITY, CORAL = YOUR FORK,
+ * SUN = AN ACTION YOU CAN TAKE. Never swap those meanings.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Plus+Jakarta+Sans:wght@500;700;800&family=JetBrains+Mono:wght@600;700&display=swap');
+
+:root {
+  /* ── Colour: core ─────────────────────────────────────────── */
+  --rs-ink: #0B0F19;          /* outlines, offset shadows, text on light */
+  --rs-paper: #FFFDF6;        /* floating panels, cards, buttons */
+  --rs-sun: #FFD60A;          /* primary action + brand wordmark only */
+
+  /* ── Colour: the fork duality ─────────────────────────────── */
+  --rs-real: #21B8A6;         /* reality: fills, pins, chips (ink text on top) */
+  --rs-real-tint: #C9F2EC;    /* reality value pills on paper */
+  --rs-real-deep: #123B49;    /* reality half of split backgrounds */
+  --rs-fork: #FF6B3D;         /* your fork: fills, pins, chips, display accents */
+  --rs-fork-tint: #FFD9CB;    /* fork value pills on paper */
+  --rs-fork-deep: #4A1F2A;    /* fork half of split backgrounds */
+
+  /* ── Colour: neutrals ─────────────────────────────────────── */
+  --rs-space: #070913;        /* page background behind the globe */
+  --rs-hud: #151B2E;          /* dense dark surfaces (tables, dashboard) */
+  --rs-hud-line: #2A3350;     /* dividers on dark surfaces */
+  --rs-hud-raised: #1C2340;   /* cards on --rs-hud */
+  --rs-hud-raised-hover: #232C4E;
+  --rs-paper-sunk: #E7E9EF;   /* meter tracks, tab rails on paper */
+  --rs-paper-cool: #EEF4FF;   /* agent quote callouts on paper */
+  --rs-text-on-dark: #E9ECF2;
+  --rs-muted-on-dark: #A3ABBD;
+  --rs-muted-on-paper: #5B6170;
+
+  /* ── Colour: status (never the only signal: pair with ▲▼ or text) */
+  --rs-good: #0F7A3A;         /* on paper */
+  --rs-bad: #C2362B;          /* on paper */
+  --rs-good-on-dark: #5CD98A;
+  --rs-bad-on-dark: #FF7B7B;
+
+  /* ── Colour: government branches (categorical; avoids teal/coral,
+     which are reserved for reality/fork) ────────────────────── */
+  --rs-branch-head: #FFD60A;
+  --rs-branch-executive: #6EA8FF;
+  --rs-branch-legislative: #7ED957;
+  --rs-branch-judicial: #C7A6FF;
+  --rs-branch-security: #FF8FA3;
+  --rs-branch-economic: #F2B66D;
+  --rs-branch-party: #9AA4B8;
+
+  /* ── Type ─────────────────────────────────────────────────── */
+  --rs-font-display: 'Fredoka', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --rs-font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --rs-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --rs-text-2xs: 10px;   /* chip labels, table headers (uppercase, tracked) */
+  --rs-text-xs: 11px;    /* eyebrows, metadata */
+  --rs-text-sm: 13px;    /* panel body, stats */
+  --rs-text-md: 15px;    /* default body */
+  --rs-text-lg: 20px;    /* button labels (display) */
+  --rs-text-xl: 26px;    /* panel titles (display) */
+  --rs-text-2xl: 40px;   /* page titles (display) */
+  --rs-text-hero: clamp(38px, 5vw, 66px);
+
+  --rs-tracking-label: 0.08em;
+
+  /* ── Space (4px base) ─────────────────────────────────────── */
+  --rs-space-1: 4px;
+  --rs-space-2: 8px;
+  --rs-space-3: 12px;
+  --rs-space-4: 16px;
+  --rs-space-5: 24px;
+  --rs-space-6: 32px;
+  --rs-space-7: 48px;
+
+  /* ── Shape & depth ────────────────────────────────────────── */
+  --rs-border: 3px solid var(--rs-ink);       /* every floating surface */
+  --rs-border-thin: 2px solid var(--rs-ink);  /* pills, inner elements */
+  --rs-radius-sm: 7px;    /* pills, flags, small tiles */
+  --rs-radius-md: 12px;   /* buttons, chips, inputs */
+  --rs-radius-lg: 18px;   /* panels, dialogs */
+  --rs-shadow-sm: 3px 3px 0 var(--rs-ink);    /* chips, toasts */
+  --rs-shadow-md: 5px 5px 0 var(--rs-ink);    /* cards */
+  --rs-shadow-lg: 8px 8px 0 var(--rs-ink);    /* hero panels, the globe */
+  --rs-shadow-press: 0 5px 0 var(--rs-ink);   /* buttons at rest */
+  --rs-shadow-pressed: 0 1px 0 var(--rs-ink); /* buttons :active */
+
+  /* ── Motion ───────────────────────────────────────────────── */
+  --rs-ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --rs-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --rs-dur-fast: 90ms;    /* button press */
+  --rs-dur-med: 220ms;    /* hovers, tab switches */
+  --rs-dur-slow: 450ms;   /* toasts popping in, bars filling */
+
+  /* ── Focus ────────────────────────────────────────────────── */
+  --rs-focus: 3px solid var(--rs-sun);
+  --rs-focus-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --rs-dur-fast: 0ms;
+    --rs-dur-med: 0ms;
+    --rs-dur-slow: 0ms;
+  }
+}

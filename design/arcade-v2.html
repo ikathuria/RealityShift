@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Arcade Direction v2</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap">
+<style>
+  :root { --ink:#0b0f19; --y:#FFE600; --paper:#fff; --page:#f4f3ef; --text:#15171c; --muted:#5d6068; --up:#1f9d55; --down:#d63a3a; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page:#101114; --text:#eceae4; --muted:#9a9ca3; } }
+  :root[data-theme="dark"] { --page:#101114; --text:#eceae4; --muted:#9a9ca3; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--page); color:var(--text); font:15px/1.5 'Plus Jakarta Sans',system-ui,sans-serif; }
+  main { max-width:1180px; margin:0 auto; padding:40px 16px 80px; }
+  h1 { font:700 30px/1.1 'Fredoka'; margin:0 0 6px; }
+  .lede { color:var(--muted); max-width:64ch; margin:0 0 28px; }
+
+  .stage { position:relative; overflow:hidden; border:3px solid var(--ink); border-radius:14px; min-height:600px;
+    background:linear-gradient(#4a9be0,#1f5fa8); color:#fff; }
+  .land { position:absolute; left:-80px; bottom:-160px; width:720px; height:560px; border-radius:48% 52% 45% 55%; background:#5cc46a; border:4px solid var(--ink); }
+  .land2 { position:absolute; left:420px; bottom:-60px; width:260px; height:200px; border-radius:50%; background:#e8c15a; border:4px solid var(--ink); }
+  .pin { position:absolute; display:flex; align-items:center; gap:6px; font:700 12px 'Plus Jakarta Sans'; }
+  .pin i { width:14px; height:14px; border-radius:50%; border:3px solid var(--ink); background:var(--y); }
+  .pin.you i { width:20px; height:20px; box-shadow:0 0 0 6px #ffe60055; }
+  .pin span { background:var(--ink); padding:2px 8px; border-radius:6px; }
+  .pin.rival i { background:#ff6b6b; }
+
+  /* top HUD */
+  .hud { position:absolute; left:16px; right:16px; top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .logo { font:700 24px 'Fredoka'; color:var(--y); text-shadow:2px 2px 0 var(--ink); margin-right:6px; }
+  .chip { background:var(--ink); padding:7px 12px; border-radius:9px; font:700 13px 'Plus Jakarta Sans'; display:flex; gap:8px; align-items:center; }
+  .chip b { font:700 16px 'Fredoka'; color:var(--y); }
+  .turn { background:var(--paper); color:var(--ink); border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink); padding:4px 12px; border-radius:10px; display:flex; align-items:center; gap:10px; }
+  .turn small { font:700 11px 'Plus Jakarta Sans'; text-transform:uppercase; letter-spacing:.06em; color:#5d6068; }
+  .turn strong { font:700 22px 'Fredoka'; }
+  .clock { width:28px; height:28px; border-radius:50%; border:3px solid var(--ink); background:conic-gradient(var(--y) 0 68%, #e8eaf0 68% 100%); }
+  .sp { flex:1; }
+
+  /* dossier */
+  .panel { position:absolute; right:16px; top:76px; width:320px; background:var(--paper); color:var(--ink); border:3px solid var(--ink); border-radius:14px; box-shadow:6px 6px 0 var(--ink); }
+  .ph { display:flex; align-items:center; gap:12px; padding:14px 16px 10px; }
+  .flag { width:44px; height:44px; border-radius:10px; border:3px solid var(--ink); background:repeating-linear-gradient(#d63a3a 0 5px,#fff 5px 10px); position:relative; }
+  .flag::after { content:""; position:absolute; left:0; top:0; width:20px; height:18px; background:#2a4aa8; border-right:2px solid var(--ink); border-bottom:2px solid var(--ink); }
+  .ph h3 { font:700 24px/1 'Fredoka'; margin:0; }
+  .ph .sub { font:700 12px 'Plus Jakarta Sans'; color:#5d6068; }
+  .rank { margin-left:auto; text-align:center; background:var(--y); border:3px solid var(--ink); border-radius:10px; padding:2px 8px; font:700 20px/1.1 'Fredoka'; }
+  .rank small { display:block; font:800 9px 'Plus Jakarta Sans'; letter-spacing:.06em; }
+  .body { padding:4px 16px 12px; }
+  .stat { margin-bottom:10px; font-size:13px; font-weight:700; }
+  .row { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  .delta { font-size:11px; font-weight:800; }
+  .delta.up { color:var(--up); } .delta.down { color:var(--down); }
+  .meter { position:relative; height:12px; background:#e8eaf0; border:2px solid var(--ink); border-radius:6px; margin-top:4px; overflow:hidden; }
+  .meter i { position:absolute; inset:0 auto 0 0; background:var(--ink); }
+  .meter .ghost { position:absolute; top:-2px; bottom:-2px; width:3px; background:var(--y); border-left:1px solid var(--ink); border-right:1px solid var(--ink); }
+  .agent { margin:4px 16px 12px; background:#f4f3ef; border:2px solid var(--ink); border-radius:10px; padding:10px 12px; font-size:13px; }
+  .agent .who { display:flex; gap:8px; align-items:center; font:800 11px 'Plus Jakarta Sans'; text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; }
+  .agent .face { width:22px; height:22px; border-radius:50%; border:2px solid var(--ink); background:#ffd7a8; }
+  .cta { display:block; width:calc(100% - 32px); margin:0 16px 16px; height:52px; background:var(--y); border:3px solid var(--ink); border-radius:12px; box-shadow:0 5px 0 var(--ink); font:700 20px 'Fredoka'; color:var(--ink); cursor:pointer; transition:transform .08s, box-shadow .08s; }
+  .cta:hover { transform:translateY(-2px); box-shadow:0 7px 0 var(--ink); }
+  .cta:active { transform:translateY(4px); box-shadow:0 1px 0 var(--ink); }
+  .cta:focus-visible { outline:3px solid #2a4aa8; outline-offset:3px; }
+  .cta small { display:block; font:700 11px 'Plus Jakarta Sans'; margin-top:-2px; }
+
+  /* event ticker */
+  .feed { position:absolute; left:16px; bottom:16px; width:min(420px, calc(100% - 32px)); display:flex; flex-direction:column; gap:8px; }
+  .toast { background:var(--paper); color:var(--ink); border:3px solid var(--ink); border-radius:12px; box-shadow:4px 4px 0 var(--ink); padding:8px 12px; display:flex; gap:10px; align-items:center; font-size:13px; font-weight:600; }
+  .toast .tag { font:800 10px 'Plus Jakarta Sans'; letter-spacing:.06em; text-transform:uppercase; background:var(--ink); color:var(--y); padding:3px 7px; border-radius:6px; white-space:nowrap; }
+  .toast.old { opacity:.7; transform:scale(.97); transform-origin:left; }
+  @media (prefers-reduced-motion: no-preference) { .toast:first-child { animation:pop .5s cubic-bezier(.34,1.56,.64,1); } }
+  @keyframes pop { from { transform:translateY(12px) scale(.9); opacity:0; } }
+
+  @media (max-width:720px) {
+    .stage { min-height:0; padding-bottom:16px; }
+    .hud, .panel, .feed { position:relative; left:auto; right:auto; top:auto; bottom:auto; margin:14px 16px 0; width:auto; }
+    .land, .land2, .pin { display:none; }
+  }
+
+  /* annotations */
+  ol.notes { margin:28px 0 0; padding:0; list-style:none; display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:18px 28px; }
+  ol.notes li { counter-increment:n; padding-left:36px; position:relative; font-size:14px; color:var(--muted); }
+  ol.notes li::before { content:counter(n); position:absolute; left:0; top:0; width:24px; height:24px; border-radius:50%; background:var(--y); color:var(--ink); border:2px solid var(--ink); font:700 13px/20px 'Fredoka'; text-align:center; }
+  ol.notes b { color:var(--text); display:block; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Refined arcade, v2: adding the game</h1>
+  <p class="lede">The v1 mock looked like a game but didn't play like one. It showed stats with no stakes, no clock, no rivals and nothing happening. This version adds those in the same flat, ink-outlined style. All numbers are sample values.</p>
+
+  <div class="stage">
+    <div class="land"></div><div class="land2"></div>
+    <div class="pin you" style="left:300px;top:330px"><i></i><span>You</span></div>
+    <div class="pin rival" style="left:140px;top:440px"><i></i><span>Mexico · rival</span></div>
+    <div class="pin" style="left:470px;top:470px"><i></i><span>Brazil</span></div>
+
+    <div class="hud">
+      <span class="logo">Reality Shift</span>
+      <div class="turn"><div class="clock" aria-hidden="true"></div><div><small>Turn 7 · next in</small><br><strong>3:12</strong></div></div>
+      <div class="chip">Influence <b>1,240</b></div>
+      <div class="chip">Streak <b>4</b></div>
+      <span class="sp"></span>
+      <div class="chip">Hall</div><div class="chip">Front pages</div>
+    </div>
+
+    <div class="panel">
+      <div class="ph">
+        <div class="flag" aria-hidden="true"></div>
+        <div><h3>United States</h3><div class="sub">Superpower · AI-run</div></div>
+        <div class="rank"><small>RANK</small>#2</div>
+      </div>
+      <div class="body">
+        <div class="stat"><div class="row"><span>GDP per capita</span><span>$85.4K <span class="delta up">▲ 2.1%</span></span></div><div class="meter"><i style="width:86%"></i><span class="ghost" style="left:84%"></span></div></div>
+        <div class="stat"><div class="row"><span>Military</span><span>2.9% <span class="delta up">▲ 0.4</span></span></div><div class="meter"><i style="width:36%"></i><span class="ghost" style="left:31%"></span></div></div>
+        <div class="stat"><div class="row"><span>Unemployment</span><span>4.1% <span class="delta down">▲ 0.6</span></span></div><div class="meter"><i style="width:16%"></i><span class="ghost" style="left:13%"></span></div></div>
+      </div>
+      <div class="agent">
+        <div class="who"><span class="face" aria-hidden="true"></span>President agent · turn 6</div>
+        "Raised defence spending after Mexico's tariff move. The Senate agent is pushing back."
+      </div>
+      <button class="cta">Take over!<small>Replace the AI and play this nation</small></button>
+    </div>
+
+    <div class="feed" aria-live="polite">
+      <div class="toast"><span class="tag">Breaking</span>Mexico slaps 25% tariffs on US steel</div>
+      <div class="toast old"><span class="tag">Turn 6</span>India overtakes UK in GDP ranking</div>
+    </div>
+  </div>
+
+  <ol class="notes">
+    <li><b>A clock</b>A turn counter and countdown give the world a heartbeat, so there's always a reason to check back.</li>
+    <li><b>Stakes and score</b>Rank, influence and a streak give you a way to measure yourself against other players.</li>
+    <li><b>Change, not just state</b>Arrows show movement since last turn, and the yellow tick marks where each bar started.</li>
+    <li><b>Characters</b>A quote from the AI agent currently running the country gives you someone to overthrow.</li>
+    <li><b>Things happening</b>Events pop up in a feed, and rivals are pinned on the map, so the world feels alive while you watch.</li>
+    <li><b>A juicier button</b>The main button presses down with a chunky shadow, and the label says what you're actually doing.</li>
+  </ol>
+</main>
+</body>
+</html>

@@ -1,230 +1,348 @@
-/* Arcade & Video Game Theme System for RealityShift */
-@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;0,800;1,700&family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+/* RealityShift component primitives, built on the "Arcade Fork" brand tokens.
+ * Tokens live in brand-tokens.css; usage rules live in BRAND.md.
+ *
+ * Legacy variable names (--accent-cyan, --font-heading, …) are kept as
+ * aliases so older inline styles pick up the brand automatically. New code
+ * should reference --rs-* tokens directly.
+ */
+@import './brand-tokens.css';
 
 :root {
-  /* Arcade Fonts */
-  --font-display: 'Fredoka', 'Chakra Petch', cursive, sans-serif;
-  --font-heading: 'Chakra Petch', 'Fredoka', sans-serif;
-  --font-body: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  /* ── Legacy aliases → brand tokens ────────────────────────── */
+  --font-display: var(--rs-font-display);
+  --font-heading: var(--rs-font-display);
+  --font-body: var(--rs-font-body);
 
-  /* Vibrant Game Palette */
-  --bg-deep-space: #070913;
-  --bg-hud-panel: rgba(13, 17, 31, 0.92);
-  --bg-hud-card: #151b2e;
-  --bg-hud-card-hover: #1e2640;
-  
-  --game-border-ink: #0b0f19;
-  --game-border-light: rgba(255, 255, 255, 0.15);
-  --game-border-cyan: #00F0FF;
-  --game-border-yellow: #FFE600;
-  --game-border-magenta: #FF2E93;
+  --bg-deep-space: var(--rs-space);
+  --bg-hud-panel: var(--rs-hud);
+  --bg-hud-card: var(--rs-hud-raised);
+  --bg-hud-card-hover: var(--rs-hud-raised-hover);
 
-  /* Accents */
-  --accent-cyan: #00F0FF;
-  --accent-cyan-glow: rgba(0, 240, 255, 0.4);
-  --accent-yellow: #FFE600;
-  --accent-yellow-glow: rgba(255, 230, 0, 0.4);
-  --accent-magenta: #FF2E93;
-  --accent-green: #00FF66;
-  --accent-green-glow: rgba(0, 255, 102, 0.4);
-  --accent-orange: #FF7700;
-  --accent-purple: #9D00FF;
+  --game-border-ink: var(--rs-ink);
+  --game-border-light: var(--rs-hud-line);
+  --game-border-cyan: var(--rs-real);
+  --game-border-yellow: var(--rs-sun);
+  --game-border-magenta: var(--rs-fork);
 
-  /* Game HUD Surfaces */
-  --hud-shadow: 4px 4px 0px #04060b;
-  --hud-shadow-lg: 6px 6px 0px #04060b;
-  --hud-shadow-glow-cyan: 0 0 16px rgba(0, 240, 255, 0.35);
-  --hud-shadow-glow-yellow: 0 0 16px rgba(255, 230, 0, 0.35);
-  
-  --radius-game-sm: 6px;
-  --radius-game-md: 12px;
-  --radius-game-lg: 18px;
+  /* cyan was the generic accent → reality teal; magenta was alarm → bad */
+  --accent-cyan: var(--rs-real);
+  --accent-yellow: var(--rs-sun);
+  --accent-magenta: var(--rs-bad-on-dark);
+  --accent-green: var(--rs-good-on-dark);
+  --accent-orange: var(--rs-fork);
+  --accent-purple: var(--rs-fork);
+  --accent-cyan-glow: transparent;
+  --accent-yellow-glow: transparent;
+  --accent-green-glow: transparent;
+
+  /* Hard ink shadows only. The old glow tokens resolve to the plain shadow. */
+  --hud-shadow: var(--rs-shadow-md);
+  --hud-shadow-lg: var(--rs-shadow-lg);
+  --hud-shadow-glow-cyan: var(--rs-shadow-md);
+  --hud-shadow-glow-yellow: var(--rs-shadow-md);
+  --hud-shadow-glow-green: var(--rs-shadow-md);
+
+  --radius-game-sm: var(--rs-radius-sm);
+  --radius-game-md: var(--rs-radius-md);
+  --radius-game-lg: var(--rs-radius-lg);
   --radius-game-pill: 9999px;
 }
 
-/* Global Game Elements */
-.game-font-display {
-  font-family: var(--font-display);
-  letter-spacing: 0.5px;
-}
-
+/* ── Type helpers ─────────────────────────────────────────────── */
+.game-font-display,
 .game-font-heading {
-  font-family: var(--font-heading);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
+  font-family: var(--rs-font-display);
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
-/* Chunky Game Card Styling */
+.rs-sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.game-eyebrow {
+  font: 800 var(--rs-text-xs) var(--rs-font-body);
+  letter-spacing: var(--rs-tracking-label);
+  text-transform: uppercase;
+  color: var(--rs-muted-on-dark);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rs-space-2);
+}
+.rs-paper .game-eyebrow { color: var(--rs-muted-on-paper); }
+
+/* ── Surfaces ─────────────────────────────────────────────────── */
+/* Dense dark surface: dashboard cards, tables, side panels. */
 .game-panel {
-  background: var(--bg-hud-panel);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 3px solid var(--game-border-ink);
-  outline: 1px solid var(--game-border-light);
-  border-radius: var(--radius-game-md);
-  box-shadow: var(--hud-shadow);
-  color: #fff;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  background: var(--rs-hud);
+  border: var(--rs-border);
+  outline: 1px solid var(--rs-hud-line);
+  outline-offset: -4px;
+  border-radius: var(--rs-radius-lg);
+  box-shadow: var(--rs-shadow-lg);
+  color: var(--rs-text-on-dark);
+}
+
+/* Floating paper surface: anything that sits on top of the globe. */
+.rs-paper {
+  background: var(--rs-paper);
+  color: var(--rs-ink);
+  border: var(--rs-border);
+  border-radius: var(--rs-radius-lg);
+  box-shadow: var(--rs-shadow-lg);
 }
 
 .game-card {
   background: var(--bg-hud-card);
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-game-sm);
-  box-shadow: 2px 2px 0px #000;
-  padding: 12px;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  border: var(--rs-border-thin);
+  border-radius: var(--rs-radius-md);
+  box-shadow: var(--rs-shadow-sm);
+  padding: var(--rs-space-3);
+  transition: transform var(--rs-dur-med) var(--rs-ease-out), background var(--rs-dur-med);
 }
-
 .game-card:hover {
   background: var(--bg-hud-card-hover);
-  border-color: var(--accent-cyan);
-  transform: translateY(-2px);
-  box-shadow: 4px 4px 0px #000;
+  transform: translate(-1px, -1px);
 }
 
-/* Tactile 3D Buttons */
+/* ── Buttons ──────────────────────────────────────────────────── */
 .game-button {
-  font-family: var(--font-heading);
-  font-weight: 800;
-  text-transform: uppercase;
-  font-size: 14px;
-  padding: 10px 18px;
-  border-radius: var(--radius-game-sm);
-  border: 2.5px solid var(--game-border-ink);
-  background: linear-gradient(180deg, #FFE600 0%, #FFB800 100%);
-  color: #0b0f19;
+  font: 700 var(--rs-text-md)/1 var(--rs-font-display);
+  min-height: 44px;
+  padding: 0 var(--rs-space-4);
+  border: var(--rs-border);
+  border-radius: var(--rs-radius-md);
+  background: var(--rs-sun);
+  color: var(--rs-ink);
+  box-shadow: var(--rs-shadow-press);
   cursor: pointer;
-  box-shadow: 3px 3px 0px #000;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--rs-space-2);
   text-decoration: none;
   user-select: none;
-  transition: all 0.1s ease;
+  transition: transform var(--rs-dur-fast) ease, box-shadow var(--rs-dur-fast) ease;
+}
+.game-button:hover { transform: translateY(-2px); box-shadow: 0 7px 0 var(--rs-ink); }
+.game-button:active { transform: translateY(4px); box-shadow: var(--rs-shadow-pressed); }
+.game-button:disabled,
+.game-button[aria-disabled="true"] {
+  opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: var(--rs-shadow-press);
 }
 
-.game-button:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0px #000;
-  filter: brightness(1.08);
+/* Secondary: paper. (-dark kept as the class name older screens use.) */
+.game-button-dark,
+.game-button-cyan { background: var(--rs-paper); color: var(--rs-ink); }
+.game-button-green { background: var(--rs-sun); color: var(--rs-ink); }
+.game-button-magenta { background: var(--rs-fork); color: var(--rs-ink); }
+.rs-button-real { background: var(--rs-real); color: var(--rs-ink); }
+.rs-button-fork { background: var(--rs-fork); color: var(--rs-ink); }
+.rs-button-lg { min-height: 56px; font-size: var(--rs-text-lg); border-radius: 14px; }
+
+.game-link {
+  margin-top: var(--rs-space-1);
+  padding: var(--rs-space-1) 0;
+  border: 0; background: none; cursor: pointer;
+  color: inherit; font: 800 var(--rs-text-xs) var(--rs-font-body);
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 2px;
+  text-decoration-color: var(--rs-sun);
 }
 
-.game-button:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px #000;
-}
-
-.game-button-cyan {
-  background: linear-gradient(180deg, #00F0FF 0%, #00B8FF 100%);
-  color: #070a14;
-}
-
-.game-button-magenta {
-  background: linear-gradient(180deg, #FF5EA7 0%, #FF2E93 100%);
-  color: #fff;
-}
-
-.game-button-green {
-  background: linear-gradient(180deg, #5CFF95 0%, #00D94A 100%);
-  color: #051408;
-}
-
-.game-button-dark {
-  background: linear-gradient(180deg, #252e48 0%, #151b2e 100%);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #fff;
-}
-
-.game-button-dark:hover {
-  border-color: var(--accent-cyan);
-}
-
-/* Stat Progress Bar (Arcade Health Bar style) */
-.game-stat-bar-container {
-  height: 10px;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 99px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  overflow: hidden;
-  position: relative;
-}
-
-.game-stat-bar-fill {
-  height: 100%;
-  border-radius: 99px;
-  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
-  box-shadow: 0 0 8px var(--accent-cyan-glow);
-  transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-/* Game Badges & Chips */
+/* ── Chips & badges ───────────────────────────────────────────── */
 .game-badge {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 4px;
-  border: 1.5px solid var(--game-border-ink);
-  background: #1a233b;
-  color: var(--accent-cyan);
+  font: 700 var(--rs-text-2xs) var(--rs-font-mono);
+  letter-spacing: var(--rs-tracking-label);
+  text-transform: uppercase;
+  padding: 3px var(--rs-space-2);
+  border: var(--rs-border-thin);
+  border-radius: var(--rs-radius-sm);
+  background: var(--rs-paper);
+  color: var(--rs-ink);
+  box-shadow: 2px 2px 0 var(--rs-ink);
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  text-transform: uppercase;
+  gap: var(--rs-space-1);
+}
+.game-badge-yellow { background: var(--rs-sun); }
+.game-badge-cyan,
+.rs-chip-real { background: var(--rs-real); color: var(--rs-ink); }
+.game-badge-magenta,
+.rs-chip-fork { background: var(--rs-fork); color: var(--rs-ink); }
+.game-badge-green { background: var(--rs-good-on-dark); color: var(--rs-ink); }
+
+/* Real-vs-fork value pills */
+.rs-pill {
+  font: 700 var(--rs-text-sm) var(--rs-font-mono);
+  padding: 1px var(--rs-space-2);
+  border: var(--rs-border-thin);
+  border-radius: var(--rs-radius-sm);
+  text-align: right;
+  color: var(--rs-ink);
+}
+.rs-pill-real { background: var(--rs-real-tint); }
+.rs-pill-fork { background: var(--rs-fork-tint); }
+
+/* Drift meter: teal (reality) → coral (fork), sun marker */
+.rs-drift {
+  position: relative; flex: 1; height: 14px;
+  border: var(--rs-border-thin); border-radius: var(--rs-radius-sm);
+  background: linear-gradient(90deg, var(--rs-real), var(--rs-fork));
+}
+.rs-drift > i {
+  position: absolute; top: -6px; width: 8px; height: 22px; margin-left: -4px;
+  background: var(--rs-sun); border: var(--rs-border-thin); border-radius: 3px;
+  transition: left var(--rs-dur-slow) var(--rs-ease-pop);
 }
 
-.game-badge-yellow {
-  background: #332b00;
-  color: var(--accent-yellow);
-  border-color: #5c4e00;
+/* ── Stat meters ──────────────────────────────────────────────── */
+.game-stat-bar-container {
+  position: relative;
+  height: 12px;
+  background: var(--rs-paper-sunk);
+  border: var(--rs-border-thin);
+  border-radius: var(--rs-radius-sm);
+}
+.game-panel .game-stat-bar-container { background: var(--rs-hud-line); }
+.game-stat-bar-fill {
+  height: 100%;
+  background: var(--rs-ink);
+  border-radius: 4px 0 0 4px;
+  transition: width var(--rs-dur-slow) var(--rs-ease-pop);
+}
+.game-panel .game-stat-bar-fill { background: var(--rs-text-on-dark); }
+.game-stat-bar-ghost {
+  position: absolute; top: -5px; bottom: -5px; width: 6px; margin-left: -3px;
+  background: var(--rs-sun); border: 2px solid var(--rs-ink); border-radius: 2px;
 }
 
-.game-badge-magenta {
-  background: #33001b;
-  color: var(--accent-magenta);
-  border-color: #660036;
+.game-delta { font: 800 var(--rs-text-2xs) var(--rs-font-body); }
+.game-delta.is-good { color: var(--rs-good-on-dark); }
+.game-delta.is-bad { color: var(--rs-bad-on-dark); }
+.rs-paper .game-delta.is-good { color: var(--rs-good); }
+.rs-paper .game-delta.is-bad { color: var(--rs-bad); }
+
+/* ── Tabs ─────────────────────────────────────────────────────── */
+.game-segmented {
+  display: flex;
+  padding: 3px;
+  gap: 3px;
+  background: var(--rs-paper-sunk);
+  border: var(--rs-border-thin);
+  border-radius: var(--rs-radius-md);
+}
+.game-segmented button {
+  flex: 1;
+  min-height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--rs-muted-on-paper);
+  font: 700 var(--rs-text-sm) var(--rs-font-display);
+  cursor: pointer;
+  transition: background var(--rs-dur-med);
+}
+.game-segmented button:hover { color: var(--rs-ink); }
+.game-segmented button[aria-selected="true"] {
+  background: var(--rs-paper); color: var(--rs-ink);
+  box-shadow: inset 0 0 0 2px var(--rs-ink);
 }
 
-.game-badge-green {
-  background: #003314;
-  color: var(--accent-green);
-  border-color: #006629;
+/* ── Agent quote ──────────────────────────────────────────────── */
+.game-agent-quote {
+  display: flex; gap: var(--rs-space-3); align-items: flex-start;
+  padding: var(--rs-space-3);
+  margin-bottom: var(--rs-space-3);
+  background: var(--rs-paper-cool);
+  border: var(--rs-border-thin);
+  border-radius: var(--rs-radius-md);
+  color: var(--rs-ink);
 }
 
-/* Ticker Animations */
+/* ── Event toasts ─────────────────────────────────────────────── */
+.game-toast {
+  display: flex; gap: var(--rs-space-3); align-items: center;
+  padding: var(--rs-space-2) var(--rs-space-3) var(--rs-space-2) var(--rs-space-2);
+  background: var(--rs-paper);
+  color: var(--rs-ink);
+  border: var(--rs-border);
+  border-radius: 14px;
+  box-shadow: var(--rs-shadow-md);
+  font-size: var(--rs-text-sm); line-height: 1.35;
+}
+.game-toast.is-old { opacity: 0.82; transform: scale(0.97); transform-origin: left center; }
+.game-toast-tag {
+  font: 700 var(--rs-text-2xs) var(--rs-font-mono);
+  letter-spacing: var(--rs-tracking-label); text-transform: uppercase;
+  color: var(--rs-ink); background: var(--rs-fork);
+  border: 2px solid var(--rs-ink);
+  padding: 1px 6px; border-radius: 5px;
+}
+.game-toast.is-old .game-toast-tag { background: var(--rs-paper); }
+@media (prefers-reduced-motion: no-preference) {
+  .game-toast.is-new { animation: rs-pop var(--rs-dur-slow) var(--rs-ease-pop); }
+}
+@keyframes rs-pop { from { transform: translateY(12px) scale(0.92); opacity: 0; } }
+
+/* ── Flags ────────────────────────────────────────────────────── */
+.game-flag {
+  display: inline-block; flex-shrink: 0; object-fit: cover;
+  border: 2px solid var(--rs-ink); border-radius: 3px;
+  box-shadow: 2px 2px 0 var(--rs-ink);
+  vertical-align: middle;
+}
+
+/* ── Wordmark ─────────────────────────────────────────────────── */
+.rs-wordmark {
+  font: 700 28px/1 var(--rs-font-display);
+  color: var(--rs-sun);
+  -webkit-text-stroke: 1.5px var(--rs-ink);
+  paint-order: stroke fill;
+  text-shadow: 3px 3px 0 var(--rs-ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.rs-wordmark b { color: var(--rs-fork); font-weight: 700; }
+
+/* ── Fork split (signature move 1) ────────────────────────────── */
+.rs-split-chip {
+  font: 700 var(--rs-text-xs) var(--rs-font-mono);
+  letter-spacing: var(--rs-tracking-label); text-transform: uppercase;
+  padding: 5px var(--rs-space-3);
+  border: var(--rs-border); border-radius: 10px;
+  box-shadow: var(--rs-shadow-sm);
+  color: var(--rs-ink);
+}
+
+/* ── Ticker ───────────────────────────────────────────────────── */
 @keyframes ticker {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
-
 .game-ticker-wrapper {
   overflow: hidden;
   white-space: nowrap;
-  background: linear-gradient(90deg, #15092b, #09122b);
-  border-bottom: 2px solid var(--accent-cyan);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  background: var(--rs-ink);
+  border-bottom: 3px solid var(--rs-fork);
 }
-
 .game-ticker-content {
   display: inline-block;
   animation: ticker 35s linear infinite;
 }
+.game-ticker-content:hover { animation-play-state: paused; }
 
-.game-ticker-content:hover {
-  animation-play-state: paused;
+/* ── Focus & motion ───────────────────────────────────────────── */
+.game-button:focus-visible,
+.game-segmented button:focus-visible,
+.game-link:focus-visible,
+.game-toast:focus-visible {
+  outline: var(--rs-focus);
+  outline-offset: var(--rs-focus-offset);
 }
 
-/* CRT Scanline Toggle Option */
-.crt-overlay::before {
-  content: " ";
-  display: block;
-  position: absolute;
-  top: 0; left: 0; bottom: 0; right: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-  z-index: 999;
-  background-size: 100% 3px, 6px 100%;
-  pointer-events: none;
-  opacity: 0.6;
+@media (prefers-reduced-motion: reduce) {
+  .game-ticker-content { animation: none; }
+  .game-button:hover, .game-card:hover { transform: none; }
 }
