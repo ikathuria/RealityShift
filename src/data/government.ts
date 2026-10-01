@@ -66,13 +66,13 @@ export interface Government {
 
 // Human-readable labels + accent colors (theme tokens) per branch.
 export const BRANCH_META: Record<GovBranch, { label: string; color: string }> = {
-  head_of_state: { label: 'Head of State', color: 'var(--accent-yellow)' },
-  executive:     { label: 'Executive',     color: 'var(--accent-cyan)' },
-  legislative:   { label: 'Legislative',   color: 'var(--accent-green)' },
-  judicial:      { label: 'Judiciary',     color: 'var(--accent-purple)' },
-  security:      { label: 'Security',      color: 'var(--accent-magenta)' },
-  economic:      { label: 'Economic',      color: 'var(--accent-orange)' },
-  party:         { label: 'Party',         color: '#3B82F6' },
+  head_of_state: { label: 'Head of State', color: 'var(--rs-branch-head)' },
+  executive:     { label: 'Executive',     color: 'var(--rs-branch-executive)' },
+  legislative:   { label: 'Legislative',   color: 'var(--rs-branch-legislative)' },
+  judicial:      { label: 'Judiciary',     color: 'var(--rs-branch-judicial)' },
+  security:      { label: 'Security',      color: 'var(--rs-branch-security)' },
+  economic:      { label: 'Economic',      color: 'var(--rs-branch-economic)' },
+  party:         { label: 'Party',         color: 'var(--rs-branch-party)' },
 };
 
 export const RELATION_LABELS: Record<GovRelation, string> = {

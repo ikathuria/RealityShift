@@ -252,7 +252,7 @@ export default function GovernmentGraph({ government }: { government: Government
       >
         <defs>
           <marker id="gov-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(255,255,255,0.35)" />
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--rs-muted-on-dark)" />
           </marker>
         </defs>
 
@@ -273,18 +273,18 @@ export default function GovernmentGraph({ government }: { government: Government
               || s.id === selectedNode.id || t.id === selectedNode.id;
             const midX = (x1 + x2) / 2, midY = (y1 + y2) / 2;
             return (
-              <g key={i} style={{ opacity: active ? 1 : 0.12, transition: 'opacity 0.15s' }}>
+              <g key={i} style={{ opacity: active ? 1 : 0.12, transition: 'opacity var(--rs-dur-med)' }}>
                 <line
                   x1={x1} y1={y1} x2={x2} y2={y2}
-                  stroke={active && selectedNode ? 'var(--accent-cyan)' : 'rgba(255,255,255,0.28)'}
-                  strokeWidth={active && selectedNode ? 2 : 1.2}
+                  stroke={active && selectedNode ? 'var(--rs-sun)' : 'var(--rs-hud-line)'}
+                  strokeWidth={active && selectedNode ? 2.5 : 2}
                   markerEnd="url(#gov-arrow)"
                 />
                 {selectedNode && active && (
                   <text
                     x={midX} y={midY - 3}
                     textAnchor="middle"
-                    style={{ fill: 'var(--accent-cyan)', fontSize: 9, fontFamily: 'var(--font-heading)', pointerEvents: 'none' }}
+                    style={{ fill: 'var(--rs-sun)', fontSize: 'var(--rs-text-2xs)', fontWeight: 700, fontFamily: 'var(--rs-font-mono)', paintOrder: 'stroke', stroke: 'var(--rs-space)', strokeWidth: 3, pointerEvents: 'none' }}
                   >
                     {RELATION_LABELS[l.relation]}
                   </text>
@@ -304,22 +304,28 @@ export default function GovernmentGraph({ government }: { government: Government
                 key={n.id}
                 transform={`translate(${n.x},${n.y})`}
                 onPointerDown={e => onNodePointerDown(e, n)}
-                style={{ cursor: 'pointer', opacity: dim ? 0.25 : 1, transition: 'opacity 0.15s' }}
+                style={{ cursor: 'pointer', opacity: dim ? 0.25 : 1, transition: 'opacity var(--rs-dur-med)' }}
               >
                 <circle
                   r={r}
-                  fill="var(--bg-hud-card)"
-                  stroke={color}
-                  strokeWidth={isSel ? 4 : 2.5}
-                  style={{ filter: isSel ? `drop-shadow(0 0 10px ${color})` : `drop-shadow(0 0 4px ${color})` }}
+                  cx={isSel ? 4 : 3}
+                  cy={isSel ? 4 : 3}
+                  fill="var(--rs-ink)"
                 />
+                <circle
+                  r={r}
+                  fill={color}
+                  stroke="var(--rs-ink)"
+                  strokeWidth={3}
+                />
+                {isSel && <circle r={r + 5} fill="none" stroke="var(--rs-sun)" strokeWidth={3} />}
                 {n.kind === 'person' && (
-                  <circle r={4} cy={-r + 6} fill={color} stroke="var(--bg-hud-card)" strokeWidth={1.5} />
+                  <circle r={4} cy={-r + 6} fill="var(--rs-paper)" stroke="var(--rs-ink)" strokeWidth={2} />
                 )}
                 <text
                   textAnchor="middle"
                   y={r + 14}
-                  style={{ fill: '#fff', fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-heading)', pointerEvents: 'none' }}
+                  style={{ fill: 'var(--rs-text-on-dark)', fontSize: 'var(--rs-text-xs)', fontWeight: 700, fontFamily: 'var(--rs-font-body)', paintOrder: 'stroke', stroke: 'var(--rs-space)', strokeWidth: 3, pointerEvents: 'none' }}
                 >
                   {truncate(n.label, 24)}
                 </text>
@@ -327,7 +333,7 @@ export default function GovernmentGraph({ government }: { government: Government
                   <text
                     textAnchor="middle"
                     y={r + 27}
-                    style={{ fill: color, fontSize: 10, fontFamily: 'var(--font-heading)', pointerEvents: 'none' }}
+                    style={{ fill: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-2xs)', fontWeight: 700, fontFamily: 'var(--rs-font-body)', paintOrder: 'stroke', stroke: 'var(--rs-space)', strokeWidth: 3, pointerEvents: 'none' }}
                   >
                     {truncate(n.holder, 26)}
                   </text>
@@ -339,56 +345,57 @@ export default function GovernmentGraph({ government }: { government: Government
       </svg>
 
       {/* Controls */}
-      <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 6 }}>
+      <div role="toolbar" aria-label="Graph view" style={{ position: 'absolute', top: 'var(--rs-space-3)', right: 'var(--rs-space-3)', display: 'flex', gap: 'var(--rs-space-2)' }}>
         <button className="game-button game-button-dark" style={ctrlBtn} onClick={() => setView(v => ({ ...v, k: clamp(v.k * 1.2, 0.35, 3) }))} aria-label="Zoom in">+</button>
         <button className="game-button game-button-dark" style={ctrlBtn} onClick={() => setView(v => ({ ...v, k: clamp(v.k / 1.2, 0.35, 3) }))} aria-label="Zoom out">−</button>
-        <button className="game-button game-button-dark" style={{ ...ctrlBtn, width: 'auto', padding: '0 10px', fontSize: 10 }} onClick={fitView}>⤢ FIT</button>
-        <button className="game-button game-button-dark" style={{ ...ctrlBtn, width: 'auto', padding: '0 10px', fontSize: 10 }} onClick={() => simRef.current?.alpha(0.9).restart()}>↻ REPLAY</button>
+        <button className="game-button game-button-dark" style={{ ...ctrlBtn, width: 'auto', padding: '0 var(--rs-space-3)', fontSize: 'var(--rs-text-sm)' }} onClick={fitView}>Fit</button>
+        <button className="game-button game-button-dark" style={{ ...ctrlBtn, width: 'auto', padding: '0 var(--rs-space-3)', fontSize: 'var(--rs-text-sm)' }} onClick={() => simRef.current?.alpha(0.9).restart()}>Shake it up</button>
       </div>
 
       {/* Branch legend */}
-      <div style={{ position: 'absolute', bottom: 12, left: 12, display: 'flex', flexWrap: 'wrap', gap: '6px 12px', maxWidth: 'calc(100% - 24px)' }}>
+      <ul aria-label="Branches" className="game-panel" style={{ position: 'absolute', bottom: 'var(--rs-space-3)', left: 'var(--rs-space-3)', margin: 0, listStyle: 'none', padding: 'var(--rs-space-2) var(--rs-space-3)', boxShadow: 'var(--rs-shadow-sm)', display: 'flex', flexWrap: 'wrap', gap: 'var(--rs-space-1) var(--rs-space-3)', maxWidth: 'calc(100% - 200px)' }}>
         {Object.entries(BRANCH_META).map(([key, meta]) => (
-          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: meta.color, boxShadow: `0 0 6px ${meta.color}`, flexShrink: 0 }} />
-            <span style={{ color: 'var(--text-muted, #8a93b2)', fontSize: 10, fontFamily: 'var(--font-heading)' }}>{meta.label}</span>
-          </div>
+          <li key={key} style={{ display: 'flex', alignItems: 'center', gap: 'var(--rs-space-1)' }}>
+            <span aria-hidden="true" style={{ width: 12, height: 12, borderRadius: '50%', background: meta.color, border: 'var(--rs-border-thin)', flexShrink: 0 }} />
+            <span style={{ color: 'var(--rs-text-on-dark)', fontSize: 'var(--rs-text-xs)', fontWeight: 700 }}>{meta.label}</span>
+          </li>
         ))}
-      </div>
+      </ul>
 
       {/* Selected node detail card */}
       {selectedNode && (
-        <div
-          className="game-card"
-          style={{ position: 'absolute', top: 12, left: 12, width: 250, padding: '14px 16px', maxWidth: 'calc(100% - 24px)' }}
+        <section
+          aria-live="polite"
+          className="rs-paper"
+          style={{ position: 'absolute', top: 'var(--rs-space-3)', left: 'var(--rs-space-3)', width: 260, padding: 'var(--rs-space-4)', maxWidth: 'calc(100% - 24px)', boxSizing: 'border-box', boxShadow: 'var(--rs-shadow-md)' }}
         >
-          <div className="game-badge" style={{ background: BRANCH_META[selectedNode.branch].color, color: '#000', marginBottom: 8 }}>
+          <div className="game-badge" style={{ background: BRANCH_META[selectedNode.branch].color, color: 'var(--rs-ink)', marginBottom: 'var(--rs-space-2)' }}>
             {BRANCH_META[selectedNode.branch].label}
           </div>
-          <div className="game-font-heading" style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>
+          <h2 style={{ fontFamily: 'var(--rs-font-display)', fontSize: 'var(--rs-text-lg)', fontWeight: 700, lineHeight: 1.1, margin: 0 }}>
             {selectedNode.label}
-          </div>
+          </h2>
           {selectedNode.holder && (
-            <div style={{ color: BRANCH_META[selectedNode.branch].color, fontSize: 13, fontWeight: 700, marginTop: 2 }}>
+            <div style={{ fontSize: 'var(--rs-text-sm)', fontWeight: 700, marginTop: 'var(--rs-space-1)' }}>
               {selectedNode.holder}
             </div>
           )}
           {selectedNode.note && (
-            <div style={{ color: 'var(--text-secondary, #b7c0dd)', fontSize: 12, lineHeight: 1.5, marginTop: 8 }}>
+            <p style={{ color: 'var(--rs-muted-on-paper)', fontSize: 'var(--rs-text-sm)', lineHeight: 1.45, margin: 'var(--rs-space-2) 0 0' }}>
               {selectedNode.note}
-            </div>
+            </p>
           )}
-        </div>
+        </section>
       )}
     </div>
   );
 }
 
 const ctrlBtn: React.CSSProperties = {
-  width: 32,
-  height: 32,
+  width: 44,
+  height: 44,
   padding: 0,
-  fontSize: 16,
+  fontSize: 'var(--rs-text-lg)',
   lineHeight: 1,
   display: 'flex',
   alignItems: 'center',

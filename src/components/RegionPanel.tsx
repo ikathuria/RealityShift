@@ -14,16 +14,16 @@ interface SliderCfg {
 
 const SLIDERS: SliderCfg[] = [
   {
-    key: 'housing', label: 'Housing Policy', min: 0, max: 10, step: 0.5, unit: '/10',
-    desc: 'Rent control & zoning strictness',
+    key: 'housing', label: 'Housing policy', min: 0, max: 10, step: 0.5, unit: '/10',
+    desc: 'How tight rent control and zoning are',
   },
   {
-    key: 'transport', label: 'Transit Funding', min: 0, max: 10, step: 0.5, unit: '/10',
-    desc: 'Public transport investment',
+    key: 'transport', label: 'Transit funding', min: 0, max: 10, step: 0.5, unit: '/10',
+    desc: 'Money for buses, trains and trams',
   },
   {
-    key: 'local_tax', label: 'Local Tax Rate', min: 5, max: 40, step: 1, unit: '%',
-    desc: 'Municipal revenue rate',
+    key: 'local_tax', label: 'Local tax rate', min: 5, max: 40, step: 1, unit: '%',
+    desc: 'What the city takes from each paycheck',
   },
 ];
 
@@ -53,40 +53,28 @@ export default function RegionPanel() {
   const hasDraft = Object.keys(regionDraft).length > 0;
 
   return (
-    <div style={{
-      position:        'absolute',
-      top:             16,
-      right:           16,
-      width:           300,
-      background:      'rgba(10,10,20,0.93)',
-      border:          '1px solid rgba(255,255,255,0.1)',
-      borderRadius:    12,
-      color:           '#fff',
-      boxShadow:       'var(--shadow-floating)',
-      backdropFilter:  'var(--surface-floating-blur)',
-      zIndex:          30,
-      overflow:        'hidden',
+    <section aria-label={`${selectedRegion.name} region`} className="rs-paper" style={{
+      position: 'absolute',
+      top:      'var(--rs-space-4)',
+      right:    'var(--rs-space-4)',
+      width:    300,
+      maxWidth: 'calc(100% - 2 * var(--rs-space-4))',
+      zIndex:   30,
+      overflow: 'hidden',
     }}>
       {/* Header */}
-      <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ padding: 'var(--rs-space-4) var(--rs-space-4) var(--rs-space-3)', borderBottom: 'var(--rs-border-thin)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--rs-space-2)' }}>
           <div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 3 }}>
-              Region
-            </div>
-            <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.2 }}>
+            <div className="game-eyebrow" style={{ marginBottom: 'var(--rs-space-1)' }}>Region</div>
+            <h2 className="game-font-display" style={{ fontSize: 'var(--rs-text-xl)', lineHeight: 1.05, margin: 0 }}>
               {selectedRegion.name}
-            </div>
-            <div style={{ marginTop: 4, display: 'flex', gap: 6, alignItems: 'center' }}>
-              <span style={{
-                fontSize: 10, fontWeight: 700,
-                background: 'rgba(99,102,241,0.2)', color: '#a78bfa',
-                padding: '2px 7px', borderRadius: 4,
-              }}>
-                {selectedRegion.countryCode}
-              </span>
+            </h2>
+            <div style={{ marginTop: 'var(--rs-space-2)', display: 'flex', gap: 'var(--rs-space-2)', alignItems: 'center', flexWrap: 'wrap' }}>
+              <span className="game-badge">{selectedRegion.countryCode}</span>
+              {isInFork && <span className="game-badge rs-chip-fork">Your fork</span>}
               {existing?.population !== undefined && (
-                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: 'var(--rs-text-xs)', color: 'var(--rs-muted-on-paper)', fontWeight: 700 }}>
                   Pop. {formatPop(existing.population)}
                 </span>
               )}
@@ -94,47 +82,45 @@ export default function RegionPanel() {
           </div>
           <button
             onClick={() => selectRegion(null)}
-            style={{
-              background: 'none', border: 'none', color: 'var(--text-muted)',
-              cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: 4,
-            }}
+            aria-label={`Close ${selectedRegion.name}`}
+            className="game-button game-button-dark"
+            style={{ width: 44, padding: 0, flexShrink: 0 }}
           >
-            ×
+            <span aria-hidden="true">×</span>
           </button>
         </div>
       </div>
 
       {/* Policy sliders */}
-      <div style={{ padding: '14px 16px' }}>
-        <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
-          Local Policies
-        </div>
+      <div style={{ padding: 'var(--rs-space-4)' }}>
+        <h3 className="game-eyebrow" style={{ margin: '0 0 var(--rs-space-3)' }}>Local policies</h3>
 
         {SLIDERS.map(cfg => {
           const current = val(cfg.key);
+          const digits  = cfg.step < 1 ? 1 : 0;
           const delta   = current - base[cfg.key];
-          const deltaStr = delta === 0 ? '' :
-            (delta > 0 ? `+${delta.toFixed(cfg.step < 1 ? 1 : 0)}` : delta.toFixed(cfg.step < 1 ? 1 : 0));
-          const deltaColor = delta > 0 ? '#34d399' : delta < 0 ? '#f87171' : 'var(--text-muted)';
+          const deltaStr = delta === 0 ? '' : `${delta > 0 ? '▲' : '▼'} ${Math.abs(delta).toFixed(digits)}`;
+          const deltaColor = delta > 0 ? 'var(--rs-good)' : 'var(--rs-bad)';
+          const inputId = `region-${cfg.key}`;
 
           return (
-            <div key={cfg.key} style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+            <div key={cfg.key} style={{ marginBottom: 'var(--rs-space-4)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--rs-space-2)', marginBottom: 'var(--rs-space-1)' }}>
                 <div>
-                  <span style={{ fontSize: 12, color: '#d1d5db' }}>{cfg.label}</span>
-                  <div style={{ fontSize: 10, color: 'var(--text-faint)', marginTop: 1 }}>{cfg.desc}</div>
+                  <label htmlFor={inputId} style={{ fontSize: 'var(--rs-text-sm)', fontWeight: 700 }}>{cfg.label}</label>
+                  <div style={{ fontSize: 'var(--rs-text-2xs)', color: 'var(--rs-muted-on-paper)', marginTop: 1 }}>{cfg.desc}</div>
                 </div>
-                <span style={{ fontSize: 12, textAlign: 'right' }}>
-                  <span style={{ fontWeight: 600 }}>
-                    {current.toFixed(cfg.step < 1 ? 1 : 0)}
+                <span style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  <span className={`rs-pill ${isInFork ? 'rs-pill-fork' : 'rs-pill-real'}`}>
+                    {current.toFixed(digits)}{cfg.unit}
                   </span>
-                  <span style={{ color: 'var(--text-muted)' }}>{cfg.unit}</span>
                   {deltaStr && (
-                    <span style={{ marginLeft: 5, color: deltaColor, fontSize: 11 }}>{deltaStr}</span>
+                    <span style={{ marginLeft: 'var(--rs-space-1)', color: deltaColor, fontSize: 'var(--rs-text-2xs)', fontWeight: 800, fontFamily: 'var(--rs-font-mono)' }}>{deltaStr}</span>
                   )}
                 </span>
               </div>
               <input
+                id={inputId}
                 type="range"
                 min={cfg.min}
                 max={cfg.max}
@@ -142,15 +128,15 @@ export default function RegionPanel() {
                 value={current}
                 onChange={e => setRegionDraft({ [cfg.key]: parseFloat(e.target.value) })}
                 disabled={!isInFork}
-                style={{ width: '100%', accentColor: '#6366f1', opacity: isInFork ? 1 : 0.5 }}
+                style={{ width: '100%', minHeight: 44, accentColor: 'var(--rs-fork)', opacity: isInFork ? 1 : 0.5 }}
               />
             </div>
           );
         })}
 
         {!isInFork && (
-          <p style={{ fontSize: 11, color: 'var(--text-faint)', margin: '4px 0 8px', textAlign: 'center' }}>
-            Take over a country to edit regional policies
+          <p style={{ fontSize: 'var(--rs-text-xs)', color: 'var(--rs-muted-on-paper)', margin: 'var(--rs-space-1) 0 var(--rs-space-2)', textAlign: 'center' }}>
+            Reality is read-only. Take over a country to start meddling locally.
           </p>
         )}
 
@@ -158,28 +144,23 @@ export default function RegionPanel() {
           <button
             onClick={() => saveRegionPolicy(worldId)}
             disabled={!hasDraft}
-            style={{
-              width: '100%', padding: '9px 0', borderRadius: 8, border: 'none',
-              background: hasDraft ? 'rgba(99,102,241,0.8)' : 'rgba(255,255,255,0.06)',
-              color: hasDraft ? '#fff' : 'var(--text-faint)',
-              fontSize: 13, fontWeight: 600,
-              cursor: hasDraft ? 'pointer' : 'default',
-              transition: 'background 0.2s',
-            }}
+            className="game-button"
+            style={{ width: '100%' }}
           >
-            💾 Save Region Policy
+            {hasDraft ? 'Save region policy' : 'Move a slider to save'}
           </button>
         )}
       </div>
 
       {/* Footer hint */}
-      <div style={{
-        padding: '8px 16px 12px',
-        borderTop: '1px solid rgba(255,255,255,0.05)',
-        fontSize: 11, color: '#374151', textAlign: 'center',
+      <p style={{
+        margin: 0,
+        padding: 'var(--rs-space-2) var(--rs-space-4) var(--rs-space-3)',
+        borderTop: 'var(--rs-border-thin)',
+        fontSize: 'var(--rs-text-xs)', color: 'var(--rs-muted-on-paper)', textAlign: 'center',
       }}>
-        Regional changes influence national agent decisions
-      </div>
-    </div>
+        Local tweaks nudge what your national AI leader decides next.
+      </p>
+    </section>
   );
 }

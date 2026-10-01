@@ -5,22 +5,18 @@ function DecisionEntry({ d }: { d: AgentDecision }) {
   return (
     <div style={{
       padding: '10px 0',
-      borderBottom: '1px solid rgba(255,255,255,0.06)',
+      borderBottom: 'var(--rs-border-thin)',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-        <span style={{ fontWeight: 600, fontSize: 13 }}>Year {d.year}</span>
+        <span style={{ font: '700 var(--rs-text-md) var(--rs-font-display)' }}>Year {d.year}</span>
         {d.historical_parallel && (
-          <span style={{
-            fontSize: 10, color: '#a78bfa',
-            background: 'rgba(167,139,250,0.1)',
-            padding: '2px 6px', borderRadius: 4,
-          }}>
-            ⟳ {d.historical_parallel.name}
+          <span className="game-badge" title="Closest historical parallel" style={{ textTransform: 'none', letterSpacing: 0, maxWidth: '60%' }}>
+            Like {d.historical_parallel.name}
           </span>
         )}
       </div>
 
-      <p style={{ fontSize: 12, color: '#d1d5db', lineHeight: 1.5, margin: '0 0 6px' }}>
+      <p style={{ fontSize: 'var(--rs-text-sm)', fontWeight: 500, lineHeight: 1.5, margin: '0 0 var(--rs-space-2)' }}>
         {d.reasoning}
       </p>
 
@@ -32,13 +28,8 @@ function DecisionEntry({ d }: { d: AgentDecision }) {
             .map(([k, v]) => {
               const val = v as number;
               return (
-                <span key={k} style={{
-                  fontSize: 10,
-                  color: val > 0 ? '#34d399' : '#f87171',
-                  background: val > 0 ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)',
-                  padding: '2px 6px', borderRadius: 4,
-                }}>
-                  {k.replace(/_delta$/, '').replace(/_/g, ' ')} {val > 0 ? '+' : ''}{val.toFixed(2)}
+                <span key={k} className="game-badge" style={{ textTransform: 'none', letterSpacing: 0 }}>
+                  {k.replace(/_delta$/, '').replace(/_/g, ' ')} {val > 0 ? '▲' : '▼'} {Math.abs(val).toFixed(2)}
                 </span>
               );
             })}
@@ -52,17 +43,17 @@ export default function DecisionLog({ countryCode }: { countryCode: string }) {
   const decisions = useWorldStore(s => s.countryDecisions[countryCode]);
 
   if (!decisions) {
-    return <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading decision log…</p>;
+    return <p style={{ fontSize: 'var(--rs-text-sm)', fontWeight: 600 }}>Loading the agent's decision log…</p>;
   }
 
   if (decisions.length === 0) {
-    return <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No agent decisions recorded yet.</p>;
+    return <p style={{ fontSize: 'var(--rs-text-sm)', fontWeight: 600 }}>No decisions yet. The agent acts on the next turn.</p>;
   }
 
   return (
     <div>
-      <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
-        Agent Decision Log
+      <div className="game-eyebrow" style={{ marginBottom: 'var(--rs-space-2)' }}>
+        Agent decision log
       </div>
       {decisions.map(d => <DecisionEntry key={d.id} d={d} />)}
     </div>

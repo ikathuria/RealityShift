@@ -10,16 +10,16 @@ interface SliderConfig {
 }
 
 const INDICATOR_SLIDERS: SliderConfig[] = [
-  { key: 'military_spend',   label: 'Military Spend',   min: 0,  max: 20, step: 0.1, unit: '% GDP' },
-  { key: 'education_spend',  label: 'Education Spend',  min: 0,  max: 15, step: 0.1, unit: '% GDP' },
-  { key: 'healthcare_spend', label: 'Healthcare Spend', min: 0,  max: 20, step: 0.1, unit: '% GDP' },
-  { key: 'tax_rate',         label: 'Tax Revenue',      min: 5,  max: 60, step: 1,   unit: '% GDP' },
+  { key: 'military_spend',   label: 'Military spend',   min: 0,  max: 20, step: 0.1, unit: '% GDP' },
+  { key: 'education_spend',  label: 'Education spend',  min: 0,  max: 15, step: 0.1, unit: '% GDP' },
+  { key: 'healthcare_spend', label: 'Healthcare spend', min: 0,  max: 20, step: 0.1, unit: '% GDP' },
+  { key: 'tax_rate',         label: 'Tax revenue',      min: 5,  max: 60, step: 1,   unit: '% GDP' },
   { key: 'unemployment',     label: 'Unemployment',     min: 0,  max: 30, step: 0.5, unit: '%'     },
 ];
 
 const POLICY_SLIDERS: SliderConfig[] = [
-  { key: 'trade_openness', label: 'Trade Openness', min: 0, max: 10, step: 0.5, unit: '/10' },
-  { key: 'press_freedom',  label: 'Press Freedom',  min: 0, max: 10, step: 0.5, unit: '/10' },
+  { key: 'trade_openness', label: 'Trade openness', min: 0, max: 10, step: 0.5, unit: '/10' },
+  { key: 'press_freedom',  label: 'Press freedom',  min: 0, max: 10, step: 0.5, unit: '/10' },
 ];
 
 interface Props {
@@ -33,42 +33,40 @@ function Slider({ cfg, base, value, onChange }: {
   value: number;
   onChange: (v: number) => void;
 }) {
+  const digits = cfg.step < 1 ? 1 : 0;
   const delta = value - base;
-  const deltaStr = delta === 0 ? '' : (delta > 0 ? `+${delta.toFixed(cfg.step < 1 ? 1 : 0)}` : delta.toFixed(cfg.step < 1 ? 1 : 0));
-  const deltaColor = delta > 0 ? 'var(--accent-green)' : delta < 0 ? 'var(--accent-magenta)' : 'var(--text-muted)';
+  const deltaStr = delta === 0 ? '' : `${delta > 0 ? '▲' : '▼'} ${Math.abs(delta).toFixed(digits)}`;
+  const deltaColor = delta > 0 ? 'var(--rs-good-on-dark)' : 'var(--rs-bad-on-dark)';
+  const inputId = `policy-${cfg.key}`;
 
   return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, alignItems: 'center' }}>
-        <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600 }}>{cfg.label}</span>
-        <span style={{ fontFamily: 'var(--font-heading)', fontSize: 12 }}>
-          <span style={{ fontWeight: 800, color: 'var(--accent-yellow)' }}>{value.toFixed(cfg.step < 1 ? 1 : 0)}</span>
-          <span style={{ color: 'var(--text-muted)', fontSize: 10 }}> {cfg.unit}</span>
+    <div style={{ marginBottom: 'var(--rs-space-4)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--rs-space-1)', alignItems: 'center', gap: 'var(--rs-space-2)', flexWrap: 'wrap' }}>
+        <label htmlFor={inputId} style={{ fontSize: 'var(--rs-text-sm)', color: 'var(--rs-text-on-dark)', fontWeight: 700 }}>{cfg.label}</label>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--rs-space-1)' }}>
+          <span className="rs-pill rs-pill-real" title="Reality">
+            <span className="rs-sr-only">Real: </span>{base.toFixed(digits)}
+          </span>
+          <span className="rs-pill rs-pill-fork" title="Your fork">
+            <span className="rs-sr-only">Your fork: </span>{value.toFixed(digits)}
+          </span>
+          <span style={{ color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-2xs)' }}>{cfg.unit}</span>
           {deltaStr && (
-            <span style={{
-              marginLeft: 6, color: deltaColor, fontSize: 10, fontWeight: 800,
-              background: 'rgba(0,0,0,0.4)', padding: '1px 5px', borderRadius: 4,
-              border: `1px solid ${deltaColor}`,
-            }}>
+            <span style={{ color: deltaColor, fontSize: 'var(--rs-text-2xs)', fontWeight: 800, fontFamily: 'var(--rs-font-mono)' }}>
               {deltaStr}
             </span>
           )}
         </span>
       </div>
       <input
+        id={inputId}
         type="range"
         min={cfg.min}
         max={cfg.max}
         step={cfg.step}
         value={value}
         onChange={e => onChange(parseFloat(e.target.value))}
-        style={{
-          width: '100%',
-          accentColor: 'var(--accent-cyan)',
-          cursor: 'pointer',
-          height: 6,
-          borderRadius: 3,
-        }}
+        style={{ width: '100%', minHeight: 44, accentColor: 'var(--rs-fork)', cursor: 'pointer' }}
       />
     </div>
   );
@@ -87,9 +85,10 @@ export default function PolicyEditor({ baseIndicators, basePolicies }: Props) {
 
   return (
     <div>
-      <div className="game-badge game-badge-yellow" style={{ marginBottom: 12, display: 'inline-flex' }}>
-        📊 BUDGET INDICATORS
-      </div>
+      <h2 className="game-eyebrow" style={{ margin: '0 0 var(--rs-space-1)' }}>Budget</h2>
+      <p style={{ margin: '0 0 var(--rs-space-3)', fontSize: 'var(--rs-text-xs)', color: 'var(--rs-muted-on-dark)' }}>
+        Teal is what really happened. Coral is what you’re about to do.
+      </p>
 
       {INDICATOR_SLIDERS.map(cfg => (
         <Slider
@@ -101,9 +100,7 @@ export default function PolicyEditor({ baseIndicators, basePolicies }: Props) {
         />
       ))}
 
-      <div className="game-badge game-badge-magenta" style={{ marginBottom: 12, marginTop: 16, display: 'inline-flex' }}>
-        🏛️ STATE POLICIES
-      </div>
+      <h2 className="game-eyebrow" style={{ margin: 'var(--rs-space-4) 0 var(--rs-space-3)' }}>State policies</h2>
 
       {POLICY_SLIDERS.map(cfg => (
         <Slider

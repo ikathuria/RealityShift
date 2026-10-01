@@ -37,7 +37,7 @@ export default function AppHeader() {
         alignItems: isMobile ? 'stretch' : 'center',
         gap: isMobile ? 10 : 16,
         padding: isMobile ? '10px 12px' : '14px 20px',
-        background: 'linear-gradient(to bottom, rgba(7,9,19,0.95), rgba(7,9,19,0))',
+        background: 'linear-gradient(to bottom, var(--rs-space), transparent)',
         pointerEvents: 'none',
       }}
     >
@@ -48,43 +48,25 @@ export default function AppHeader() {
         justifyContent: isMobile ? 'space-between' : 'flex-start',
       }}>
         <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            fontSize: 26,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
-          }}>
-            🌍
-          </div>
           <div>
-            <div className="game-font-display" style={{
-              fontSize: 22,
-              fontWeight: 800,
-              color: 'var(--accent-yellow)',
-              textShadow: '2px 2px 0px #0b0f19, 0 0 10px rgba(255,230,0,0.4)',
-              lineHeight: 1.0,
-            }}>
-              REALITY SHIFT
-            </div>
+            <span className="rs-wordmark" aria-label="RealityShift">Reality<b>/</b>Shift</span>
             <div style={{
-              fontFamily: 'var(--font-heading)',
-              fontSize: 10,
-              fontWeight: 700,
-              color: 'var(--accent-cyan)',
-              letterSpacing: 0.8,
-              marginTop: 2,
-              textTransform: 'uppercase',
+              font: '700 var(--rs-text-xs) var(--rs-font-body)',
+              color: 'var(--rs-muted-on-dark)',
+              marginTop: 'var(--rs-space-1)',
             }}>
-              MULTI-AGENT WARGAME SIMULATOR
+              Take over a country. Fork the world.
             </div>
           </div>
         </Link>
 
         {/* Visitor Location & Sun Clock Badge */}
-        <div className="game-badge" style={{
+        <div className="game-eyebrow" style={{
           display: 'flex', alignItems: 'center', gap: 6,
           padding: '4px 10px',
           marginLeft: isMobile ? 0 : 8,
         }}>
-          <span aria-hidden>{visitor.isDay ? '☀️' : '🌙'}</span>
+          <span aria-hidden style={{ width: 6, height: 6, borderRadius: 3, background: visitor.isDay ? 'var(--rs-sun)' : 'var(--rs-muted-on-dark)' }} />
           <span>
             {visitor.country ?? visitor.timeZone} · {clock}
           </span>
@@ -106,24 +88,24 @@ export default function AppHeader() {
             <Link
               to="/hall"
               className="game-button game-button-dark"
-              style={{ height: 36, padding: '0 14px', fontSize: 12, justifyContent: 'center', whiteSpace: 'nowrap' }}
+              style={{ padding: '0 var(--rs-space-4)', justifyContent: 'center', whiteSpace: 'nowrap' }}
             >
-              🏛️ HALL
+              Hall
             </Link>
           )}
           <Link
             to="/wall"
             className="game-button game-button-dark"
-            style={{ height: 36, padding: '0 14px', fontSize: 12, flex: isMobile ? 1 : undefined, justifyContent: 'center', whiteSpace: 'nowrap' }}
+            style={{ padding: '0 var(--rs-space-4)', flex: isMobile ? 1 : undefined, justifyContent: 'center', whiteSpace: 'nowrap' }}
           >
-            🗞️ FRONT PAGES
+            Front pages
           </Link>
           <Link
             to="/world"
-            className="game-button game-button-cyan"
-            style={{ height: 36, padding: '0 16px', fontSize: 12, flex: isMobile ? 1 : undefined, justifyContent: 'center', whiteSpace: 'nowrap' }}
+            className="game-button game-button-dark"
+            style={{ padding: '0 var(--rs-space-4)', flex: isMobile ? 1 : undefined, justifyContent: 'center', whiteSpace: 'nowrap' }}
           >
-            📊 DASHBOARD →
+            Dashboard →
           </Link>
         </div>
       </div>

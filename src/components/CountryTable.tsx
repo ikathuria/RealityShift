@@ -1,3 +1,4 @@
+import type React from 'react';
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWorldStore } from '../store/worldStore';
@@ -5,6 +6,26 @@ import { countryName } from '../data/countries';
 import { useAuthStore } from '../store/authStore';
 import { useGameStore } from '../store/gameStore';
 import AuthModal from './AuthModal';
+import { Flag } from './GameIcons';
+
+const COLUMNS: { field: SortField; label: string }[] = [
+  { field: 'name', label: 'Nation' },
+  { field: 'year', label: 'Year' },
+  { field: 'gdp_per_capita', label: 'GDP / capita' },
+  { field: 'military_spend', label: 'Military' },
+  { field: 'education_spend', label: 'Education' },
+  { field: 'healthcare_spend', label: 'Healthcare' },
+  { field: 'unemployment', label: 'Unemployment' },
+  { field: 'divergence', label: 'Drift' },
+];
+
+const cell: React.CSSProperties = { padding: 'var(--rs-space-2) var(--rs-space-3)', borderBottom: '1px solid var(--rs-hud-line)' };
+const num: React.CSSProperties = { ...cell, font: '700 var(--rs-text-sm) var(--rs-font-mono)', fontVariantNumeric: 'tabular-nums' };
+const th: React.CSSProperties = {
+  padding: 0, textAlign: 'left', whiteSpace: 'nowrap',
+  font: '800 var(--rs-text-2xs) var(--rs-font-body)', letterSpacing: 'var(--rs-tracking-label)', textTransform: 'uppercase',
+  color: 'var(--rs-muted-on-dark)', background: 'var(--rs-hud)', borderBottom: 'var(--rs-border-thin)',
+};
 
 type SortField =
   | 'name'
@@ -117,77 +138,84 @@ export default function CountryTable() {
         />
       )}
 
-      <div className="game-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', padding: 20 }}>
-        {/* Table Control Bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14, marginBottom: 16 }}>
+      <section className="game-panel" aria-labelledby="country-table-title" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', padding: 'var(--rs-space-5)' }}>
+        {/* Table control bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 'var(--rs-space-3)', marginBottom: 'var(--rs-space-4)' }}>
           <div>
-            <div className="game-badge game-badge-yellow" style={{ marginBottom: 4 }}>
-              WORLD DATABASE TABLE · {rows.length} NATIONS TRACKED
+            <div className="game-eyebrow" style={{ marginBottom: 'var(--rs-space-1)' }}>
+              {rows.length} nations tracked
             </div>
-            <div className="game-font-heading" style={{ fontSize: 20, color: '#fff' }}>
-              ALL COUNTRY SIMULATION INDICATORS
-            </div>
+            <h2 id="country-table-title" style={{ margin: 0, font: '700 var(--rs-text-xl)/1 var(--rs-font-display)' }}>
+              Every nation, by the numbers
+            </h2>
           </div>
-
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            <input
-              type="text"
-              placeholder="🔍 Search nation or code..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{
-                background: 'var(--bg-hud-card)',
-                border: '2px solid var(--game-border-ink)',
-                borderRadius: 'var(--radius-game-sm)',
-                color: '#fff',
-                padding: '8px 14px',
-                fontSize: 13,
-                fontFamily: 'var(--font-heading)',
-                outline: 'none',
-                minWidth: 220,
-              }}
-            />
-          </div>
+          <input
+            type="search"
+            aria-label="Search nations by name or code"
+            placeholder="Search nation or code"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              background: 'var(--rs-space)',
+              border: 'var(--rs-border-thin)',
+              outline: '1px solid var(--rs-hud-line)',
+              borderRadius: 'var(--rs-radius-md)',
+              color: 'var(--rs-text-on-dark)',
+              padding: '0 var(--rs-space-3)',
+              minHeight: 44,
+              font: '500 var(--rs-text-sm) var(--rs-font-body)',
+              minWidth: 220,
+            }}
+          />
         </div>
 
-        {/* Scrollable Data Table */}
-        <div style={{ flex: 1, overflow: 'auto', border: '2px solid var(--game-border-ink)', borderRadius: 'var(--radius-game-md)', background: '#090d1a' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: '#12182b', borderBottom: '3px solid var(--game-border-ink)', position: 'sticky', top: 0, zIndex: 10 }}>
-                <th style={{ padding: '12px 14px', fontFamily: 'var(--font-heading)', color: 'var(--text-muted)' }}>#</th>
-                <th onClick={() => handleSort('name')} style={{ padding: '12px 14px', fontFamily: 'var(--font-heading)', color: sortField === 'name' ? 'var(--accent-yellow)' : '#fff', cursor: 'pointer' }}>
-                  NATION {sortField === 'name' ? (sortAsc ? '▲' : '▼') : ''}
+        {/* Scrollable data table: focusable so keyboard users can scroll it */}
+        <div
+          tabIndex={0}
+          role="region"
+          aria-label="Nation table, scrollable"
+          style={{ flex: 1, overflow: 'auto', border: 'var(--rs-border-thin)', borderRadius: 'var(--rs-radius-md)', background: 'var(--rs-hud)' }}
+        >
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', font: '500 var(--rs-text-sm) var(--rs-font-body)', color: 'var(--rs-text-on-dark)' }}>
+            <caption className="rs-sr-only">Simulated indicators for every nation. Select a column header to sort.</caption>
+            <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
+              <tr>
+                <th scope="col" style={{ ...th, padding: 'var(--rs-space-3)' }}>#</th>
+                {COLUMNS.map(({ field, label }) => {
+                  const active = sortField === field;
+                  return (
+                    <th
+                      key={field}
+                      scope="col"
+                      aria-sort={active ? (sortAsc ? 'ascending' : 'descending') : 'none'}
+                      style={{ ...th, color: active ? 'var(--rs-sun)' : 'var(--rs-muted-on-dark)' }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleSort(field)}
+                        style={{
+                          all: 'unset', boxSizing: 'border-box', cursor: 'pointer', minHeight: 44, width: '100%',
+                          padding: '0 var(--rs-space-3)', display: 'flex', alignItems: 'center', gap: 'var(--rs-space-1)',
+                        }}
+                      >
+                        {label}
+                        <span aria-hidden="true">{active ? (sortAsc ? '▲' : '▼') : ''}</span>
+                      </button>
+                    </th>
+                  );
+                })}
+                <th scope="col" style={{ ...th, padding: 'var(--rs-space-3)', textAlign: 'right' }}>
+                  <span className="rs-sr-only">Action</span>
                 </th>
-                <th onClick={() => handleSort('year')} style={{ padding: '12px 14px', fontFamily: 'var(--font-heading)', color: sortField === 'year' ? 'var(--accent-yellow)' : '#fff', cursor: 'pointer' }}>
-                  YEAR {sortField === 'year' ? (sortAsc ? '▲' : '▼') : ''}
-                </th>
-                <th onClick={() => handleSort('gdp_per_capita')} style={{ padding: '12px 14px', fontFamily: 'var(--font-heading)', color: sortField === 'gdp_per_capita' ? 'var(--accent-yellow)' : '#fff', cursor: 'pointer' }}>
-                  GDP / CAPITA {sortField === 'gdp_per_capita' ? (sortAsc ? '▲' : '▼') : ''}
-                </th>
-                <th onClick={() => handleSort('military_spend')} style={{ padding: '12px 14px', fontFamily: 'var(--font-heading)', color: sortField === 'military_spend' ? 'var(--accent-yellow)' : '#fff', cursor: 'pointer' }}>
-                  MILITARY {sortField === 'military_spend' ? (sortAsc ? '▲' : '▼') : ''}
-                </th>
-                <th onClick={() => handleSort('education_spend')} style={{ padding: '12px 14px', fontFamily: 'var(--font-heading)', color: sortField === 'education_spend' ? 'var(--accent-yellow)' : '#fff', cursor: 'pointer' }}>
-                  EDUCATION {sortField === 'education_spend' ? (sortAsc ? '▲' : '▼') : ''}
-                </th>
-                <th onClick={() => handleSort('healthcare_spend')} style={{ padding: '12px 14px', fontFamily: 'var(--font-heading)', color: sortField === 'healthcare_spend' ? 'var(--accent-yellow)' : '#fff', cursor: 'pointer' }}>
-                  HEALTHCARE {sortField === 'healthcare_spend' ? (sortAsc ? '▲' : '▼') : ''}
-                </th>
-                <th onClick={() => handleSort('unemployment')} style={{ padding: '12px 14px', fontFamily: 'var(--font-heading)', color: sortField === 'unemployment' ? 'var(--accent-yellow)' : '#fff', cursor: 'pointer' }}>
-                  UNEMPLOYMENT {sortField === 'unemployment' ? (sortAsc ? '▲' : '▼') : ''}
-                </th>
-                <th onClick={() => handleSort('divergence')} style={{ padding: '12px 14px', fontFamily: 'var(--font-heading)', color: sortField === 'divergence' ? 'var(--accent-yellow)' : '#fff', cursor: 'pointer' }}>
-                  DIVERGENCE {sortField === 'divergence' ? (sortAsc ? '▲' : '▼') : ''}
-                </th>
-                <th style={{ padding: '12px 14px', fontFamily: 'var(--font-heading)', color: 'var(--text-muted)', textAlign: 'right' }}>ACTION</th>
               </tr>
             </thead>
             <tbody>
               {!rows.length ? (
                 <tr>
-                  <td colSpan={10} style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>
-                    No matching country records found.
+                  <td colSpan={10} style={{ ...cell, padding: 'var(--rs-space-6)', textAlign: 'center', color: 'var(--rs-muted-on-dark)' }}>
+                    {search.trim()
+                      ? 'No nation by that name. Try a three-letter code like FRA.'
+                      : 'Loading every nation’s numbers…'}
                   </td>
                 </tr>
               ) : (
@@ -197,59 +225,49 @@ export default function CountryTable() {
                     <tr
                       key={r.code}
                       onClick={() => selectCountry(r.code)}
+                      aria-selected={isSelected}
                       style={{
-                        borderBottom: '1px solid rgba(255,255,255,0.06)',
-                        background: isSelected ? 'rgba(0, 240, 255, 0.12)' : i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent',
+                        background: isSelected ? 'var(--rs-real-deep)' : 'transparent',
+                        boxShadow: isSelected ? 'inset 4px 0 0 var(--rs-sun)' : undefined,
                         cursor: 'pointer',
-                        transition: 'background 0.1s ease',
+                        transition: 'background var(--rs-dur-fast)',
                       }}
                     >
-                      <td style={{ padding: '12px 14px', fontFamily: 'var(--font-heading)', color: 'var(--text-muted)', fontSize: 11 }}>
-                        {i + 1}
-                      </td>
-                      <td style={{ padding: '12px 14px', fontWeight: 700 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <td style={{ ...num, color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-xs)' }}>{i + 1}</td>
+                      <th scope="row" style={{ ...cell, textAlign: 'left', font: '700 var(--rs-text-sm) var(--rs-font-body)' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--rs-space-2)' }}>
+                          <Flag iso3={r.code} height={14} />
                           <span>{r.name}</span>
-                          <span className="game-badge" style={{ fontSize: 9, padding: '1px 5px' }}>{r.code}</span>
-                        </div>
-                      </td>
-                      <td style={{ padding: '12px 14px', fontFamily: 'var(--font-heading)', color: 'var(--accent-yellow)' }}>
-                        {r.year}
-                      </td>
-                      <td style={{ padding: '12px 14px', fontFamily: 'var(--font-heading)', fontWeight: 800, color: 'var(--accent-cyan)' }}>
-                        {fmtVal('gdp_per_capita', r.gdp_per_capita)}
-                      </td>
-                      <td style={{ padding: '12px 14px', color: r.military_spend > 3 ? 'var(--accent-magenta)' : '#fff' }}>
-                        {r.military_spend.toFixed(2)}%
-                      </td>
-                      <td style={{ padding: '12px 14px', color: 'var(--text-secondary)' }}>
-                        {r.education_spend.toFixed(2)}%
-                      </td>
-                      <td style={{ padding: '12px 14px', color: 'var(--text-secondary)' }}>
-                        {r.healthcare_spend.toFixed(2)}%
-                      </td>
-                      <td style={{ padding: '12px 14px', color: r.unemployment > 10 ? 'var(--accent-magenta)' : 'var(--text-secondary)' }}>
-                        {r.unemployment.toFixed(1)}%
-                      </td>
-                      <td style={{ padding: '12px 14px' }}>
+                          <span style={{ color: 'var(--rs-muted-on-dark)', font: '700 var(--rs-text-2xs) var(--rs-font-mono)' }}>{r.code}</span>
+                        </span>
+                      </th>
+                      <td style={{ ...num, color: 'var(--rs-muted-on-dark)' }}>{r.year}</td>
+                      <td style={num}>{fmtVal('gdp_per_capita', r.gdp_per_capita)}</td>
+                      <td style={num}>{r.military_spend.toFixed(2)}%</td>
+                      <td style={num}>{r.education_spend.toFixed(2)}%</td>
+                      <td style={num}>{r.healthcare_spend.toFixed(2)}%</td>
+                      <td style={num}>{r.unemployment.toFixed(1)}%</td>
+                      <td style={cell}>
                         {r.divergence > 0 ? (
-                          <span className="game-badge game-badge-yellow" style={{ fontSize: 10 }}>
-                            ⚡ {r.divergence.toFixed(1)} pts
+                          <span className="rs-pill rs-pill-fork" style={{ whiteSpace: 'nowrap' }}>
+                            {r.divergence.toFixed(1)} pts
                           </span>
                         ) : (
-                          <span style={{ color: 'var(--text-faint)', fontSize: 11 }}>—</span>
+                          <span style={{ color: 'var(--rs-muted-on-dark)' }} aria-label="No drift">—</span>
                         )}
                       </td>
-                      <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                      <td style={{ ...cell, textAlign: 'right' }}>
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleTakeOver(r.code);
                           }}
-                          className="game-button game-button-green"
-                          style={{ padding: '4px 10px', fontSize: 10, height: 26 }}
+                          className="game-button game-button-dark"
+                          aria-label={`Take over ${r.name}`}
+                          style={{ minHeight: 44, padding: '0 var(--rs-space-3)', fontSize: 'var(--rs-text-sm)', whiteSpace: 'nowrap' }}
                         >
-                          🎮 COMMAND
+                          Take over
                         </button>
                       </td>
                     </tr>
@@ -259,7 +277,7 @@ export default function CountryTable() {
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
     </>
   );
 }

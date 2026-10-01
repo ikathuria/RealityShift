@@ -14,69 +14,67 @@ export default function ProvenancePanel({ entry }: { entry: MediaEntry }) {
   const p = entry.provenance;
 
   return (
-    <div style={{
-      background: 'var(--surface-panel)', border: 'var(--border-subtle)',
-      borderRadius: 'var(--radius-panel)', padding: 16, fontSize: 'var(--font-size-sm)',
+    <section aria-labelledby="provenance-title" style={{
+      background: 'var(--rs-hud)', border: 'var(--rs-border-thin)', borderColor: 'var(--rs-hud-line)',
+      borderRadius: 'var(--rs-radius-md)', padding: 'var(--rs-space-4)',
+      fontSize: 'var(--rs-text-sm)', color: 'var(--rs-text-on-dark)',
     }}>
-      <div style={{
-        fontSize: 'var(--font-size-xs)', textTransform: 'uppercase', letterSpacing: 1,
-        color: 'var(--text-muted)', marginBottom: 12,
-      }}>
-        🔏 Embedded provenance
-      </div>
+      <h3 id="provenance-title" className="game-eyebrow" style={{ margin: '0 0 var(--rs-space-3)' }}>
+        Embedded provenance
+      </h3>
 
       {p ? (
-        <dl style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 14px', margin: 0 }}>
+        <dl style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 'var(--rs-space-2) var(--rs-space-3)', margin: 0 }}>
           <Row k="Fork" v={p.fork_id} />
           <Row k="Parent" v={p.parent_fork_id ?? '—'} />
           <Row k="Nation" v={countryName(p.nation_iso)} />
           <Row k="Diverged from reality" v={p.divergence_date} />
           <Row k="Reporting sim-date" v={p.sim_date} />
           <Row k="Real-world data cutoff" v={p.real_world_data_cutoff} highlight />
-          <Row k="Counterfactual" v={p.is_counterfactual ? 'yes' : 'no'} />
+          <Row k="Counterfactual" v={p.is_counterfactual ? 'Yes' : 'No'} />
         </dl>
       ) : (
-        <div style={{ color: 'var(--text-muted)' }}>No provenance recorded for this item.</div>
+        <p style={{ margin: 0, color: 'var(--rs-muted-on-dark)' }}>
+          This item shipped without a provenance block, so there's nothing to check it against.
+        </p>
       )}
 
-      <div style={{ marginTop: 14, paddingTop: 12, borderTop: 'var(--border-subtle)' }}>
-        <div style={{ color: 'var(--text-muted)', fontSize: 'var(--font-size-xs)', marginBottom: 4 }}>
-          canonical hash
+      <div style={{ marginTop: 'var(--rs-space-4)', paddingTop: 'var(--rs-space-3)', borderTop: '1px solid var(--rs-hud-line)' }}>
+        <div className="game-eyebrow" style={{ fontSize: 'var(--rs-text-2xs)', marginBottom: 'var(--rs-space-1)' }}>
+          Canonical hash
         </div>
         <code style={{
-          display: 'block', wordBreak: 'break-all', fontSize: 11,
-          color: 'var(--text-secondary)', lineHeight: 1.5,
+          display: 'block', wordBreak: 'break-all', fontFamily: 'var(--rs-font-mono)', fontSize: 'var(--rs-text-xs)',
+          color: 'var(--rs-text-on-dark)', lineHeight: 1.5,
         }}>
           {entry.canonical_hash}
         </code>
-        <div style={{ color: 'var(--text-faint)', fontSize: 'var(--font-size-xs)', marginTop: 10, lineHeight: 1.5 }}>
+        <p style={{ color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-xs)', margin: 'var(--rs-space-3) 0 0', lineHeight: 1.5 }}>
           Download the MP4 and re-derive this hash with{' '}
-          <code style={{ color: 'var(--accent-text)' }}>genblaze verify &lt;file&gt;</code> — the
-          fields above are bound into it and can't be altered without breaking verification.
-          Integrity, not authentication; not C2PA.
-        </div>
+          <code style={{ fontFamily: 'var(--rs-font-mono)', color: 'var(--rs-text-on-dark)' }}>genblaze verify &lt;file&gt;</code>.
+          The fields above are baked into it, so nobody can quietly edit history. This proves integrity,
+          not authorship, and it isn't C2PA.
+        </p>
         <Link
           to="/verify"
-          style={{
-            display: 'inline-block', marginTop: 10, fontSize: 'var(--font-size-xs)',
-            color: 'var(--accent-text)', textDecoration: 'none', fontWeight: 600,
-          }}
+          className="game-button game-button-dark"
+          style={{ marginTop: 'var(--rs-space-3)', fontSize: 'var(--rs-text-sm)' }}
         >
-          🔏 Verify in your browser →
+          Verify a file in your browser →
         </Link>
       </div>
-    </div>
+    </section>
   );
 }
 
 function Row({ k, v, highlight }: { k: string; v: string; highlight?: boolean }) {
   return (
     <>
-      <dt style={{ color: 'var(--text-muted)' }}>{k}</dt>
+      <dt style={{ color: 'var(--rs-muted-on-dark)' }}>{k}</dt>
       <dd style={{
-        margin: 0, textAlign: 'right', fontVariantNumeric: 'tabular-nums',
-        color: highlight ? 'var(--accent-text)' : 'var(--text-primary)',
-        fontWeight: highlight ? 700 : 400,
+        margin: 0, textAlign: 'right', fontFamily: 'var(--rs-font-mono)', fontVariantNumeric: 'tabular-nums',
+        color: highlight ? 'var(--rs-sun)' : 'var(--rs-text-on-dark)',
+        fontWeight: 700,
       }}>
         {v}
       </dd>

@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { fetchMediaIndex, type MediaEntry } from '../lib/mediaIndex';
+import { Link } from 'react-router-dom';
 import { countryName } from '../data/countries';
+import { Flag } from './GameIcons';
 
 // Year straight from the ISO string. new Date('2025-01-01').getFullYear() parses
 // as UTC midnight and shifts to the previous year in negative-offset zones.
@@ -18,6 +20,8 @@ export default function FrontPageWall({ worldId = 'live' }: { worldId?: string }
   const [entries, setEntries] = useState<MediaEntry[] | null>(null);
   const [simDate, setSimDate] = useState<string>('all');
   const [selectedImage, setSelectedImage] = useState<MediaEntry | null>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -27,14 +31,17 @@ export default function FrontPageWall({ worldId = 'live' }: { worldId?: string }
     return () => { live = false; };
   }, [worldId]);
 
-  // Close modal on Escape key & lock scroll when open
+  // Close on Escape, lock scroll and move focus into the lightbox (and back) while open
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setSelectedImage(null);
     };
     if (selectedImage) {
       document.body.style.overflow = 'hidden';
+      closeRef.current?.focus();
     } else {
+      openerRef.current?.focus();
+      openerRef.current = null;
       document.body.style.overflow = '';
     }
     window.addEventListener('keydown', handleKeyDown);
@@ -55,27 +62,36 @@ export default function FrontPageWall({ worldId = 'live' }: { worldId?: string }
   );
 
   if (entries === null) {
-    return <div style={{ padding: 24, color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)' }}>Loading front pages…</div>;
+    return (
+      <p role="status" style={{ padding: 'var(--rs-space-5)', margin: 0, color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-sm)' }}>
+        Loading front pages from this world…
+      </p>
+    );
   }
 
   if (entries.length === 0) {
     return (
-      <div style={{ padding: 24, color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', lineHeight: 1.5 }}>
-        No front pages generated yet for this world. Run the media batch to
-        populate the wall.
-      </div>
+      <p style={{ padding: 'var(--rs-space-5)', margin: 0, color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-sm)', lineHeight: 1.45 }}>
+        The presses haven't run for this world yet. Front pages appear here once the media batch
+        prints them. Until then, <Link to="/hall" style={{ color: 'var(--rs-sun)' }}>browse other worlds in the Hall</Link>.
+      </p>
     );
   }
+
+  const open = (e: MediaEntry, el: HTMLElement) => {
+    openerRef.current = el;
+    setSelectedImage(e);
+  };
 
   return (
     <div>
       {simDates.length > 1 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '0 0 18px' }}>
-          <FilterChip label="ALL YEARS" active={simDate === 'all'} onClick={() => setSimDate('all')} />
+        <div role="group" aria-label="Filter by year" style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--rs-space-2)', paddingBottom: 'var(--rs-space-4)' }}>
+          <FilterChip label="All years" active={simDate === 'all'} onClick={() => setSimDate('all')} />
           {simDates.map(d => (
             <FilterChip
               key={d}
-              label={`YEAR ${isoYear(d)}`}
+              label={`Year ${isoYear(d)}`}
               active={simDate === d}
               onClick={() => setSimDate(d)}
             />
@@ -83,142 +99,128 @@ export default function FrontPageWall({ worldId = 'live' }: { worldId?: string }
         </div>
       )}
 
-      <div style={{
+      <ul style={{
+        listStyle: 'none', margin: 0, padding: 0,
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))',
-        gap: 18,
+        gap: 'var(--rs-space-4)',
       }}>
         {shown.map(e => (
-          <figure
-            key={e.canonical_hash}
-            className="game-card"
-            onClick={() => setSelectedImage(e)}
-            style={{
-              margin: 0, padding: 10, cursor: 'pointer',
-              transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-            }}
-          >
-            <div style={{
-              aspectRatio: '3 / 4', overflow: 'hidden', borderRadius: 'var(--radius-game-sm)',
-              background: '#000', border: '2px solid var(--game-border-ink)',
-              position: 'relative',
-            }}>
-              <img
-                src={e.b2_url}
-                alt={`Front page — ${countryName(e.nation_iso)}, ${isoYear(e.sim_date)}`}
-                loading="lazy"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-              />
-              <div style={{
-                position: 'absolute', bottom: 6, right: 6,
-                background: 'rgba(7,9,19,0.85)', color: 'var(--accent-cyan)',
-                fontSize: 10, fontFamily: 'var(--font-heading)', padding: '2px 6px',
-                borderRadius: 4, border: '1px solid var(--accent-cyan)',
-                pointerEvents: 'none',
+          <li key={e.canonical_hash}>
+            <figure className="rs-paper" style={{ margin: 0, padding: 'var(--rs-space-2)', boxShadow: 'var(--rs-shadow-md)' }}>
+              <button
+                type="button"
+                onClick={ev => open(e, ev.currentTarget)}
+                aria-label={`Enlarge front page: ${countryName(e.nation_iso)}, ${isoYear(e.sim_date)}`}
+                style={{
+                  display: 'block', width: '100%', padding: 0, cursor: 'zoom-in',
+                  aspectRatio: '3 / 4', overflow: 'hidden', borderRadius: 'var(--rs-radius-sm)',
+                  background: 'var(--rs-ink)', border: 'var(--rs-border-thin)', position: 'relative',
+                }}
+              >
+                <img
+                  src={e.b2_url}
+                  alt={`Newspaper front page from a forked ${countryName(e.nation_iso)}, ${isoYear(e.sim_date)}`}
+                  width={300}
+                  height={400}
+                  loading="lazy"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+                <span className="game-badge rs-chip-fork" style={{ position: 'absolute', top: 'var(--rs-space-2)', left: 'var(--rs-space-2)', pointerEvents: 'none' }}>
+                  Fork
+                </span>
+              </button>
+              <figcaption style={{
+                marginTop: 'var(--rs-space-2)', fontSize: 'var(--rs-text-sm)', fontWeight: 700,
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--rs-space-2)',
               }}>
-                🔍 ENLARGE
-              </div>
-            </div>
-            <figcaption style={{
-              marginTop: 8, fontSize: 12, color: '#fff', fontFamily: 'var(--font-heading)', fontWeight: 800,
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8,
-            }}>
-              <span>{countryName(e.nation_iso)}</span>
-              <span className="game-badge game-badge-yellow" style={{ fontSize: 10, padding: '1px 5px' }}>{isoYear(e.sim_date)}</span>
-            </figcaption>
-          </figure>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--rs-space-2)', minWidth: 0 }}>
+                  {e.nation_iso && <Flag iso3={e.nation_iso} height={12} />}
+                  {countryName(e.nation_iso)}
+                </span>
+                <span style={{ fontFamily: 'var(--rs-font-mono)', fontSize: 'var(--rs-text-xs)', color: 'var(--rs-muted-on-paper)' }}>
+                  {isoYear(e.sim_date)}
+                </span>
+              </figcaption>
+            </figure>
+          </li>
         ))}
-      </div>
+      </ul>
 
-      {/* Full-Screen Theater Lightbox Box for Newspaper Reading.
-          Portalled to <body>: the wall's .game-panel ancestor sets a
-          backdrop-filter, which (like transform/filter) makes it the containing
-          block for position:fixed descendants — so an inline overlay is trapped
-          inside the panel instead of covering the viewport. */}
+      {/* Lightbox, portalled to <body> so no ancestor's transform/filter can
+          become the containing block for its position:fixed overlay. */}
       {selectedImage && createPortal(
         <div
           onClick={() => setSelectedImage(null)}
           style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            zIndex: 99999,
-            background: 'rgba(4, 6, 12, 0.96)',
-            backdropFilter: 'blur(16px)',
+            position: 'fixed', inset: 0, zIndex: 99999,
+            background: 'var(--rs-space)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 12, animation: 'fadeIn 0.15s ease-out',
+            padding: 'var(--rs-space-3)',
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="fpw-lightbox-title"
             onClick={(e) => e.stopPropagation()}
-            className="game-panel"
+            className="rs-paper"
             style={{
               position: 'relative',
-              width: '92vw', height: '90vh',
-              maxWidth: 1300, maxHeight: '90vh',
+              width: '92vw', height: '90vh', maxWidth: 1300,
               display: 'flex', flexDirection: 'column',
-              padding: 12, background: '#080c16',
-              border: '3px solid var(--accent-cyan)',
-              boxShadow: '0 0 40px rgba(0, 240, 255, 0.4)',
-              boxSizing: 'border-box',
-              overflow: 'hidden',
+              padding: 'var(--rs-space-3)', boxSizing: 'border-box', overflow: 'hidden',
             }}
           >
-            {/* Header toolbar */}
             <div style={{
-              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              marginBottom: 10, gap: 16, borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: 8,
-              flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap',
+              gap: 'var(--rs-space-3)', marginBottom: 'var(--rs-space-3)', flexShrink: 0,
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span className="game-badge game-badge-yellow" style={{ fontSize: 13, padding: '4px 10px' }}>
-                  🗞️ {countryName(selectedImage.nation_iso)} · {isoYear(selectedImage.sim_date)}
-                </span>
-                <span style={{ fontSize: 12, fontFamily: 'var(--font-heading)', color: 'var(--accent-cyan)', letterSpacing: 0.5 }}>
-                  FULL-SCREEN NEWSPAPER EDITION
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--rs-space-2)' }}>
+                <span className="game-badge rs-chip-fork">Fork</span>
+                <h2 id="fpw-lightbox-title" style={{ margin: 0, fontFamily: 'var(--rs-font-display)', fontSize: 'var(--rs-text-lg)', lineHeight: 1 }}>
+                  {countryName(selectedImage.nation_iso)}, {isoYear(selectedImage.sim_date)}
+                </h2>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--rs-space-2)' }}>
                 <a
                   href={selectedImage.b2_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="game-button game-button-cyan"
-                  style={{ height: 34, padding: '0 14px', fontSize: 11, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}
+                  className="game-button game-button-dark"
                 >
-                  🔗 OPEN ORIGINAL FILE
+                  Open original
                 </a>
                 <button
+                  ref={closeRef}
+                  type="button"
                   onClick={() => setSelectedImage(null)}
-                  className="game-button game-button-magenta"
-                  style={{ height: 34, padding: '0 16px', fontSize: 12, fontWeight: 800 }}
+                  className="game-button game-button-dark"
+                  aria-label="Close front page"
                 >
-                  ✖ CLOSE [ESC]
+                  Close
                 </button>
               </div>
             </div>
 
-            {/* Full-screen High-res Image Container */}
             <div
               onClick={() => setSelectedImage(null)}
               style={{
-                overflow: 'auto', flex: '1 1 0%', minHeight: 0, width: '100%', height: '100%',
+                overflow: 'auto', flex: '1 1 0%', minHeight: 0, width: '100%',
                 display: 'flex', justifyContent: 'center', alignItems: 'center',
-                background: '#000', borderRadius: 8, border: '2px solid var(--game-border-ink)',
-                padding: 8, boxSizing: 'border-box', cursor: 'zoom-out',
+                background: 'var(--rs-ink)', borderRadius: 'var(--rs-radius-md)', border: 'var(--rs-border-thin)',
+                padding: 'var(--rs-space-2)', boxSizing: 'border-box', cursor: 'zoom-out',
               }}
             >
               <img
                 src={selectedImage.b2_url}
-                alt={`Front page full view — ${countryName(selectedImage.nation_iso)}`}
+                alt={`Newspaper front page from a forked ${countryName(selectedImage.nation_iso)}, ${isoYear(selectedImage.sim_date)}, full size`}
+                width={1200}
+                height={1600}
                 onClick={(e) => e.stopPropagation()}
                 style={{
-                  maxHeight: '100%',
-                  maxWidth: '100%',
-                  width: 'auto',
-                  height: 'auto',
-                  objectFit: 'contain',
-                  display: 'block',
-                  borderRadius: 4,
-                  boxShadow: '0 0 35px rgba(0, 0, 0, 0.9)',
+                  maxHeight: '100%', maxWidth: '100%', width: 'auto', height: 'auto',
+                  objectFit: 'contain', display: 'block', borderRadius: 'var(--rs-radius-sm)',
                 }}
               />
             </div>
@@ -233,11 +235,11 @@ export default function FrontPageWall({ worldId = 'live' }: { worldId?: string }
 function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`game-button ${active ? 'game-button-cyan' : 'game-button-dark'}`}
-      style={{
-        height: 30, padding: '0 12px', fontSize: 11,
-      }}
+      aria-pressed={active}
+      className={`game-button ${active ? 'rs-button-fork' : 'game-button-dark'}`}
+      style={{ fontSize: 'var(--rs-text-sm)' }}
     >
       {label}
     </button>

@@ -13,56 +13,54 @@ export default function WallPage() {
   const { worldId } = useParams();
   const world = worldId ?? 'live';
 
+  const sectionTitle = {
+    fontFamily: 'var(--rs-font-display)', fontWeight: 700, fontSize: 'var(--rs-text-xl)',
+    lineHeight: 1, margin: '0 0 var(--rs-space-3)',
+  } as const;
+
   return (
-    <div style={{
-      width: '100vw', height: '100vh', background: 'var(--bg-deep-space)',
-      color: '#fff', overflowY: 'auto',
+    <main style={{
+      width: '100vw', height: '100vh', background: 'var(--rs-space)',
+      color: 'var(--rs-text-on-dark)', fontFamily: 'var(--rs-font-body)', overflowY: 'auto',
     }}>
       <header style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
-        padding: '20px 28px',
-        borderBottom: '3px solid var(--game-border-ink)',
-        background: 'var(--bg-hud-panel)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: 'var(--rs-space-4)', flexWrap: 'wrap',
+        padding: 'var(--rs-space-5)',
+        borderBottom: 'var(--rs-border)',
+        background: 'var(--rs-hud)',
       }}>
         <div>
-          <div className="game-font-display" style={{
-            fontSize: 26, fontWeight: 800, color: 'var(--accent-yellow)',
-            textShadow: '2px 2px 0px #0b0f19, 0 0 12px rgba(255,230,0,0.4)',
+          <span className="game-eyebrow">
+            <span className="game-badge rs-chip-fork">Fork</span> World: {world}
+          </span>
+          <h1 style={{
+            fontFamily: 'var(--rs-font-display)', fontWeight: 700, fontSize: 'var(--rs-text-2xl)',
+            lineHeight: 1.05, margin: 'var(--rs-space-2) 0 0',
           }}>
-            🗞️ FORK MEDIA NEWSSTAND & KIOSK
-          </div>
-          <div style={{ fontSize: 11, fontFamily: 'var(--font-heading)', color: 'var(--accent-cyan)', marginTop: 2 }}>
-            AUTHENTICATED COUNTERFACTUAL BROADCASTS · WORLD: {world.toUpperCase()}
-          </div>
+            Front pages from other worlds
+          </h1>
         </div>
-        <Link
-          to="/"
-          className="game-button game-button-cyan"
-          style={{ height: 38, padding: '0 16px', fontSize: 12 }}
-        >
-          ← GLOBE WARGAME
+        <Link to="/" className="game-button game-button-dark">
+          ← Back to the globe
         </Link>
       </header>
 
-      <div style={{ padding: '24px 28px 40px', maxWidth: 1400, margin: '0 auto' }}>
-        <section style={{ marginBottom: 36 }}>
-          <div className="game-badge game-badge-yellow" style={{ marginBottom: 12, fontSize: 12, padding: '4px 10px' }}>
-            📺 DIVERGENCE BROADCAST STUDIO
-          </div>
-          <div className="game-panel" style={{ padding: 20 }}>
+      <div style={{ padding: 'var(--rs-space-5) var(--rs-space-4) var(--rs-space-7)', maxWidth: 1200, margin: '0 auto' }}>
+        <section aria-labelledby="wall-broadcast" style={{ marginBottom: 'var(--rs-space-6)' }}>
+          <h2 id="wall-broadcast" style={sectionTitle}>Tonight's broadcast</h2>
+          <div className="game-panel" style={{ padding: 'var(--rs-space-4)' }}>
             <BroadcastPlayer worldId={world} />
           </div>
         </section>
 
-        <section>
-          <div className="game-badge game-badge-magenta" style={{ marginBottom: 12, fontSize: 12, padding: '4px 10px' }}>
-            🗞️ NEWSPAPER FRONT PAGE GALLERY
-          </div>
-          <div className="game-panel" style={{ padding: 20 }}>
+        <section aria-labelledby="wall-papers">
+          <h2 id="wall-papers" style={sectionTitle}>Newspaper front pages</h2>
+          <div className="game-panel" style={{ padding: 'var(--rs-space-4)' }}>
             <FrontPageWall worldId={world} />
           </div>
         </section>
       </div>
-    </div>
+    </main>
   );
 }

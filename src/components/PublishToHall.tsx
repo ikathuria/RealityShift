@@ -32,63 +32,66 @@ export default function PublishToHall({ fork }: { fork: Fork }) {
     }
   }
 
+  const inputStyle = {
+    width: '100%', boxSizing: 'border-box' as const, minHeight: 44, padding: '0 var(--rs-space-3)',
+    background: 'var(--rs-paper)', color: 'var(--rs-ink)', borderRadius: 'var(--rs-radius-md)',
+    border: 'var(--rs-border-thin)', font: '500 var(--rs-text-sm) var(--rs-font-body)',
+  };
+
   return (
-    <div style={{ marginTop: 16, paddingTop: 14, borderTop: '2px dashed rgba(255,255,255,0.1)' }}>
-      <div className="game-badge game-badge-yellow" style={{ marginBottom: 8, display: 'inline-flex' }}>
-        {isPublic ? '🏛️ PUBLISHED TO HALL' : '🔒 PRIVATE WORLD'}
-      </div>
+    <section style={{ marginTop: 'var(--rs-space-4)', paddingTop: 'var(--rs-space-4)', borderTop: '1px solid var(--rs-hud-line)' }}>
+      <h2 className="game-eyebrow" style={{ margin: '0 0 var(--rs-space-2)' }}>
+        {isPublic ? 'Live in the Hall of Worlds' : 'Private world'}
+      </h2>
 
       {!isPublic ? (
         <>
+          <label htmlFor={`world-title-${fork.worldId}`} className="rs-sr-only">World name</label>
           <input
+            id={`world-title-${fork.worldId}`}
             value={title}
             onChange={e => setTitle(e.target.value)}
             placeholder="Name your world (optional)"
             maxLength={80}
-            style={{
-              width: '100%', boxSizing: 'border-box', marginBottom: 8, padding: '9px 11px',
-              background: 'rgba(0,0,0,0.3)', color: '#fff', borderRadius: 8,
-              border: '1px solid rgba(255,255,255,0.15)', fontSize: 13,
-            }}
+            style={{ ...inputStyle, marginBottom: 'var(--rs-space-2)' }}
           />
           <button
             onClick={() => toggle(true)}
             disabled={busy}
             className="game-button game-button-dark"
-            style={{ width: '100%', padding: '11px 0', fontSize: 13 }}
+            style={{ width: '100%' }}
           >
-            {busy ? '⏳ PUBLISHING…' : '🏛️ PUBLISH TO HALL OF WORLDS'}
+            {busy ? 'Publishing…' : 'Publish to the Hall of Worlds'}
           </button>
-          <div style={{ color: 'var(--text-muted)', fontSize: 10, marginTop: 6, lineHeight: 1.5 }}>
-            Lists this fork publicly and makes its front pages shareable. You can unpublish anytime.
-          </div>
+          <p style={{ color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-2xs)', margin: 'var(--rs-space-2) 0 0', lineHeight: 1.5 }}>
+            Puts this fork on public display and makes its front pages shareable. Change your mind? Unpublish anytime.
+          </p>
         </>
       ) : (
         <>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 'var(--rs-space-2)' }}>
+            <label htmlFor={`share-url-${fork.worldId}`} className="rs-sr-only">Share link</label>
             <input
+              id={`share-url-${fork.worldId}`}
               readOnly
               value={shareUrl}
               onFocus={e => e.currentTarget.select()}
-              style={{
-                flex: 1, minWidth: 0, padding: '9px 11px', background: 'rgba(0,0,0,0.3)', color: '#fff',
-                borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', fontSize: 12,
-              }}
+              style={{ ...inputStyle, flex: 1, minWidth: 0, fontFamily: 'var(--rs-font-mono)', fontSize: 'var(--rs-text-xs)' }}
             />
-            <button onClick={copyLink} className="game-button game-button-cyan" style={{ padding: '9px 14px', fontSize: 12, flexShrink: 0 }}>
-              {copied ? '✓ COPIED' : 'COPY'}
+            <button onClick={copyLink} className="game-button game-button-dark" style={{ flexShrink: 0 }} aria-live="polite">
+              {copied ? 'Copied' : 'Copy link'}
             </button>
           </div>
           <button
             onClick={() => toggle(false)}
             disabled={busy}
             className="game-button game-button-dark"
-            style={{ width: '100%', padding: '9px 0', fontSize: 12, marginTop: 8, opacity: 0.85 }}
+            style={{ width: '100%', marginTop: 'var(--rs-space-2)' }}
           >
-            {busy ? '⏳…' : 'UNPUBLISH (make private)'}
+            {busy ? 'Making it private…' : 'Unpublish and make private'}
           </button>
         </>
       )}
-    </div>
+    </section>
   );
 }

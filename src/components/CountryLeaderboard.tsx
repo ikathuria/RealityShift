@@ -1,6 +1,8 @@
+import type React from 'react';
 import { useState, useMemo, useEffect } from 'react';
 import { useWorldStore } from '../store/worldStore';
 import { countryName } from '../data/countries';
+import { Flag } from './GameIcons';
 import { fetchGlobalEnrichment, DC_INDICATOR_META, DC_KEYS, type DcKey } from '../data/dataCommons';
 
 /** Metrics sourced from the sim itself (countryData / divergences). */
@@ -16,25 +18,44 @@ type SimMetric =
 // Sim + real-world (Data Commons) metrics share the one selector.
 export type FilterMetric = SimMetric | DcKey;
 
-const SIM_METRIC_CONFIG: Record<SimMetric, { label: string; icon: string; fmt: (v: number) => string }> = {
-  gdp_per_capita:   { label: 'GDP per Capita', icon: '💰', fmt: v => `$${Math.round(v).toLocaleString()}` },
-  divergence:       { label: 'Divergence Score', icon: '🚨', fmt: v => `${v.toFixed(1)} pts` },
-  military_spend:   { label: 'Military Spend', icon: '⚔️', fmt: v => `${v.toFixed(2)}%` },
-  education_spend:  { label: 'Education Spend', icon: '🎓', fmt: v => `${v.toFixed(2)}%` },
-  healthcare_spend: { label: 'Healthcare Spend', icon: '🏥', fmt: v => `${v.toFixed(2)}%` },
-  unemployment:     { label: 'Unemployment', icon: '📈', fmt: v => `${v.toFixed(1)}%` },
-  tax_rate:         { label: 'Tax Revenue', icon: '🏛️', fmt: v => `${v.toFixed(1)}%` },
+const SIM_METRIC_CONFIG: Record<SimMetric, { label: string; fmt: (v: number) => string }> = {
+  gdp_per_capita:   { label: 'GDP per capita', fmt: v => `$${Math.round(v).toLocaleString()}` },
+  divergence:       { label: 'Drift score', fmt: v => `${v.toFixed(1)} pts` },
+  military_spend:   { label: 'Military spend', fmt: v => `${v.toFixed(2)}%` },
+  education_spend:  { label: 'Education spend', fmt: v => `${v.toFixed(2)}%` },
+  healthcare_spend: { label: 'Healthcare spend', fmt: v => `${v.toFixed(2)}%` },
+  unemployment:     { label: 'Unemployment', fmt: v => `${v.toFixed(1)}%` },
+  tax_rate:         { label: 'Tax revenue', fmt: v => `${v.toFixed(1)}%` },
 };
 
 const SIM_METRICS = Object.keys(SIM_METRIC_CONFIG) as SimMetric[];
-const DC_ICONS: Record<DcKey, string> = {
-  life_expectancy:   '🫀',
-  gini_index:        '⚖️',
-  co2_per_capita:    '🏭',
-  internet_users:    '🌐',
-  energy_per_capita: '🔌',
-  extreme_poverty:   '🍞',
+
+const inputStyle: React.CSSProperties = {
+  background: 'var(--rs-space)',
+  border: 'var(--rs-border-thin)',
+  outline: '1px solid var(--rs-hud-line)',
+  borderRadius: 'var(--rs-radius-md)',
+  color: 'var(--rs-text-on-dark)',
+  padding: '0 var(--rs-space-3)',
+  minHeight: 44,
+  font: '500 var(--rs-text-sm) var(--rs-font-body)',
+  minWidth: 160,
 };
+
+/** Metric filter chip: a toggle, ≥44px tall. Real-world metrics go teal when on. */
+function MetricButton({ active, real, onClick, children }: { active: boolean; real?: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`game-button ${active ? (real ? 'rs-button-real' : 'rs-button-fork') : 'game-button-dark'}`}
+      style={{ padding: '0 var(--rs-space-3)', fontSize: 'var(--rs-text-sm)', minHeight: 44 }}
+    >
+      {children}
+    </button>
+  );
+}
 
 // Module-level cache of the all-countries map per Data Commons metric — the
 // Worker already edge-caches these, and they don't change within a session.
@@ -44,12 +65,12 @@ function isDcMetric(m: FilterMetric): m is DcKey {
   return (DC_KEYS as string[]).includes(m);
 }
 
-function metricConfig(m: FilterMetric): { label: string; icon: string; fmt: (v: number) => string } {
+function metricConfig(m: FilterMetric): { label: string; real: boolean; fmt: (v: number) => string } {
   if (isDcMetric(m)) {
     const meta = DC_INDICATOR_META[m];
-    return { label: meta.label, icon: DC_ICONS[m], fmt: v => `${v.toFixed(meta.decimals)} ${meta.unit}`.trim() };
+    return { label: meta.label, real: true, fmt: v => `${v.toFixed(meta.decimals)} ${meta.unit}`.trim() };
   }
-  return SIM_METRIC_CONFIG[m];
+  return { ...SIM_METRIC_CONFIG[m], real: false };
 }
 
 export default function CountryLeaderboard() {
@@ -119,162 +140,135 @@ export default function CountryLeaderboard() {
   const cfg = metricConfig(metric);
 
   return (
-    <div className="game-panel" style={{ padding: 18 }}>
-      {/* Header & Metric Filter Selector */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
+    <section className="game-panel" aria-labelledby="leaderboard-title" style={{ padding: 'var(--rs-space-4)' }}>
+      {/* Header & search */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 'var(--rs-space-3)', marginBottom: 'var(--rs-space-3)' }}>
         <div>
-          <div className="game-badge game-badge-yellow" style={{ marginBottom: 4 }}>
-            WORLD LEADERBOARD & STAT FILTERS
-          </div>
-          <div className="game-font-heading" style={{ fontSize: 18, color: '#fff' }}>
-            NATION RANKINGS BY METRIC
-          </div>
+          <div className="game-eyebrow" style={{ marginBottom: 'var(--rs-space-1)' }}>Leaderboard</div>
+          <h2 id="leaderboard-title" style={{ margin: 0, font: '700 var(--rs-text-xl)/1 var(--rs-font-display)' }}>
+            Who leads the pack?
+          </h2>
         </div>
         <input
-          type="text"
-          placeholder="🔍 Search nation..."
+          type="search"
+          aria-label="Search nations"
+          placeholder="Search nations"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          style={{
-            background: 'var(--bg-hud-card)',
-            border: '2px solid var(--game-border-ink)',
-            borderRadius: 'var(--radius-game-sm)',
-            color: '#fff',
-            padding: '6px 12px',
-            fontSize: 12,
-            fontFamily: 'var(--font-heading)',
-            outline: 'none',
-            minWidth: 160,
-          }}
+          style={inputStyle}
         />
       </div>
 
-      {/* Metric Filter Tabs — sim metrics, then real-world Data Commons metrics */}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-        {SIM_METRICS.map(m => {
-          const item = SIM_METRIC_CONFIG[m];
-          const active = metric === m;
-          return (
-            <button
-              key={m}
-              onClick={() => setMetric(m)}
-              className={`game-button ${active ? 'game-button-cyan' : 'game-button-dark'}`}
-              style={{ padding: '6px 12px', fontSize: 11, height: 32 }}
-            >
-              <span>{item.icon}</span>
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
+      {/* Metric filters: sim (fork) metrics, then real-world Data Commons metrics */}
+      <div className="game-eyebrow" id="lb-sim-label" style={{ marginBottom: 'var(--rs-space-2)' }}>Simulation</div>
+      <div role="group" aria-labelledby="lb-sim-label" style={{ display: 'flex', gap: 'var(--rs-space-2)', flexWrap: 'wrap', marginBottom: 'var(--rs-space-3)' }}>
+        {SIM_METRICS.map(m => (
+          <MetricButton key={m} active={metric === m} onClick={() => setMetric(m)}>
+            {SIM_METRIC_CONFIG[m].label}
+          </MetricButton>
+        ))}
       </div>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 4, alignItems: 'center' }}>
-        <span className="game-badge game-badge-cyan" style={{ fontSize: 9 }}>🌍 REAL-WORLD</span>
-        {DC_KEYS.map(m => {
-          const active = metric === m;
-          return (
-            <button
-              key={m}
-              onClick={() => setMetric(m)}
-              className={`game-button ${active ? 'game-button-cyan' : 'game-button-dark'}`}
-              style={{ padding: '6px 12px', fontSize: 11, height: 32 }}
-            >
-              <span>{DC_ICONS[m]}</span>
-              <span>{DC_INDICATOR_META[m].label}</span>
-            </button>
-          );
-        })}
+      <div className="game-eyebrow" id="lb-real-label" style={{ marginBottom: 'var(--rs-space-2)' }}>
+        <span className="game-badge rs-chip-real">Real</span> Real world
       </div>
-      <div style={{ color: 'var(--text-faint)', fontSize: 9, marginBottom: 14, fontFamily: 'var(--font-heading)' }}>
-        REAL-WORLD METRICS: DATA COMMONS · DATA.UN.ORG
+      <div role="group" aria-labelledby="lb-real-label" style={{ display: 'flex', gap: 'var(--rs-space-2)', flexWrap: 'wrap', marginBottom: 'var(--rs-space-2)' }}>
+        {DC_KEYS.map(m => (
+          <MetricButton key={m} real active={metric === m} onClick={() => setMetric(m)}>
+            {DC_INDICATOR_META[m].label}
+          </MetricButton>
+        ))}
       </div>
+      <p style={{ color: 'var(--rs-muted-on-dark)', font: '500 var(--rs-text-xs) var(--rs-font-body)', margin: '0 0 var(--rs-space-4)' }}>
+        Real-world figures come from Data Commons and data.un.org.
+      </p>
 
-      {/* Sort Direction Toggle */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, padding: '0 4px' }}>
-        <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-heading)' }}>
-          SHOWING {rows.length} COUNTRIES · RANKED BY {cfg.label.toUpperCase()}
+      {/* Sort direction */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--rs-space-2)', marginBottom: 'var(--rs-space-2)', flexWrap: 'wrap' }}>
+        <span style={{ color: 'var(--rs-muted-on-dark)', font: '700 var(--rs-text-sm) var(--rs-font-body)' }} aria-live="polite">
+          {rows.length} nations, ranked by {cfg.label.toLowerCase()}
         </span>
         <button
+          type="button"
           onClick={() => setSortAsc(!sortAsc)}
+          className="game-link"
           style={{
-            background: 'none', border: 'none', color: 'var(--accent-yellow)',
-            cursor: 'pointer', fontSize: 11, fontFamily: 'var(--font-heading)', fontWeight: 700,
+            background: 'none', border: 0, color: 'var(--rs-sun)', cursor: 'pointer', minHeight: 44,
+            font: '700 var(--rs-text-sm) var(--rs-font-body)',
           }}
         >
-          {sortAsc ? '⬆ LOWEST FIRST' : '⬇ HIGHEST FIRST'}
+          {sortAsc ? '▲ Lowest first' : '▼ Highest first'}
         </button>
       </div>
 
-      {/* Leaderboard Table / List */}
-      <div style={{ maxHeight: 420, overflowY: 'auto', paddingRight: 4 }}>
+      {/* Ranked list */}
+      <div
+        tabIndex={0}
+        role="region"
+        aria-label={`Nations ranked by ${cfg.label}`}
+        style={{ maxHeight: 420, overflowY: 'auto', paddingRight: 'var(--rs-space-1)' }}
+      >
         {dcLoading ? (
-          <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-            Loading real-world data from Data Commons…
-          </div>
+          <p style={{ padding: 'var(--rs-space-5)', textAlign: 'center', color: 'var(--rs-muted-on-dark)', font: '500 var(--rs-text-sm) var(--rs-font-body)', margin: 0 }}>
+            Loading real-world figures from Data Commons…
+          </p>
         ) : !rows.length ? (
-          <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
+          <p style={{ padding: 'var(--rs-space-5)', textAlign: 'center', color: 'var(--rs-muted-on-dark)', font: '500 var(--rs-text-sm) var(--rs-font-body)', margin: 0 }}>
             {isDcMetric(metric)
-              ? 'No Data Commons values available (enrichment proxy may be unconfigured).'
-              : 'No matching countries found.'}
-          </div>
+              ? 'No real-world figures for this one yet. The Data Commons proxy may not be set up.'
+              : 'No nation matches that search.'}
+          </p>
         ) : (
-          rows.map((r, index) => {
-            const isSelected = selectedCountry === r.code;
-            const pct = Math.min(100, Math.max(4, (r.value / maxVal) * 100));
-            const rank = index + 1;
-            const rankBadge = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
-
-            return (
-              <div
-                key={r.code}
-                onClick={() => selectCountry(r.code)}
-                className="game-card"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  marginBottom: 6,
-                  padding: '8px 12px',
-                  cursor: 'pointer',
-                  borderColor: isSelected ? 'var(--accent-yellow)' : undefined,
-                  boxShadow: isSelected ? '0 0 10px rgba(255,230,0,0.3)' : undefined,
-                }}
-              >
-                <div style={{
-                  fontFamily: 'var(--font-heading)',
-                  fontWeight: 800,
-                  fontSize: 13,
-                  minWidth: 32,
-                  color: rank <= 3 ? 'var(--accent-yellow)' : 'var(--text-muted)',
-                }}>
-                  {rankBadge}
-                </div>
-
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontWeight: 700, fontSize: 13, color: '#fff' }}>{r.name}</span>
-                    <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: 12, color: 'var(--accent-cyan)' }}>
-                      {cfg.fmt(r.value)}
+          <ol style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+            {rows.map((r, index) => {
+              const isSelected = selectedCountry === r.code;
+              const pct = Math.min(100, Math.max(4, (r.value / maxVal) * 100));
+              const rank = index + 1;
+              return (
+                <li key={r.code} style={{ marginBottom: 'var(--rs-space-2)' }}>
+                  <button
+                    type="button"
+                    onClick={() => selectCountry(r.code)}
+                    aria-current={isSelected ? 'true' : undefined}
+                    style={{
+                      width: '100%', minHeight: 44, display: 'flex', alignItems: 'center', gap: 'var(--rs-space-3)',
+                      padding: 'var(--rs-space-2) var(--rs-space-3)', cursor: 'pointer', textAlign: 'left',
+                      background: 'var(--rs-hud)', color: 'var(--rs-text-on-dark)',
+                      border: isSelected ? '2px solid var(--rs-sun)' : '2px solid var(--rs-hud-line)',
+                      borderRadius: 'var(--rs-radius-md)',
+                      transition: 'border-color var(--rs-dur-med)',
+                    }}
+                  >
+                    <span style={{
+                      font: '700 var(--rs-text-sm) var(--rs-font-mono)', minWidth: 32,
+                      color: rank <= 3 ? 'var(--rs-sun)' : 'var(--rs-muted-on-dark)',
+                    }}>
+                      #{rank}
                     </span>
-                  </div>
-                  <div className="game-stat-bar-container" style={{ height: 6 }}>
-                    <div
-                      className="game-stat-bar-fill"
-                      style={{
-                        width: `${pct}%`,
-                        background: rank <= 3 ? 'linear-gradient(90deg, #FFE600, #FF7700)' : 'linear-gradient(90deg, #00F0FF, #9D00FF)',
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div className="game-badge" style={{ fontSize: 10, padding: '2px 6px' }}>
-                  {r.code}
-                </div>
-              </div>
-            );
-          })
+                    <Flag iso3={r.code} height={16} />
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--rs-space-2)', marginBottom: 'var(--rs-space-1)' }}>
+                        <span style={{ font: '700 var(--rs-text-sm) var(--rs-font-body)' }}>{r.name}</span>
+                        <span style={{
+                          font: '700 var(--rs-text-sm) var(--rs-font-mono)', fontVariantNumeric: 'tabular-nums',
+                          color: cfg.real ? 'var(--rs-real)' : 'var(--rs-fork)',
+                        }}>
+                          {cfg.fmt(r.value)}
+                        </span>
+                      </span>
+                      <span className="game-stat-bar-container" style={{ display: 'block', height: 6 }}>
+                        <span
+                          className="game-stat-bar-fill"
+                          style={{ display: 'block', height: '100%', width: `${pct}%`, background: cfg.real ? 'var(--rs-real)' : 'var(--rs-fork)' }}
+                        />
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
         )}
       </div>
-    </div>
+    </section>
   );
 }

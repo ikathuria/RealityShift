@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 
 interface Props {
@@ -14,9 +14,25 @@ export default function AuthModal({ onSuccess, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [signupDone, setSignupDone] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+
+  // Escape closes; focus moves into the dialog and returns to the opener on close.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    (emailRef.current ?? dialogRef.current)?.focus();
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onCloseRef.current(); };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      opener?.focus?.();
+    };
+  }, []);
 
   const submit = async () => {
-    if (!email || !password) { setError('Email and password required'); return; }
+    if (!email || !password) { setError('We need an email and a password to let you in.'); return; }
     setLoading(true);
     setError(null);
     const err = mode === 'signin'
@@ -29,11 +45,15 @@ export default function AuthModal({ onSuccess, onClose }: Props) {
   };
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '10px 12px', borderRadius: 8,
-    border: '1px solid rgba(255,255,255,0.15)',
-    background: 'rgba(255,255,255,0.06)', color: '#fff',
-    fontSize: 14, outline: 'none', boxSizing: 'border-box',
+    width: '100%', minHeight: 44, padding: '0 var(--rs-space-3)', borderRadius: 'var(--rs-radius-md)',
+    border: 'var(--rs-border-thin)', background: 'var(--rs-paper)', color: 'var(--rs-ink)',
+    font: '500 var(--rs-text-md) var(--rs-font-body)', boxSizing: 'border-box',
   };
+  const labelStyle: React.CSSProperties = {
+    display: 'flex', flexDirection: 'column', gap: 'var(--rs-space-1)',
+    font: '800 var(--rs-text-xs) var(--rs-font-body)', color: 'var(--rs-ink)',
+  };
+  const linkBtn: React.CSSProperties = { minHeight: 44, margin: 0, fontSize: 'var(--rs-text-sm)' };
 
   return (
     /* Backdrop */
@@ -41,109 +61,128 @@ export default function AuthModal({ onSuccess, onClose }: Props) {
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
-        background: 'rgba(0,0,0,0.75)',
+        background: 'var(--rs-space)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 'var(--rs-space-4)',
       }}
     >
-      {/* Modal */}
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="auth-modal-title"
+        aria-describedby="auth-modal-desc"
+        tabIndex={-1}
         onClick={e => e.stopPropagation()}
+        className="rs-paper"
         style={{
-          width: 360, background: '#0d0d1a',
-          border: '1px solid rgba(255,255,255,0.12)',
-          borderRadius: 14, padding: 28, color: '#fff',
+          position: 'relative', width: 380, maxWidth: '100%', boxSizing: 'border-box',
+          padding: 'var(--rs-space-5)', fontFamily: 'var(--rs-font-body)',
         }}
       >
-        <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>
-          {mode === 'signin' ? 'Sign In' : 'Create Account'}
-        </div>
-        <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 20 }}>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close sign-in"
+          className="game-button game-button-dark"
+          style={{ position: 'absolute', top: 'var(--rs-space-3)', right: 'var(--rs-space-3)', width: 44, padding: 0 }}
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+        <h2 id="auth-modal-title" style={{
+          fontFamily: 'var(--rs-font-display)', fontWeight: 700, fontSize: 'var(--rs-text-xl)',
+          lineHeight: 1, margin: '0 0 var(--rs-space-2)', paddingRight: 'var(--rs-space-7)',
+        }}>
+          {mode === 'signin' ? 'Sign in' : 'Create an account'}
+        </h2>
+        <p id="auth-modal-desc" style={{ color: 'var(--rs-muted-on-paper)', fontSize: 'var(--rs-text-sm)', lineHeight: 1.45, margin: '0 0 var(--rs-space-5)' }}>
           {mode === 'signin'
-            ? 'Sign in to take over a country and fork the simulation.'
-            : 'Create an account to start your own parallel universe.'}
-        </div>
+            ? 'Sign in to take over a country and fork the world.'
+            : 'Make an account and get a parallel universe of your very own.'}
+        </p>
 
         {signupDone ? (
-          <div style={{ textAlign: 'center', padding: '16px 0' }}>
-            <div style={{ fontSize: 32, marginBottom: 10 }}>📧</div>
-            <div style={{ fontWeight: 600, marginBottom: 6 }}>Check your email</div>
-            <div style={{ color: '#9ca3af', fontSize: 13 }}>
-              We sent a confirmation link to <strong>{email}</strong>.
-              Confirm it then sign in.
-            </div>
+          <div role="status" style={{ textAlign: 'center' }}>
+            <h3 style={{ fontFamily: 'var(--rs-font-display)', fontSize: 'var(--rs-text-lg)', margin: '0 0 var(--rs-space-2)' }}>
+              Check your email
+            </h3>
+            <p style={{ color: 'var(--rs-muted-on-paper)', fontSize: 'var(--rs-text-sm)', lineHeight: 1.45, margin: 0 }}>
+              We sent a confirmation link to <strong style={{ color: 'var(--rs-ink)' }}>{email}</strong>.
+              Click it, then come back and sign in.
+            </p>
             <button
+              type="button"
               onClick={() => { setSignupDone(false); setMode('signin'); }}
-              style={{
-                marginTop: 16, padding: '8px 20px', borderRadius: 8, border: 'none',
-                background: 'rgba(255,255,255,0.1)', color: '#fff', cursor: 'pointer',
-              }}
+              className="game-button game-button-dark"
+              style={{ marginTop: 'var(--rs-space-4)' }}
             >
-              Back to Sign In
+              Back to sign in
             </button>
           </div>
         ) : (
           <>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
-              <input
-                type="email"
-                placeholder="email@example.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && submit()}
-                style={inputStyle}
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && submit()}
-                style={inputStyle}
-              />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--rs-space-3)', marginBottom: 'var(--rs-space-4)' }}>
+              <label style={labelStyle}>
+                Email
+                <input
+                  ref={emailRef}
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && submit()}
+                  style={inputStyle}
+                />
+              </label>
+              <label style={labelStyle}>
+                Password
+                <input
+                  type="password"
+                  autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && submit()}
+                  style={inputStyle}
+                />
+              </label>
             </div>
 
             {error && (
-              <div style={{
-                color: '#f87171', fontSize: 12, marginBottom: 12,
-                background: 'rgba(248,113,113,0.1)', padding: '8px 12px', borderRadius: 6,
+              <p role="alert" style={{
+                color: 'var(--rs-bad)', fontSize: 'var(--rs-text-sm)', fontWeight: 700, margin: '0 0 var(--rs-space-3)',
+                border: 'var(--rs-border-thin)', borderColor: 'var(--rs-bad)', borderRadius: 'var(--rs-radius-sm)',
+                padding: 'var(--rs-space-2) var(--rs-space-3)',
               }}>
                 {error}
-              </div>
+              </p>
             )}
 
             <button
+              type="button"
               onClick={submit}
               disabled={loading}
-              style={{
-                width: '100%', padding: '11px 0', borderRadius: 8, border: 'none',
-                background: loading ? 'rgba(255,255,255,0.1)' : 'rgba(99,102,241,0.8)',
-                color: '#fff', fontSize: 14, fontWeight: 600, cursor: loading ? 'default' : 'pointer',
-              }}
+              className="game-button rs-button-lg"
+              style={{ width: '100%' }}
             >
-              {loading ? 'Please wait…' : mode === 'signin' ? 'Sign In' : 'Create Account'}
+              {loading ? (mode === 'signin' ? 'Signing you in…' : 'Creating your account…') : mode === 'signin' ? 'Sign in!' : 'Create account!'}
             </button>
 
-            <div style={{ textAlign: 'center', marginTop: 14, fontSize: 13, color: 'var(--text-muted)' }}>
+            <p style={{ textAlign: 'center', margin: 'var(--rs-space-3) 0 0', fontSize: 'var(--rs-text-sm)', color: 'var(--rs-muted-on-paper)' }}>
               {mode === 'signin' ? (
-                <>No account?{' '}
-                  <button
-                    onClick={() => { setMode('signup'); setError(null); }}
-                    style={{ background: 'none', border: 'none', color: '#a78bfa', cursor: 'pointer', fontSize: 13 }}
-                  >
-                    Sign up
+                <>No account yet?{' '}
+                  <button type="button" className="game-link" style={linkBtn} onClick={() => { setMode('signup'); setError(null); }}>
+                    Create one
                   </button>
                 </>
               ) : (
                 <>Already have one?{' '}
-                  <button
-                    onClick={() => { setMode('signin'); setError(null); }}
-                    style={{ background: 'none', border: 'none', color: '#a78bfa', cursor: 'pointer', fontSize: 13 }}
-                  >
+                  <button type="button" className="game-link" style={linkBtn} onClick={() => { setMode('signin'); setError(null); }}>
                     Sign in
                   </button>
                 </>
               )}
-            </div>
+            </p>
           </>
         )}
       </div>

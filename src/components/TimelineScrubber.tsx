@@ -3,8 +3,8 @@ import type { Divergence } from '../store/worldStore';
 import { countryName } from '../data/countries';
 import { buildTimeline, cumulativeMagnitude, divergenceMagnitude } from '../lib/timeline';
 
-function magColor(mag: number): string {
-  return mag > 5 ? 'var(--accent-magenta)' : mag > 2 ? 'var(--accent-yellow)' : 'var(--accent-green)';
+function magLabel(mag: number): string {
+  return mag > 5 ? 'Big swing' : mag > 2 ? 'Noticeable' : 'Nudge';
 }
 
 /**
@@ -42,9 +42,9 @@ export default function TimelineScrubber({ divs }: { divs: Divergence[] }) {
 
   if (steps.length === 0) {
     return (
-      <div style={{ color: 'var(--text-muted)', fontSize: 13, textAlign: 'center', padding: 20 }}>
-        No divergences yet — this timeline fills in as the world drifts from reality.
-      </div>
+      <p style={{ color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-sm)', textAlign: 'center', padding: 'var(--rs-space-5)', margin: 0 }}>
+        Nothing has drifted yet. Simulate a year and this timeline fills in as the world drifts from reality.
+      </p>
     );
   }
 
@@ -62,24 +62,23 @@ export default function TimelineScrubber({ divs }: { divs: Divergence[] }) {
   return (
     <div>
       {/* Transport + year readout */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--rs-space-3)', marginBottom: 'var(--rs-space-3)' }}>
         <button
           onClick={togglePlay}
           aria-label={playing ? 'Pause timeline' : 'Play timeline'}
-          className="game-font-heading"
-          style={{
-            width: 40, height: 40, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
-            border: '2px solid var(--accent-cyan)', background: 'var(--surface-panel)',
-            color: 'var(--accent-cyan)', fontSize: 16,
-          }}
+          className="game-button"
+          style={{ width: 48, padding: 0, flexShrink: 0 }}
         >
-          {playing ? '❚❚' : '▶'}
+          <span aria-hidden="true">{playing ? '❚❚' : '▶'}</span>
         </button>
         <div style={{ flex: 1 }}>
-          <div className="game-font-heading" style={{ fontSize: 22, fontWeight: 800, color: 'var(--accent-yellow)', lineHeight: 1 }}>
-            {step.year}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--rs-space-2)', flexWrap: 'wrap' }}>
+            <span className="game-font-display" style={{ fontSize: 'var(--rs-text-xl)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+              {step.year}
+            </span>
+            <span className="game-badge rs-chip-fork">Fork</span>
           </div>
-          <div style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 2 }}>
+          <div style={{ color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-xs)', marginTop: 'var(--rs-space-1)' }}>
             Step {index + 1} of {steps.length} · {step.items.length} divergence{step.items.length === 1 ? '' : 's'}
           </div>
         </div>
@@ -96,49 +95,50 @@ export default function TimelineScrubber({ divs }: { divs: Divergence[] }) {
           setPlaying(false);
           setIndex(Number(e.target.value));
         }}
-        style={{ width: '100%', accentColor: 'var(--accent-cyan)', cursor: 'pointer' }}
+        style={{ width: '100%', minHeight: 44, accentColor: 'var(--rs-fork)', cursor: 'pointer' }}
       />
 
       {/* Drift-from-reality meter */}
-      <div style={{ margin: '10px 0 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>
+      <div style={{ margin: 'var(--rs-space-2) 0 var(--rs-space-4)' }}>
+        <div className="game-eyebrow" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--rs-space-2)' }}>
           <span>DRIFT FROM REALITY</span>
-          <span style={{ fontVariantNumeric: 'tabular-nums' }}>{runningMag.toFixed(1)}</span>
+          <span style={{ fontFamily: 'var(--rs-font-mono)', fontVariantNumeric: 'tabular-nums' }}>{runningMag.toFixed(1)}</span>
         </div>
-        <div style={{ height: 6, borderRadius: 3, background: 'var(--surface-panel)', overflow: 'hidden' }}>
-          <div style={{
-            width: `${pct}%`, height: '100%',
-            background: 'linear-gradient(90deg, var(--accent-green), var(--accent-yellow), var(--accent-magenta))',
-            transition: 'width 0.5s ease',
-          }} />
+        <div
+          className="rs-drift"
+          role="meter"
+          aria-label="Drift from reality"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(pct)}
+          aria-valuetext={`${Math.round(pct)}% of this fork's total drift`}
+          style={{ display: 'block' }}
+        >
+          <i style={{ left: `${pct}%` }} />
         </div>
       </div>
 
       {/* Divergences for the active year */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <ul style={{ display: 'flex', flexDirection: 'column', gap: 'var(--rs-space-2)', listStyle: 'none', margin: 0, padding: 0 }}>
         {step.items.slice(0, 8).map(d => {
           const mag = divergenceMagnitude(d);
           return (
-            <div key={d.id} className="game-card" style={{ position: 'relative', paddingLeft: 14 }}>
-              <div style={{
-                position: 'absolute', left: 0, top: 0, bottom: 0, width: 4,
-                background: magColor(mag), borderRadius: '4px 0 0 4px',
-              }} />
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
-                <span className="game-font-heading" style={{ fontWeight: 800, fontSize: 13, color: 'var(--accent-yellow)' }}>
+            <li key={d.id} className="game-card" style={{ borderLeft: '6px solid var(--rs-fork)' }}>
+              <div style={{ display: 'flex', gap: 'var(--rs-space-2)', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h3 className="game-font-display" style={{ fontSize: 'var(--rs-text-md)', margin: 0 }}>
                   {countryName(d.country_code)}
-                </span>
-                <span style={{ color: 'var(--text-muted)', fontSize: 10, fontVariantNumeric: 'tabular-nums' }}>
-                  Δ {mag.toFixed(1)}
+                </h3>
+                <span className="rs-pill rs-pill-fork" title={magLabel(mag)}>
+                  Δ {mag.toFixed(1)}<span className="rs-sr-only"> ({magLabel(mag)})</span>
                 </span>
               </div>
-              <p style={{ color: 'var(--text-secondary)', fontSize: 11, margin: '4px 0 0', lineHeight: 1.45 }}>
+              <p style={{ color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-xs)', margin: 'var(--rs-space-1) 0 0', lineHeight: 1.45 }}>
                 {d.narrative.split('\n\nNews used:')[0].slice(0, 140)}…
               </p>
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 }

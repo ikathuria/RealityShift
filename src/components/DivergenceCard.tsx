@@ -1,13 +1,21 @@
 import type { Divergence } from '../store/worldStore';
 import { countryName } from '../data/countries';
+import { Flag } from './GameIcons';
 
+/** One indicator's sim-minus-reality gap. Sits on a dark HUD surface, so the
+ *  coral fork pill carries the value and the arrow carries the direction. */
 function DeltaRow({ label, value }: { label: string; value: number }) {
   const positive = value > 0;
-  const color = positive ? '#f87171' : '#34d399'; // red = sim above reality, green = below
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '3px 0' }}>
-      <span style={{ color: '#9ca3af' }}>{label}</span>
-      <span style={{ color, fontWeight: 600 }}>
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      gap: 'var(--rs-space-2)', padding: 'var(--rs-space-1) 0',
+      font: '700 var(--rs-text-sm) var(--rs-font-body)',
+    }}>
+      <span style={{ color: 'var(--rs-muted-on-dark)', textTransform: 'capitalize' }}>{label}</span>
+      <span className="rs-pill rs-pill-fork" style={{ fontVariantNumeric: 'tabular-nums' }}>
+        <span aria-hidden="true">{positive ? '▲' : '▼'} </span>
+        <span className="rs-sr-only">{positive ? 'Fork above reality by ' : 'Fork below reality by '}</span>
         {positive ? '+' : ''}{value.toFixed(2)}
       </span>
     </div>
@@ -17,33 +25,33 @@ function DeltaRow({ label, value }: { label: string; value: number }) {
 export default function DivergenceCard({ div }: { div: Divergence }) {
   const deltaEntries = Object.entries(div.delta).filter(([, v]) => Math.abs(v) > 0.001);
   const magnitude = deltaEntries.reduce((a, [, v]) => a + Math.abs(v), 0);
-  const severeColor = magnitude > 5 ? '#f87171' : magnitude > 2 ? '#fbbf24' : '#34d399';
+  const severity = magnitude > 5 ? 'Big drift' : magnitude > 2 ? 'Some drift' : 'Light drift';
 
   return (
-    <div style={{
-      background: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: 8,
-      padding: '12px 14px',
-      marginBottom: 10,
+    <article style={{
+      background: 'var(--rs-hud)',
+      border: 'var(--rs-border-thin)',
+      outline: '1px solid var(--rs-hud-line)',
+      outlineOffset: -4,
+      borderRadius: 'var(--rs-radius-md)',
+      padding: 'var(--rs-space-3) var(--rs-space-4)',
+      marginBottom: 'var(--rs-space-3)',
+      color: 'var(--rs-text-on-dark)',
     }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{
-            background: severeColor,
-            width: 8, height: 8, borderRadius: '50%', display: 'inline-block',
-          }} />
-          {/* ISO3 codes are developer-facing; lead with the readable name and
-              keep the code as secondary metadata. */}
-          <span style={{ fontWeight: 600, fontSize: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--rs-space-2)', marginBottom: 'var(--rs-space-2)', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--rs-space-2)' }}>
+          <Flag iso3={div.country_code} height={16} />
+          {/* ISO3 codes are developer-facing; lead with the readable name. */}
+          <h3 style={{ margin: 0, font: '700 var(--rs-text-md) var(--rs-font-display)' }}>
             {countryName(div.country_code)}
-          </span>
-          <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>sim yr {div.sim_year}</span>
+          </h3>
+          <span className="game-badge rs-chip-fork">{severity}</span>
         </div>
         {/* Explicit day-month-year: toLocaleDateString() renders 28/07/2026,
             which is ambiguous across locales. */}
-        <span style={{ color: 'var(--text-faint)', fontSize: 11 }}>
+        <span style={{ color: 'var(--rs-muted-on-dark)', font: '700 var(--rs-text-xs) var(--rs-font-mono)' }}>
+          Sim year {div.sim_year} ·{' '}
           {new Date(div.published_at).toLocaleDateString('en-GB', {
             day: 'numeric', month: 'short', year: 'numeric',
           })}
@@ -51,19 +59,19 @@ export default function DivergenceCard({ div }: { div: Divergence }) {
       </div>
 
       {/* Narrative */}
-      <p style={{ fontSize: 12, color: '#d1d5db', lineHeight: 1.5, margin: '0 0 8px' }}>
+      <p style={{ font: '500 var(--rs-text-sm)/1.45 var(--rs-font-body)', color: 'var(--rs-text-on-dark)', margin: '0 0 var(--rs-space-2)' }}>
         {div.narrative.split('\n\nNews used:')[0].slice(0, 200)}
         {div.narrative.length > 200 ? '…' : ''}
       </p>
 
       {/* Deltas */}
       {deltaEntries.length > 0 && (
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 8 }}>
+        <div style={{ borderTop: '1px solid var(--rs-hud-line)', paddingTop: 'var(--rs-space-2)' }}>
           {deltaEntries.slice(0, 4).map(([k, v]) => (
             <DeltaRow key={k} label={k.replace(/_/g, ' ')} value={v} />
           ))}
         </div>
       )}
-    </div>
+    </article>
   );
 }

@@ -36,73 +36,51 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (this.props.fallback) return this.props.fallback(error, this.reset);
 
     return (
-      <div
+      <main
         role="alert"
         style={{
           minHeight: '100vh',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 16,
-          padding: 24,
-          textAlign: 'center',
-          background: '#0b1020',
-          color: '#e6ebff',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
+          padding: 'var(--rs-space-5) var(--rs-space-4)',
+          background: 'var(--rs-space)',
+          fontFamily: 'var(--rs-font-body)',
         }}
       >
-        <div style={{ fontSize: 48, lineHeight: 1 }}>🌍</div>
-        <h1 style={{ margin: 0, fontSize: 22 }}>Something knocked the world off its axis.</h1>
-        <p style={{ margin: 0, maxWidth: 460, opacity: 0.75, fontSize: 14 }}>
-          An unexpected error interrupted the simulation. Your data is safe — reloading usually
-          fixes it.
-        </p>
-        <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-          <button
-            onClick={this.reset}
-            style={{
-              padding: '10px 18px',
-              borderRadius: 8,
-              border: '1px solid #3a4a7a',
-              background: '#1a2140',
-              color: '#e6ebff',
-              cursor: 'pointer',
-              fontSize: 14,
-            }}
-          >
-            Try again
-          </button>
-          <button
-            onClick={() => window.location.reload()}
-            style={{
-              padding: '10px 18px',
-              borderRadius: 8,
-              border: 'none',
-              background: '#4f7cff',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: 14,
-            }}
-          >
-            Reload
-          </button>
+        <div className="rs-paper" style={{ maxWidth: 480, padding: 'var(--rs-space-6)', textAlign: 'center' }}>
+          <h1 style={{ margin: '0 0 var(--rs-space-3)', fontFamily: 'var(--rs-font-display)', fontSize: 'var(--rs-text-xl)', lineHeight: 1.05 }}>
+            Something knocked the world off its axis
+          </h1>
+          <p style={{ margin: 0, color: 'var(--rs-muted-on-paper)', fontSize: 'var(--rs-text-md)', lineHeight: 1.45 }}>
+            An unexpected error stopped the simulation mid-turn. Your worlds are safe on our side.
+            Try again, or reload the page if it keeps happening.
+          </p>
+          <div style={{ display: 'flex', gap: 'var(--rs-space-3)', marginTop: 'var(--rs-space-5)', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button type="button" onClick={this.reset} className="game-button">
+              Try again
+            </button>
+            <button type="button" onClick={() => window.location.reload()} className="game-button game-button-dark">
+              Reload the page
+            </button>
+          </div>
+          {import.meta.env.DEV && (
+            <pre
+              style={{
+                marginTop: 'var(--rs-space-4)',
+                maxWidth: '100%',
+                overflow: 'auto',
+                fontFamily: 'var(--rs-font-mono)',
+                fontSize: 'var(--rs-text-xs)',
+                color: 'var(--rs-muted-on-paper)',
+                textAlign: 'left',
+              }}
+            >
+              {error.message}
+            </pre>
+          )}
         </div>
-        {import.meta.env.DEV && (
-          <pre
-            style={{
-              marginTop: 16,
-              maxWidth: '90vw',
-              overflow: 'auto',
-              fontSize: 12,
-              opacity: 0.6,
-              textAlign: 'left',
-            }}
-          >
-            {error.message}
-          </pre>
-        )}
-      </div>
+      </main>
     );
   }
 }

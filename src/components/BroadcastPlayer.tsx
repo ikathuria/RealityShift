@@ -26,13 +26,19 @@ export default function BroadcastPlayer({ worldId = 'live' }: { worldId?: string
   }, [worldId]);
 
   if (broadcasts === null) {
-    return <div style={{ padding: 24, color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)' }}>Loading broadcast…</div>;
+    return (
+      <p role="status" style={{ padding: 'var(--rs-space-5)', margin: 0, color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-sm)' }}>
+        Tuning in to this world's newsroom…
+      </p>
+    );
   }
   if (broadcasts.length === 0) {
     return (
-      <div style={{ padding: 24, color: 'var(--text-muted)', fontSize: 'var(--font-size-sm)', lineHeight: 1.5 }}>
-        No broadcast generated yet. Run <code>rs-media batch … --broadcast IND</code> to add one.
-      </div>
+      <p style={{ padding: 'var(--rs-space-5)', margin: 0, color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-sm)', lineHeight: 1.45 }}>
+        Nothing on air yet. Broadcasts appear here once the newsroom renders one
+        (run <code style={{ fontFamily: 'var(--rs-font-mono)', color: 'var(--rs-text-on-dark)' }}>rs-media batch … --broadcast IND</code>).
+        The front pages below are still worth a read.
+      </p>
     );
   }
 
@@ -41,18 +47,15 @@ export default function BroadcastPlayer({ worldId = 'live' }: { worldId?: string
   return (
     <div>
       {broadcasts.length > 1 && (
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+        <div role="group" aria-label="Choose a broadcast" style={{ display: 'flex', gap: 'var(--rs-space-2)', flexWrap: 'wrap', marginBottom: 'var(--rs-space-4)' }}>
           {broadcasts.map((b, i) => (
             <button
               key={b.canonical_hash}
+              type="button"
               onClick={() => setActive(i)}
-              style={{
-                minHeight: 26, padding: '0 10px', borderRadius: 6, cursor: 'pointer',
-                fontSize: 'var(--font-size-xs)',
-                border: i === active ? '1px solid rgba(99,102,241,0.5)' : 'var(--border-subtle)',
-                background: i === active ? 'rgba(99,102,241,0.18)' : 'transparent',
-                color: i === active ? 'var(--accent-text)' : 'var(--text-muted)',
-              }}
+              aria-pressed={i === active}
+              className={`game-button ${i === active ? 'rs-button-fork' : 'game-button-dark'}`}
+              style={{ fontSize: 'var(--rs-text-sm)' }}
             >
               {countryName(b.nation_iso)} · {b.sim_date.slice(0, 4)}
             </button>
@@ -60,18 +63,26 @@ export default function BroadcastPlayer({ worldId = 'live' }: { worldId?: string
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 2fr) minmax(260px, 1fr)', gap: 20, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 2fr) minmax(260px, 1fr)', gap: 'var(--rs-space-5)', alignItems: 'start' }}>
         <div>
           <video
             key={entry.b2_url}
             src={entry.b2_url}
             controls
             playsInline
-            style={{ width: '100%', borderRadius: 10, background: '#000', border: 'var(--border-subtle)' }}
+            aria-label={`Broadcast from a forked ${countryName(entry.nation_iso)}, year ${entry.sim_date.slice(0, 4)}`}
+            style={{
+              width: '100%', display: 'block', borderRadius: 'var(--rs-radius-md)', background: 'var(--rs-ink)',
+              border: 'var(--rs-border)', boxShadow: 'var(--rs-shadow-md)',
+            }}
           />
-          <div style={{ marginTop: 8, fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
-            {countryName(entry.nation_iso)} — divergence broadcast, sim year {entry.sim_date.slice(0, 4)}
-            {entry.duration ? ` · ${Math.round(entry.duration)}s` : ''}
+          <div style={{
+            marginTop: 'var(--rs-space-3)', fontSize: 'var(--rs-text-sm)', fontWeight: 700, color: 'var(--rs-text-on-dark)',
+            display: 'flex', alignItems: 'center', gap: 'var(--rs-space-2)', flexWrap: 'wrap',
+          }}>
+            <span className="game-badge rs-chip-fork">Fork</span>
+            {countryName(entry.nation_iso)} evening news, year {entry.sim_date.slice(0, 4)}
+            {entry.duration ? <span style={{ fontFamily: 'var(--rs-font-mono)', color: 'var(--rs-muted-on-dark)' }}>· {Math.round(entry.duration)}s</span> : null}
           </div>
         </div>
         <ProvenancePanel entry={entry} />

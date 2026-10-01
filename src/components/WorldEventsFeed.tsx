@@ -1,59 +1,60 @@
 import type { WorldEvent } from '../store/worldStore';
+import { countryName } from '../data/countries';
+import { EventIcon, Flag } from './GameIcons';
 
-const EVENT_META: Record<string, { icon: string; color: string; label: string }> = {
-  sanction:            { icon: '🚫', color: 'var(--accent-magenta)', label: 'SANCTION'        },
-  trade_deal:          { icon: '🤝', color: 'var(--accent-green)', label: 'TRADE DEAL'      },
-  military_posture:    { icon: '⚔️',  color: 'var(--accent-yellow)', label: 'MILITARY'       },
-  diplomatic_protest:  { icon: '📣', color: 'var(--accent-orange)', label: 'PROTEST'         },
-  alliance_formed:     { icon: '🔗', color: 'var(--accent-cyan)', label: 'ALLIANCE'        },
-  alliance_broken:     { icon: '💔', color: 'var(--accent-magenta)', label: 'ALLIANCE BROKEN' },
-  conflict_risk:       { icon: '🔴', color: 'var(--accent-magenta)', label: 'CONFLICT RISK'   },
+// Event-type chips. Teal/coral are reserved for reality/fork, so event kinds
+// use neutral paper chips; the hand-drawn EventIcon carries the type visually.
+const EVENT_LABEL: Record<string, string> = {
+  sanction:           'Sanction',
+  trade_deal:         'Trade deal',
+  military_posture:   'Military',
+  diplomatic_protest: 'Protest',
+  alliance_formed:    'Alliance',
+  alliance_broken:    'Alliance broken',
+  conflict_risk:      'Conflict risk',
 };
 
 function EventRow({ event }: { event: WorldEvent }) {
-  const meta = EVENT_META[event.event_type] ?? { icon: '🌐', color: 'var(--accent-cyan)', label: event.event_type.toUpperCase() };
+  const label = EVENT_LABEL[event.event_type] ?? event.event_type.replace(/_/g, ' ');
 
   return (
-    <div
-      className="game-card"
+    <li
       style={{
-        marginBottom: 8,
-        padding: '10px 12px',
-        borderLeft: `4px solid ${meta.color}`,
+        listStyle: 'none',
+        marginBottom: 'var(--rs-space-2)',
+        padding: 'var(--rs-space-3)',
+        border: 'var(--rs-border-thin)',
+        outline: '1px solid var(--rs-hud-line)',
+        outlineOffset: -4,
+        borderRadius: 'var(--rs-radius-md)',
+        background: 'var(--rs-hud)',
+        color: 'var(--rs-text-on-dark)',
       }}
     >
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
-        <span style={{ fontSize: 13 }}>{meta.icon}</span>
-        <span
-          className="game-badge"
-          style={{
-            fontSize: 9,
-            color: meta.color,
-            borderColor: meta.color,
-            background: 'rgba(0,0,0,0.5)',
-          }}
-        >
-          {meta.label}
-        </span>
-        <span style={{ color: 'var(--accent-yellow)', fontFamily: 'var(--font-heading)', fontSize: 10, fontWeight: 700, marginLeft: 'auto' }}>
-          YR {event.sim_year}
+      <div style={{ display: 'flex', gap: 'var(--rs-space-2)', alignItems: 'center', marginBottom: 'var(--rs-space-2)' }}>
+        <EventIcon type={event.event_type} size={22} />
+        <span className="game-badge">{label}</span>
+        <span style={{ color: 'var(--rs-muted-on-dark)', font: '700 var(--rs-text-xs) var(--rs-font-mono)', marginLeft: 'auto' }}>
+          Year {event.sim_year}
         </span>
       </div>
 
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4, fontFamily: 'var(--font-heading)' }}>
-        <span style={{ fontWeight: 800, fontSize: 13, color: '#fff' }}>{event.from_country}</span>
+      <div style={{ display: 'flex', gap: 'var(--rs-space-2)', alignItems: 'center', flexWrap: 'wrap', marginBottom: 'var(--rs-space-1)', font: '700 var(--rs-text-sm) var(--rs-font-body)' }}>
+        <Flag iso3={event.from_country} height={12} />
+        <span>{countryName(event.from_country)}</span>
         {event.to_country && (
           <>
-            <span style={{ color: 'var(--accent-cyan)', fontSize: 11, fontWeight: 800 }}>⚡</span>
-            <span style={{ fontWeight: 800, fontSize: 13, color: '#fff' }}>{event.to_country}</span>
+            <span aria-label="to" style={{ color: 'var(--rs-muted-on-dark)' }}>→</span>
+            <Flag iso3={event.to_country} height={12} />
+            <span>{countryName(event.to_country)}</span>
           </>
         )}
       </div>
 
-      <p style={{ color: 'var(--text-secondary)', fontSize: 11, margin: 0, lineHeight: 1.45 }}>
+      <p style={{ color: 'var(--rs-muted-on-dark)', font: '500 var(--rs-text-sm)/1.45 var(--rs-font-body)', margin: 0 }}>
         {event.details.slice(0, 160)}{event.details.length > 160 ? '…' : ''}
       </p>
-    </div>
+    </li>
   );
 }
 
@@ -65,15 +66,28 @@ interface Props {
 export default function WorldEventsFeed({ events, maxHeight }: Props) {
   if (!events.length) {
     return (
-      <div style={{ color: 'var(--text-muted)', fontSize: 12, textAlign: 'center', padding: '16px 0', fontFamily: 'var(--font-heading)' }}>
-        🌐 NO WORLD EVENTS DETECTED YET
-      </div>
+      <p style={{ color: 'var(--rs-muted-on-dark)', font: '500 var(--rs-text-sm) var(--rs-font-body)', textAlign: 'center', padding: 'var(--rs-space-4) 0', margin: 0 }}>
+        No events yet. The world moves every turn.
+      </p>
     );
   }
 
-  return (
-    <div style={{ overflowY: 'auto', maxHeight: maxHeight, paddingRight: 4 }}>
+  const list = (
+    <ul aria-label="World events" style={{ margin: 0, padding: 0 }}>
       {events.map(e => <EventRow key={e.id} event={e} />)}
+    </ul>
+  );
+  if (maxHeight === undefined) return list;
+
+  // A capped feed scrolls, so it must be keyboard reachable (axe scrollable-region-focusable).
+  return (
+    <div
+      tabIndex={0}
+      role="region"
+      aria-label="World events feed"
+      style={{ overflowY: 'auto', maxHeight, paddingRight: 'var(--rs-space-1)' }}
+    >
+      {list}
     </div>
   );
 }

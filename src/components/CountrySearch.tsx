@@ -99,15 +99,16 @@ export default function CountrySearch({ fullWidth = false }: { fullWidth?: boole
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
         style={{
-          width: '100%', height: 32, boxSizing: 'border-box',
-          padding: '0 10px',
-          background: 'rgba(255,255,255,0.06)',
-          border: 'var(--border-subtle)',
-          borderRadius: 8,
-          color: 'var(--text-primary)',
-          fontFamily: 'inherit',
-          fontSize: 'var(--font-size-sm)',
-          outline: 'none',
+          width: '100%', height: 44, boxSizing: 'border-box',
+          padding: '0 var(--rs-space-3)',
+          background: 'var(--rs-paper)',
+          border: 'var(--rs-border)',
+          borderRadius: 'var(--rs-radius-md)',
+          boxShadow: 'var(--rs-shadow-sm)',
+          color: 'var(--rs-ink)',
+          fontFamily: 'var(--rs-font-body)',
+          fontWeight: 700,
+          fontSize: 'var(--rs-text-sm)',
         }}
       />
 
@@ -117,14 +118,14 @@ export default function CountrySearch({ fullWidth = false }: { fullWidth?: boole
           id={listboxId}
           role="listbox"
           style={{
-            position: 'absolute', top: 38, left: 0, right: 0, zIndex: 40,
-            margin: 0, padding: 4, listStyle: 'none',
+            position: 'absolute', top: 52, left: 0, right: 0, zIndex: 40,
+            margin: 0, padding: 'var(--rs-space-1)', listStyle: 'none',
             maxHeight: 264, overflowY: 'auto',
-            background: 'var(--surface-floating)',
-            backdropFilter: 'var(--surface-floating-blur)',
-            border: 'var(--border-strong)',
-            borderRadius: 'var(--radius-panel)',
-            boxShadow: 'var(--shadow-floating)',
+            background: 'var(--rs-paper)',
+            color: 'var(--rs-ink)',
+            border: 'var(--rs-border)',
+            borderRadius: 'var(--rs-radius-md)',
+            boxShadow: 'var(--rs-shadow-md)',
           }}
         >
           {matches.map((c, i) => (
@@ -136,14 +137,14 @@ export default function CountrySearch({ fullWidth = false }: { fullWidth?: boole
               onMouseDown={e => { e.preventDefault(); commit(c.code); }}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                gap: 8, minHeight: 30, padding: '0 8px', borderRadius: 6,
+                gap: 8, minHeight: 36, padding: '0 var(--rs-space-2)', borderRadius: 'var(--rs-radius-sm)',
                 cursor: 'pointer',
-                background: i === activeIndex ? 'rgba(99,102,241,0.22)' : 'transparent',
-                fontSize: 'var(--font-size-sm)',
+                background: i === activeIndex ? 'var(--rs-sun)' : 'transparent',
+                fontSize: 'var(--rs-text-sm)', fontWeight: 700,
               }}
             >
               <span>{c.name}</span>
-              <span style={{ color: 'var(--text-faint)', fontSize: 'var(--font-size-xs)' }}>
+              <span style={{ color: 'var(--rs-muted-on-paper)', font: '700 var(--rs-text-2xs) var(--rs-font-mono)' }}>
                 {c.code}
               </span>
             </li>

@@ -2,81 +2,92 @@ import { Link, useParams } from 'react-router-dom';
 import { countryName } from '../data/countries';
 import { getGovernment, GOV_COUNTRIES } from '../data/government';
 import GovernmentGraph from '../components/GovernmentGraph';
+import { Flag } from '../components/GameIcons';
 
 export default function GovernmentPage() {
   const { code } = useParams<{ code: string }>();
   const iso3 = (code ?? '').toUpperCase();
   const government = getGovernment(iso3);
 
+  const activeChip = { background: 'var(--rs-ink)', color: 'var(--rs-paper)', fontSize: 'var(--rs-text-sm)' } as const;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', width: '100vw', height: '100vh', background: 'var(--bg-deep-space)', color: '#fff', overflow: 'hidden' }}>
-      {/* Header */}
-      <div style={{ padding: '16px 18px 12px', borderBottom: '2px dashed rgba(255,255,255,0.1)', flexShrink: 0 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+    <main style={{
+      display: 'flex', flexDirection: 'column', width: '100vw', height: '100vh',
+      background: 'var(--rs-space)', color: 'var(--rs-text-on-dark)', fontFamily: 'var(--rs-font-body)',
+      overflow: 'hidden', position: 'relative',
+    }}>
+      <header style={{
+        padding: 'var(--rs-space-4) var(--rs-space-4) var(--rs-space-3)',
+        background: 'var(--rs-hud)', borderBottom: 'var(--rs-border)', flexShrink: 0,
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--rs-space-3)', flexWrap: 'wrap' }}>
           <div>
-            <div className="game-badge game-badge-magenta" style={{ marginBottom: 6 }}>
-              🏛️ GOVERNMENT GRAPH
-            </div>
-            <div className="game-font-display" style={{ fontSize: 26, fontWeight: 800, color: 'var(--accent-yellow)', textShadow: '2px 2px 0px #000', lineHeight: 1.1 }}>
-              {government ? countryName(iso3) : 'GOVERNMENT GRAPH'}
-            </div>
+            <span className="game-eyebrow">
+              <span className="game-badge rs-chip-real">Real</span> Who runs the place
+            </span>
+            <h1 style={{
+              display: 'flex', alignItems: 'center', gap: 'var(--rs-space-3)',
+              fontFamily: 'var(--rs-font-display)', fontWeight: 700, fontSize: 'var(--rs-text-2xl)',
+              lineHeight: 1.05, margin: 'var(--rs-space-2) 0 0',
+            }}>
+              {government && <Flag iso3={iso3} height={28} />}
+              {government ? `${countryName(iso3)} power map` : 'Government power maps'}
+            </h1>
             {government && (
-              <div style={{ color: 'var(--accent-cyan)', fontSize: 12, fontFamily: 'var(--font-heading)', marginTop: 4 }}>
-                {government.system.toUpperCase()} · AS OF {government.asOf}
-              </div>
+              <p style={{ color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-sm)', fontWeight: 700, margin: 'var(--rs-space-1) 0 0' }}>
+                {government.system} · as of {government.asOf}
+              </p>
             )}
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <Link to="/" className="game-button game-button-dark" style={{ padding: '6px 12px', fontSize: 11 }}>
-              ← 3D GLOBE
-            </Link>
-          </div>
+          <Link to="/" className="game-button game-button-dark">
+            ← Back to the globe
+          </Link>
         </div>
 
-        {/* Country switcher */}
-        <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
+        <nav aria-label="Choose a country" style={{ display: 'flex', gap: 'var(--rs-space-2)', marginTop: 'var(--rs-space-3)', flexWrap: 'wrap' }}>
           {GOV_COUNTRIES.map(c => (
             <Link
               key={c}
               to={`/gov/${c}`}
-              className={`game-button ${c === iso3 ? 'game-button-cyan' : 'game-button-dark'}`}
-              style={{ padding: '6px 12px', fontSize: 11, textDecoration: 'none' }}
+              aria-current={c === iso3 ? 'page' : undefined}
+              className="game-button game-button-dark"
+              style={c === iso3 ? activeChip : { fontSize: 'var(--rs-text-sm)' }}
             >
+              <Flag iso3={c} height={14} />
               {countryName(c)}
             </Link>
           ))}
-        </div>
-      </div>
+        </nav>
+      </header>
 
-      {/* Graph or empty state */}
       <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
         {government ? (
           <GovernmentGraph government={government} />
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', padding: 24, gap: 14 }}>
-            <div className="game-font-heading" style={{ fontSize: 18, color: '#fff' }}>
-              No government graph for “{iso3 || '—'}” yet.
-            </div>
-            <div style={{ color: 'var(--text-muted, #8a93b2)', fontSize: 13, maxWidth: 420, lineHeight: 1.6 }}>
-              A hand-authored power map exists for these nations so far. Pick one to explore who holds power and how it flows.
-            </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-              {GOV_COUNTRIES.map(c => (
-                <Link key={c} to={`/gov/${c}`} className="game-button game-button-cyan" style={{ padding: '8px 14px', fontSize: 12, textDecoration: 'none' }}>
-                  {countryName(c)}
-                </Link>
-              ))}
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 'var(--rs-space-5)' }}>
+            <section className="rs-paper" style={{ maxWidth: 480, padding: 'var(--rs-space-5)', textAlign: 'center' }}>
+              <h2 style={{ fontFamily: 'var(--rs-font-display)', fontSize: 'var(--rs-text-xl)', lineHeight: 1, margin: '0 0 var(--rs-space-3)' }}>
+                No power map for “{iso3 || '—'}” yet
+              </h2>
+              <p style={{ color: 'var(--rs-muted-on-paper)', fontSize: 'var(--rs-text-sm)', lineHeight: 1.45, margin: 0 }}>
+                We've hand-drawn who holds power in a few countries so far. Pick one from the list above
+                to see who answers to whom.
+              </p>
+            </section>
           </div>
         )}
       </div>
 
-      {/* Interaction hint */}
       {government && (
-        <div style={{ position: 'absolute', bottom: 12, right: 12, color: 'var(--text-muted, #8a93b2)', fontSize: 10, fontFamily: 'var(--font-heading)', textAlign: 'right', pointerEvents: 'none' }}>
-          DRAG NODES · SCROLL TO ZOOM · CLICK FOR DETAILS
-        </div>
+        <p aria-hidden="true" style={{
+          position: 'absolute', bottom: 'var(--rs-space-3)', right: 'var(--rs-space-3)', margin: 0,
+          color: 'var(--rs-muted-on-dark)', font: '800 var(--rs-text-2xs) var(--rs-font-body)',
+          letterSpacing: 'var(--rs-tracking-label)', textTransform: 'uppercase', textAlign: 'right', pointerEvents: 'none',
+        }}>
+          Drag nodes · scroll to zoom · click for details
+        </p>
       )}
-    </div>
+    </main>
   );
 }

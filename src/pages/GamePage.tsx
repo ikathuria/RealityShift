@@ -15,19 +15,20 @@ import { useRegionStore } from '../store/regionStore';
 function SimulateLog({ log }: { log: { country: string; status: string; error?: string }[] }) {
   if (!log.length) return null;
   return (
-    <div style={{ marginTop: 12 }}>
-      <div className="game-badge game-badge-yellow" style={{ marginBottom: 8, display: 'inline-flex' }}>
-        SIMULATION LOG
-      </div>
-      {log.map((r, i) => (
-        <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 11, marginBottom: 4, fontFamily: 'var(--font-heading)' }}>
-          <span style={{ color: r.status === 'ok' ? 'var(--accent-green)' : 'var(--accent-magenta)', fontWeight: 800 }}>
-            {r.status === 'ok' ? '✓' : '✗'}
-          </span>
-          <span style={{ color: r.status === 'ok' ? '#fff' : 'var(--accent-magenta)', fontWeight: 700 }}>{r.country}</span>
-          {r.error && <span style={{ color: 'var(--text-muted)', fontSize: 10 }}>{r.error.slice(0, 40)}</span>}
-        </div>
-      ))}
+    <div style={{ marginTop: 'var(--rs-space-3)' }}>
+      <h3 className="game-eyebrow" style={{ margin: '0 0 var(--rs-space-2)' }}>Last simulated year</h3>
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+        {log.map((r, i) => (
+          <li key={i} style={{ display: 'flex', gap: 'var(--rs-space-2)', alignItems: 'center', fontSize: 'var(--rs-text-xs)', marginBottom: 'var(--rs-space-1)', fontFamily: 'var(--rs-font-body)' }}>
+            <span style={{ color: r.status === 'ok' ? 'var(--rs-good-on-dark)' : 'var(--rs-bad-on-dark)', fontWeight: 800 }}>
+              {r.status === 'ok' ? '✓' : '✗'}
+              <span className="rs-sr-only">{r.status === 'ok' ? 'done' : 'failed'}</span>
+            </span>
+            <span style={{ color: r.status === 'ok' ? 'var(--rs-text-on-dark)' : 'var(--rs-bad-on-dark)', fontWeight: 700 }}>{r.country}</span>
+            {r.error && <span style={{ color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-2xs)' }}>{r.error.slice(0, 40)}</span>}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -63,21 +64,23 @@ export default function GamePage() {
 
   if (!activeFork) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg-deep-space)', color: '#fff' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 12, filter: 'drop-shadow(0 0 10px rgba(0,240,255,0.5))' }}>🌍</div>
-          <div className="game-font-heading" style={{ fontSize: 20, color: 'var(--accent-yellow)' }}>LOADING PARALLEL UNIVERSE…</div>
+      <main style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--rs-space)', color: 'var(--rs-text-on-dark)' }}>
+        <div role="status" className="rs-paper" style={{ textAlign: 'center', padding: 'var(--rs-space-6)' }}>
+          <h1 className="game-font-display" style={{ fontSize: 'var(--rs-text-xl)', margin: 0 }}>Opening your fork…</h1>
+          <p style={{ margin: 'var(--rs-space-2) 0 0', fontSize: 'var(--rs-text-sm)', color: 'var(--rs-muted-on-paper)' }}>
+            Fetching your saved worlds and loading this one’s events.
+          </p>
         </div>
-      </div>
+      </main>
     );
   }
 
   const playerData = countryData[activeFork.countryCode];
 
   return (
-    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', width: '100vw', height: '100vh', background: 'var(--bg-deep-space)', color: '#fff' }}>
+    <main style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', width: '100vw', height: '100vh', background: 'var(--rs-space)', color: 'var(--rs-text-on-dark)' }}>
       {/* Command sidebar — a full-width top panel on mobile, left rail on desktop */}
-      <div className="game-panel" style={{
+      <aside aria-label="Command desk" className="game-panel" style={{
         width: isMobile ? '100%' : 340, flexShrink: 0, borderRadius: 0, borderTop: 0, borderLeft: 0,
         borderBottom: isMobile ? undefined : 0,
         maxHeight: isMobile ? '48vh' : undefined,
@@ -85,38 +88,39 @@ export default function GamePage() {
       }}>
 
         {/* Header */}
-        <div style={{ padding: '18px 16px 12px', borderBottom: '2px dashed rgba(255,255,255,0.1)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div style={{ padding: 'var(--rs-space-5) var(--rs-space-4) var(--rs-space-3)', borderBottom: '1px solid var(--rs-hud-line)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--rs-space-2)', marginBottom: 'var(--rs-space-3)' }}>
             <Link
               to="/"
               onClick={() => exitFork()}
               className="game-button game-button-dark"
-              style={{ padding: '4px 10px', fontSize: 11 }}
             >
-              ← EXIT GAME
+              ← Back to reality
             </Link>
-            <span className="game-badge game-badge-magenta">
-              PARALLEL FORK
+            <span className="rs-split-chip" style={{ background: 'var(--rs-fork)' }}>
+              Your fork · {activeFork.year}
             </span>
           </div>
 
-          <div className="game-font-heading" style={{ fontSize: 20, color: 'var(--accent-yellow)', marginBottom: 2 }}>
-            COMMANDING {activeFork.countryCode}
-          </div>
-          <div style={{ color: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-heading)' }}>
-            SIMULATED YEAR <strong style={{ color: '#fff' }}>{activeFork.year}</strong> &nbsp;·&nbsp; NO REAL-WORLD DATA INJECTED
-          </div>
+          <h1 className="game-font-display" style={{ fontSize: 'var(--rs-text-2xl)', lineHeight: 1.05, margin: '0 0 var(--rs-space-1)' }}>
+            You run {activeFork.countryCode}
+          </h1>
+          <p style={{ color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-xs)', margin: 0 }}>
+            Simulated year <strong style={{ color: 'var(--rs-text-on-dark)' }}>{activeFork.year}</strong> · No real-world data enters your universe again.
+          </p>
         </div>
 
         {/* Policy editor */}
-        <div style={{ padding: '14px 16px', flex: 1 }}>
+        <div style={{ padding: 'var(--rs-space-4)', flex: 1 }}>
           {playerData ? (
             <PolicyEditor
               baseIndicators={playerData.indicators}
               basePolicies={playerData.policies ?? {}}
             />
           ) : (
-            <div style={{ color: 'var(--text-muted)', fontSize: 13, textAlign: 'center', padding: 20 }}>Loading country data…</div>
+            <p role="status" style={{ color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-sm)', textAlign: 'center', padding: 'var(--rs-space-5)', margin: 0 }}>
+              Loading {activeFork.countryCode}’s budget and policies…
+            </p>
           )}
 
           {/* Save Changes button — pulses the player's country on the globe */}
@@ -127,32 +131,27 @@ export default function GamePage() {
             }}
             disabled={isSimulating}
             className="game-button game-button-dark"
-            style={{
-              width: '100%', padding: '10px 0', fontSize: 12, marginTop: 12,
-            }}
+            style={{ width: '100%', marginTop: 'var(--rs-space-3)' }}
           >
-            💾 SAVE POLICY DRAFT
+            Save policy draft
           </button>
         </div>
 
         {/* Simulate button */}
-        <div style={{ padding: '12px 16px 20px', borderTop: '2px solid rgba(255,255,255,0.1)' }}>
+        <div style={{ padding: 'var(--rs-space-3) var(--rs-space-4) var(--rs-space-5)', borderTop: '1px solid var(--rs-hud-line)' }}>
           <button
             onClick={() => session && simulateYear(session.access_token)}
             disabled={isSimulating || !session}
-            className="game-button game-button-cyan"
-            style={{
-              width: '100%', padding: '14px 0', fontSize: 14,
-              boxShadow: 'var(--hud-shadow), var(--hud-shadow-glow-cyan)',
-            }}
+            className="game-button rs-button-lg"
+            style={{ width: '100%' }}
           >
-            {isSimulating ? '⏳ SIMULATING WORLD…' : '▶ SIMULATE YEAR →'}
+            {isSimulating ? 'Simulating the year…' : 'Simulate the next year!'}
           </button>
 
           {isSimulating && (
-            <div style={{ color: 'var(--accent-yellow)', fontSize: 11, textAlign: 'center', marginTop: 8, fontFamily: 'var(--font-heading)' }}>
-              ⚡ RUNNING AI AGENTS FOR NEIGHBORING NATIONS…
-            </div>
+            <p role="status" style={{ color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-xs)', textAlign: 'center', margin: 'var(--rs-space-2) 0 0' }}>
+              Your neighbours’ AI leaders are reading your moves and plotting theirs.
+            </p>
           )}
 
           <SimulateLog log={simulateLog} />
@@ -162,15 +161,13 @@ export default function GamePage() {
 
           {/* World events in this fork */}
           {worldEvents.length > 0 && (
-            <div style={{ marginTop: 16 }}>
-              <div className="game-badge game-badge-yellow" style={{ marginBottom: 8, display: 'inline-flex' }}>
-                FORK WORLD EVENTS
-              </div>
+            <section style={{ marginTop: 'var(--rs-space-4)' }}>
+              <h2 className="game-eyebrow" style={{ margin: '0 0 var(--rs-space-2)' }}>Meanwhile, in your fork</h2>
               <WorldEventsFeed events={worldEvents} maxHeight={220} />
-            </div>
+            </section>
           )}
         </div>
-      </div>
+      </aside>
 
       {/* Globe */}
       <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
@@ -180,22 +177,18 @@ export default function GamePage() {
 
         {/* Fork banner */}
         <div
-          className="game-badge"
+          className="rs-split-chip"
           style={{
-            position: 'absolute', top: 16, left: '50%', transform: 'translateX(-50%)',
-            background: 'var(--bg-hud-panel)',
-            border: '2px solid var(--game-border-ink)',
-            outline: '1px solid var(--accent-cyan)',
-            borderRadius: 'var(--radius-game-pill)',
-            padding: '6px 18px', fontSize: 12, color: '#fff',
+            position: 'absolute', top: 'var(--rs-space-4)', left: '50%', transform: 'translateX(-50%)',
+            background: 'var(--rs-fork)',
             pointerEvents: 'none',
-            boxShadow: 'var(--hud-shadow), var(--hud-shadow-glow-cyan)',
             zIndex: 30,
+            whiteSpace: 'nowrap',
           }}
         >
-          🌐 PARALLEL UNIVERSE · YEAR {activeFork.year} · CLICK A NATION TO COMMAND
+          Your fork · {activeFork.year} · Pick a nation to inspect
         </div>
       </div>
-    </div>
+    </main>
   );
 }

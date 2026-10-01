@@ -15,12 +15,15 @@ const WORKER_URL = (import.meta.env.VITE_AI_PROXY_URL as string | undefined) ?? 
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="game-card" style={{ flex: 1, minWidth: 140, padding: '12px 14px' }}>
-      <div className="game-badge game-badge-yellow" style={{ fontSize: 9, marginBottom: 4 }}>
-        {label}
-      </div>
-      <div className="game-font-heading" style={{ fontSize: 24, fontWeight: 800, color: '#fff' }}>{value}</div>
-      {sub && <div style={{ color: 'var(--text-muted)', fontSize: 10, marginTop: 2, fontFamily: 'var(--font-heading)' }}>{sub}</div>}
+    <div style={{
+      flex: 1, minWidth: 140, padding: 'var(--rs-space-3)',
+      border: '2px solid var(--rs-hud-line)', borderRadius: 'var(--rs-radius-md)',
+    }}>
+      <dt className="game-eyebrow" style={{ fontSize: 'var(--rs-text-2xs)', marginBottom: 'var(--rs-space-1)' }}>{label}</dt>
+      <dd style={{ margin: 0 }}>
+        <span style={{ display: 'block', font: '700 var(--rs-text-xl)/1 var(--rs-font-mono)', fontVariantNumeric: 'tabular-nums' }}>{value}</span>
+        {sub && <span style={{ display: 'block', color: 'var(--rs-muted-on-dark)', font: '500 var(--rs-text-xs) var(--rs-font-body)', marginTop: 'var(--rs-space-1)' }}>{sub}</span>}
+      </dd>
     </div>
   );
 }
@@ -34,16 +37,26 @@ function TopDivergences({ divs }: { divs: Divergence[] }) {
     })
     .slice(0, 5);
 
-  if (!top5.length) {
-    return <p style={{ color: 'var(--text-muted)', fontSize: 12, textAlign: 'center', padding: 20, fontFamily: 'var(--font-heading)' }}>No divergences recorded yet. Run monthly sync to populate.</p>;
-  }
-
   return (
-    <div>
-      {top5.map(d => <DivergenceCard key={d.id} div={d} />)}
-    </div>
+    <>
+      <h2 className="rs-sr-only">Biggest drift</h2>
+      {!top5.length ? (
+        <p style={{ color: 'var(--rs-muted-on-dark)', font: '500 var(--rs-text-sm)/1.45 var(--rs-font-body)', textAlign: 'center', padding: 'var(--rs-space-5)', margin: 0 }}>
+          No drift yet. The first monthly sync will show where the simulation split from reality.
+        </p>
+      ) : (
+        top5.map(d => <DivergenceCard key={d.id} div={d} />)
+      )}
+    </>
   );
 }
+
+const TABS = [
+  { id: 'top', label: 'Top drift' },
+  { id: 'ranks', label: 'Ranks' },
+  { id: 'timeline', label: 'Timeline' },
+  { id: 'events', label: 'Events' },
+] as const;
 
 export default function WorldDashboard() {
   const {
@@ -78,95 +91,98 @@ export default function WorldDashboard() {
   ).length;
 
   return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh', background: 'var(--bg-deep-space)', color: '#fff' }}>
-      {/* Left sidebar */}
-      <div className="game-panel" style={{
-        width: 380, flexShrink: 0, borderRadius: 0, borderTop: 0, borderLeft: 0, borderBottom: 0,
-        display: 'flex', flexDirection: 'column', overflowY: 'auto',
-      }}>
+    <main style={{ display: 'flex', width: '100vw', height: '100vh', background: 'var(--rs-space)', color: 'var(--rs-text-on-dark)' }}>
+      {/* Left sidebar: scrolls on its own, so it is a focusable region */}
+      <aside
+        className="game-panel"
+        tabIndex={0}
+        aria-label="Divergence summary"
+        style={{
+          width: 380, flexShrink: 0, borderRadius: 0, borderTop: 0, borderLeft: 0, borderBottom: 0,
+          display: 'flex', flexDirection: 'column', overflowY: 'auto',
+        }}
+      >
         {/* Header */}
-        <div style={{ padding: '20px 18px 12px', borderBottom: '2px dashed rgba(255,255,255,0.1)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-            <div className="game-font-display" style={{ fontSize: 22, fontWeight: 800, color: 'var(--accent-yellow)', textShadow: '2px 2px 0px #000' }}>
-              🌍 DIVERGENCE DASHBOARD
+        <header style={{ padding: 'var(--rs-space-5) var(--rs-space-4) var(--rs-space-3)', borderBottom: '1px solid var(--rs-hud-line)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--rs-space-2)', marginBottom: 'var(--rs-space-2)' }}>
+            <div>
+              <div className="game-eyebrow" style={{ marginBottom: 'var(--rs-space-1)' }}>
+                <span className="game-badge rs-chip-real">Real</span>
+                vs
+                <span className="game-badge rs-chip-fork">Fork</span>
+              </div>
+              <h1 style={{ margin: 0, font: '700 var(--rs-text-xl)/1.05 var(--rs-font-display)', color: 'var(--rs-text-on-dark)' }}>
+                Divergence dashboard
+              </h1>
             </div>
-            <Link to="/" className="game-button game-button-dark" style={{ padding: '4px 10px', fontSize: 11 }}>
-              ← 3D GLOBE
+            <Link to="/" className="game-button game-button-dark" style={{ minHeight: 44, padding: '0 var(--rs-space-3)', fontSize: 'var(--rs-text-sm)', whiteSpace: 'nowrap' }}>
+              ← Globe
             </Link>
           </div>
-          <div style={{ color: 'var(--accent-cyan)', fontSize: 11, fontFamily: 'var(--font-heading)', marginBottom: 12 }}>
-            REAL-WORLD VS SIMULATION DRIFT TRACKER
-          </div>
+          <p style={{ color: 'var(--rs-muted-on-dark)', font: '500 var(--rs-text-sm)/1.45 var(--rs-font-body)', margin: '0 0 var(--rs-space-3)' }}>
+            One world is real. The other is run by AI agents. Here is how far they have drifted apart.
+          </p>
 
           <a
             href={`${WORKER_URL}/api/world/feed.xml`}
             target="_blank"
             rel="noopener noreferrer"
-            className="game-badge game-badge-magenta"
-            style={{ textDecoration: 'none', padding: '4px 8px' }}
+            className="game-link"
+            style={{ color: 'var(--rs-sun)', font: '700 var(--rs-text-sm) var(--rs-font-body)', display: 'inline-flex', alignItems: 'center', minHeight: 44 }}
           >
-            📡 SUBSCRIBE RSS FEED
+            Follow the drift by RSS<span className="rs-sr-only"> (opens in a new tab)</span>
           </a>
-        </div>
+        </header>
 
-        {/* Stats Grid */}
-        <div style={{ padding: '12px 14px 6px', display: 'flex', gap: 8 }}>
-          <StatCard
-            label="SIM YEAR"
-            value={simYear ? String(simYear) : '—'}
-            sub="LATEST AGENT CYCLE"
-          />
-          <StatCard
-            label="COUNTRIES"
-            value={countriesTracked !== null ? String(countriesTracked) : '—'}
-            sub="AUTONOMOUS AGENTS"
-          />
-        </div>
-        <div style={{ padding: '0 14px 12px', display: 'flex', gap: 8 }}>
-          <StatCard
-            label="EVENTS"
-            value={String(worldEvents.length)}
-            sub="INTER-AGENT EVENTS"
-          />
-          <StatCard
-            label="DIVERGED"
-            value={String(divergedCount)}
-            sub={`OF ${recentDivergences.length} CHECKED`}
-          />
-        </div>
+        {/* Stats grid */}
+        <dl style={{ margin: 0, padding: 'var(--rs-space-3) var(--rs-space-4)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--rs-space-2)' }}>
+          <StatCard label="Sim year" value={simYear ? String(simYear) : '—'} sub="Latest agent cycle" />
+          <StatCard label="Nations" value={countriesTracked !== null ? String(countriesTracked) : '—'} sub="Run by AI agents" />
+          <StatCard label="Events" value={String(worldEvents.length)} sub="Between agents" />
+          <StatCard label="Drifted" value={String(divergedCount)} sub={`Of ${recentDivergences.length} checked`} />
+        </dl>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 6, padding: '0 14px 12px' }}>
-          {(['top', 'ranks', 'timeline', 'events'] as const).map(tab => (
+        <div role="tablist" aria-label="Dashboard views" className="game-segmented" style={{ margin: '0 var(--rs-space-4) var(--rs-space-3)' }}>
+          {TABS.map(tab => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`game-button ${activeTab === tab ? 'game-button-cyan' : 'game-button-dark'}`}
-              style={{ flex: 1, height: 32, fontSize: 11, padding: 0 }}
+              key={tab.id}
+              type="button"
+              role="tab"
+              id={`dash-tab-${tab.id}`}
+              aria-selected={activeTab === tab.id}
+              aria-controls="dash-tabpanel"
+              onClick={() => setActiveTab(tab.id)}
+              style={{ minHeight: 44 }}
             >
-              {tab === 'top' ? '🔥 TOP' : tab === 'ranks' ? '📊 RANKS' : tab === 'timeline' ? '⏳ TIMELINE' : '🌐 EVENTS'}
+              {tab.label}
             </button>
           ))}
         </div>
 
         {/* Tab content */}
-        <div style={{ flex: 1, padding: '0 14px 14px', overflowY: 'auto' }}>
+        <div
+          role="tabpanel"
+          id="dash-tabpanel"
+          aria-labelledby={`dash-tab-${activeTab}`}
+          style={{ flex: 1, padding: '0 var(--rs-space-4) var(--rs-space-4)' }}
+        >
           {activeTab === 'top'
             ? <TopDivergences divs={recentDivergences} />
             : activeTab === 'ranks'
               ? <CountryLeaderboard />
               : activeTab === 'timeline'
-                ? <TimelineScrubber divs={recentDivergences} />
-                : <WorldEventsFeed events={worldEvents} />}
+                ? <><h2 className="rs-sr-only">Timeline</h2><TimelineScrubber divs={recentDivergences} /></>
+                : <><h2 className="rs-sr-only">World events</h2><WorldEventsFeed events={worldEvents} /></>}
         </div>
-      </div>
+      </aside>
 
-      {/* Main Stats Table View */}
+      {/* Main stats table */}
       <div style={{ flex: 1, position: 'relative', display: 'flex', overflow: 'hidden' }}>
         <CountryTable />
         {selectedCountry && !selectedRegion && <CountryPanel />}
         {selectedRegion && <RegionPanel />}
       </div>
-    </div>
+    </main>
   );
 }
