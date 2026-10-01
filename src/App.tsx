@@ -6,6 +6,7 @@ import { readVisitorContext } from './lib/locale';
 import Globe from './components/Globe';
 import CountryPanel from './components/CountryPanel';
 import AppHeader from './components/AppHeader';
+import EventTicker from './components/EventTicker';
 
 // Secondary routes are split out of the initial bundle so the landing globe
 // paints as fast as possible. Each loads on first navigation to its route.
@@ -51,11 +52,13 @@ function GlobePage() {
   }, [globeReady, selectedCountry, selectCountry]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
+    <main style={{ position: 'relative', width: '100%', height: '100vh' }}>
+      <h1 className="rs-sr-only">RealityShift: take over a country and fork the world</h1>
       <Globe />
       <AppHeader />
+      <EventTicker />
       <CountryPanel />
-    </div>
+    </main>
   );
 }
 

@@ -17,6 +17,9 @@ import {
   ImageryLayer,
   SingleTileImageryProvider,
   Math as CesiumMath,
+  CustomDataSource,
+  VerticalOrigin,
+  NearFarScalar,
 } from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 import { useWorldStore } from '../store/worldStore';
@@ -24,11 +27,14 @@ import type { WorldEvent } from '../store/worldStore';
 import { useRegionStore, SUPPORTED_DRILL_COUNTRIES } from '../store/regionStore';
 import { NUMERIC_TO_ISO3, countryName, COUNTRY_CENTROIDS as CENTROIDS } from '../data/countries';
 import type { FeatureCollection, Feature } from 'geojson';
+import { eventPinDataUrl } from '../lib/gameArt';
 
 const cesiumToken = import.meta.env.VITE_CESIUM_ION_TOKEN as string | undefined;
 if (cesiumToken) Ion.defaultAccessToken = cesiumToken;
 
 
+
+const MAX_EVENT_PINS = 10;
 
 // Event arc colors by type
 const ARC_COLORS: Record<string, Color> = {
@@ -229,6 +235,7 @@ export default function Globe() {
   const regionSrcRef   = useRef<GeoJsonDataSource | null>(null);
   const handlerRef     = useRef<ScreenSpaceEventHandler | null>(null);
   const lastEventIdRef = useRef<number>(-1);
+  const pinSrcRef      = useRef<CustomDataSource | null>(null);
   const hoverTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const drillCountryRef = useRef<string | null>(null);
 
@@ -321,6 +328,43 @@ export default function Globe() {
     for (const ev of newEvents.slice(0, 12)) drawArc(viewerRef.current, ev);
     if (newEvents.length) lastEventIdRef.current = Math.max(...newEvents.map(e => e.id));
   }, [worldEvents]);
+
+  // ── Event pins: one per country, for its most recent event ────────────────
+  // Pins carry ISO_A3 like the country polygons do, so the existing click and
+  // hover handlers treat a pin as "that country" with no extra wiring.
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || globeStatus !== 'ready') return;
+    if (!pinSrcRef.current) {
+      pinSrcRef.current = new CustomDataSource('event-pins');
+      viewer.dataSources.add(pinSrcRef.current);
+    }
+    const pins = pinSrcRef.current.entities;
+    pins.removeAll();
+
+    const seen = new Set<string>();
+    for (const ev of worldEvents) {  // store keeps these newest-first
+      if (seen.has(ev.from_country) || seen.size >= MAX_EVENT_PINS) continue;
+      const at = CENTROIDS[ev.from_country];
+      if (!at) continue;
+      const isNewest = seen.size === 0;
+      seen.add(ev.from_country);
+      pins.add({
+        position: Cartesian3.fromDegrees(at[0], at[1], 0),
+        properties: { ISO_A3: ev.from_country },
+        billboard: {
+          image: eventPinDataUrl(ev.event_type, isNewest),
+          width: 40,
+          height: 52,
+          verticalOrigin: VerticalOrigin.BOTTOM,
+          // Full size up close, shrink as the camera pulls back to orbit.
+          scaleByDistance: new NearFarScalar(2_000_000, 1.0, 20_000_000, 0.55),
+          // Fade out from deep space, where the globe is too small to pin on.
+          translucencyByDistance: new NearFarScalar(50_000_000, 1.0, 90_000_000, 0.0),
+        },
+      });
+    }
+  }, [worldEvents, globeStatus]);
 
   // ── Load / unload admin-1 regions based on altitude + selected country ────
   const loadRegions = useCallback(async (viewer: Viewer, iso3: string) => {
@@ -544,6 +588,7 @@ export default function Globe() {
       viewerRef.current = null;
       sourceRef.current = null;
       regionSrcRef.current = null;
+      pinSrcRef.current = null;
     };
     // applyColors/loadRegions/unloadRegions are stable useCallback([]) refs, so
     // listing them keeps this viewer-init effect running exactly once on mount.
