@@ -15,20 +15,25 @@ create index if not exists worlds_public_idx
   where is_public = true;
 
 -- ── Public read of published forks and their data ────────────────────────────
-create policy if not exists "public read published forks" on worlds
+drop policy if exists "public read published forks" on worlds;
+create policy "public read published forks" on worlds
   for select using (is_public = true);
 
-create policy if not exists "public read published fork states" on country_states
+drop policy if exists "public read published fork states" on country_states;
+create policy "public read published fork states" on country_states
   for select using (world_id in (select id from worlds where is_public = true));
 
-create policy if not exists "public read published fork events" on world_events
+drop policy if exists "public read published fork events" on world_events;
+create policy "public read published fork events" on world_events
   for select using (world_id in (select id from worlds where is_public = true));
 
-create policy if not exists "public read published fork decisions" on agent_decisions
+drop policy if exists "public read published fork decisions" on agent_decisions;
+create policy "public read published fork decisions" on agent_decisions
   for select using (world_id in (select id from worlds where is_public = true));
 
 -- ── Owner can toggle publish state on their own forks ────────────────────────
 -- (Insert is already covered by "players create forks"; this adds UPDATE.)
-create policy if not exists "players update own forks" on worlds
+drop policy if exists "players update own forks" on worlds;
+create policy "players update own forks" on worlds
   for update using (player_id = auth.uid())
   with check (player_id = auth.uid());

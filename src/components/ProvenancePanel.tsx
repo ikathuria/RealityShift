@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { MediaEntry } from '../lib/mediaIndex';
 import { countryName } from '../data/countries';
+import { formatCutoff, provenanceKind } from '../lib/provenance';
 
 /**
  * Shows the Genblaze provenance a broadcast carries — the fork lineage and the
@@ -12,6 +13,7 @@ import { countryName } from '../data/countries';
  */
 export default function ProvenancePanel({ entry }: { entry: MediaEntry }) {
   const p = entry.provenance;
+  const kind = p ? provenanceKind(p) : null;
 
   return (
     <section aria-labelledby="provenance-title" style={{
@@ -23,6 +25,12 @@ export default function ProvenancePanel({ entry }: { entry: MediaEntry }) {
         Embedded provenance
       </h3>
 
+      {kind === 'sample' && (
+        <p className="game-badge" style={{ margin: '0 0 var(--rs-space-3)' }}>
+          Synthetic demo sample, not real output
+        </p>
+      )}
+
       {p ? (
         <dl style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 'var(--rs-space-2) var(--rs-space-3)', margin: 0 }}>
           <Row k="Fork" v={p.fork_id} />
@@ -30,7 +38,11 @@ export default function ProvenancePanel({ entry }: { entry: MediaEntry }) {
           <Row k="Nation" v={countryName(p.nation_iso)} />
           <Row k="Diverged from reality" v={p.divergence_date} />
           <Row k="Reporting sim-date" v={p.sim_date} />
-          <Row k="Real-world data cutoff" v={p.real_world_data_cutoff} highlight />
+          <Row
+            k="Real-world data cutoff"
+            v={kind === 'sample' && !p.real_world_data_cutoff ? 'None (sample)' : formatCutoff(p.real_world_data_cutoff, p.live_world)}
+            highlight
+          />
           <Row k="Counterfactual" v={p.is_counterfactual ? 'Yes' : 'No'} />
         </dl>
       ) : (

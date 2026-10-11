@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import FrontPageWall from '../components/FrontPageWall';
 import BroadcastPlayer from '../components/BroadcastPlayer';
+import { worldChip } from '../lib/worldLabel';
 
 /**
  * Full-width "front pages from a world that doesn't exist" wall.
@@ -12,6 +13,7 @@ import BroadcastPlayer from '../components/BroadcastPlayer';
 export default function WallPage() {
   const { worldId } = useParams();
   const world = worldId ?? 'live';
+  const chip = worldChip(world);
 
   const sectionTitle = {
     fontFamily: 'var(--rs-font-display)', fontWeight: 700, fontSize: 'var(--rs-text-xl)',
@@ -32,13 +34,13 @@ export default function WallPage() {
       }}>
         <div>
           <span className="game-eyebrow">
-            <span className="game-badge rs-chip-fork">Fork</span> World: {world}
+            <span className={chip.className}>{chip.label}</span> World: {world}
           </span>
           <h1 style={{
             fontFamily: 'var(--rs-font-display)', fontWeight: 700, fontSize: 'var(--rs-text-2xl)',
             lineHeight: 1.05, margin: 'var(--rs-space-2) 0 0',
           }}>
-            Front pages from other worlds
+            {world === 'live' ? 'Front pages from the live world' : 'Front pages from other worlds'}
           </h1>
         </div>
         <Link to="/" className="game-button game-button-dark">

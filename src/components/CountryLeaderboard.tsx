@@ -107,13 +107,15 @@ export default function CountryLeaderboard() {
   // Combine country data into rankable rows
   const rows = useMemo(() => {
     const dcMap = isDcMetric(metric) ? dcGlobalCache.get(metric) : undefined;
-    const list = Object.entries(countryData).map(([code, state]) => {
-      let value: number;
-      if (metric === 'divergence') value = divergenceMap.get(code) ?? 0;
-      else if (isDcMetric(metric)) value = dcMap?.get(code) ?? 0;
-      else value = state.indicators[metric] ?? 0;
-      return { code, name: countryName(code), value, year: state.year };
-    });
+    // Real-world (Data Commons) metrics rank every country Data Commons has a
+    // figure for; sim metrics rank the countries this world actually simulates.
+    const list: { code: string; name: string; value: number | undefined }[] = isDcMetric(metric)
+      ? [...(dcMap ?? new Map<string, number>())].map(([code, value]) => ({ code, name: countryName(code), value }))
+      : Object.entries(countryData).map(([code, state]) => ({
+          code,
+          name: countryName(code),
+          value: metric === 'divergence' ? divergenceMap.get(code) ?? 0 : state.indicators[metric],
+        }));
 
     // Filter search
     const query = search.trim().toLowerCase();
@@ -121,9 +123,10 @@ export default function CountryLeaderboard() {
       ? list.filter(r => r.name.toLowerCase().includes(query) || r.code.toLowerCase().includes(query))
       : list;
 
-    // A Data Commons metric ranks only countries that actually have a value;
-    // sim metrics keep their existing behaviour (missing -> 0).
-    const ranked = isDcMetric(metric) ? filtered.filter(r => r.value > 0) : filtered;
+    // Rank only countries that actually have a number for this metric; a
+    // missing value is left out rather than ranked as zero.
+    const ranked = filtered.filter((r): r is typeof r & { value: number } =>
+      typeof r.value === 'number' && Number.isFinite(r.value) && (!isDcMetric(metric) || r.value > 0));
 
     // Sort
     return ranked.sort((a, b) => sortAsc ? a.value - b.value : b.value - a.value);
@@ -215,7 +218,9 @@ export default function CountryLeaderboard() {
           <p style={{ padding: 'var(--rs-space-5)', textAlign: 'center', color: 'var(--rs-muted-on-dark)', font: '500 var(--rs-text-sm) var(--rs-font-body)', margin: 0 }}>
             {isDcMetric(metric)
               ? 'No real-world figures for this one yet. The Data Commons proxy may not be set up.'
-              : 'No nation matches that search.'}
+              : search.trim()
+                ? 'No nation matches that search.'
+                : 'No nation in this world has a number for this yet.'}
           </p>
         ) : (
           <ol style={{ margin: 0, padding: 0, listStyle: 'none' }}>

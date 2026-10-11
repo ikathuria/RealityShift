@@ -12,8 +12,21 @@ compatibility_flags = ["nodejs_compat"]
 # WORKER_SECRET =
 #
 # Sharing + social (optional — features no-op until set):
-# SITE_URL =            # frontend origin, e.g. https://ikathuria.github.io/RealityShift
-# MEDIA_PUBLIC_BASE =   # public B2 base for reading media indexes (front-page images)
+# SITE_URL =            # frontend URL, e.g. https://ikathuria.github.io/RealityShift
+#                       # (its origin is allowed by CORS on /api/*, together with
+#                       #  https://ishani.kathuria.net and http://localhost:5173)
+# MEDIA_PUBLIC_BASE =   # public B2/CDN base for reading media indexes (front-page images).
+#                       # When set, GET /api/media/index/:worldId proxies the index as-is.
+#
+# Private B2 bucket (S3-compatible API), used by GET /api/media/index/:worldId,
+# share pages and the Instagram cron when MEDIA_PUBLIC_BASE is unset. The Worker
+# presigns the index and re-presigns every asset URL in it per request. Same
+# names the media layer uses (media/realityshift_media/storage.py):
+# B2_KEY_ID =           # application key id (secret)
+# B2_APP_KEY =          # application key (secret) — wrangler secret put B2_APP_KEY
+# B2_BUCKET =           # bucket name
+# B2_REGION =           # e.g. us-west-004
+# B2_S3_ENDPOINT =      # optional; default https://s3.<B2_REGION>.backblazeb2.com
 # IG_USER_ID =          # Instagram Business/Creator user id (secret)
 # IG_ACCESS_TOKEN =     # long-lived Instagram Graph API token (secret)
 #

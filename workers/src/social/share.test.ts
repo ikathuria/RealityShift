@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildSharePage, shareTitle } from './share.js'
+import { buildSharePage, inlineJson, parseShareWorldId, shareTitle } from './share.js'
 
 describe('buildSharePage', () => {
   const page = buildSharePage({
@@ -31,6 +31,40 @@ describe('buildSharePage', () => {
     expect(p).not.toContain('<script>alert(1)</script>')
     expect(p).toContain('&lt;script&gt;')
     expect(p).toContain('&amp;')
+  })
+})
+
+describe('inline script JSON (reflected XSS)', () => {
+  it('cannot break out of the <script> block', () => {
+    const evil = 'https://x/wall/</script><script>alert(1)</script>'
+    const p = buildSharePage({ title: 't', description: 'd', imageUrl: 'https://x/y.png', canonicalUrl: evil })
+    const script = p.slice(p.indexOf('<script>location.replace('))
+    expect(script).not.toContain('</script><script>')
+    expect(p.match(/<script>/g)).toHaveLength(1)
+    expect(p).toContain('\\u003c/script\\u003e')
+  })
+
+  it('escapes <, >, & and the U+2028/U+2029 line terminators, and stays valid JSON', () => {
+    const value = 'a<b>c&d\u2028e\u2029f'
+    const out = inlineJson(value)
+    expect(out).not.toMatch(/[<>&\u2028\u2029]/)
+    expect(JSON.parse(out)).toBe(value)
+  })
+})
+
+describe('parseShareWorldId', () => {
+  it('accepts live and UUIDs (normalised to lower case)', () => {
+    expect(parseShareWorldId('/share/live')).toBe('live')
+    expect(parseShareWorldId('/share/live/')).toBe('live')
+    expect(parseShareWorldId('/share/3F2504E0-4F89-41D3-9A0C-0305E82C3301')).toBe('3f2504e0-4f89-41d3-9a0c-0305e82c3301')
+  })
+
+  it('rejects anything else, including encoded script and bad escapes', () => {
+    expect(parseShareWorldId('/share/%3C%2Fscript%3E%3Cscript%3Ealert(1)%3C%2Fscript%3E')).toBeNull()
+    expect(parseShareWorldId('/share/not-a-world')).toBeNull()
+    expect(parseShareWorldId('/share/%E0%A4%A')).toBeNull()
+    expect(parseShareWorldId('/share/')).toBeNull()
+    expect(parseShareWorldId('/share/live/extra')).toBeNull()
   })
 })
 

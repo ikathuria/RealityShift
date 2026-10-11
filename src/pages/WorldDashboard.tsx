@@ -137,7 +137,7 @@ export default function WorldDashboard() {
         {/* Stats grid */}
         <dl style={{ margin: 0, padding: 'var(--rs-space-3) var(--rs-space-4)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--rs-space-2)' }}>
           <StatCard label="Sim year" value={simYear ? String(simYear) : '—'} sub="Latest agent cycle" />
-          <StatCard label="Nations" value={countriesTracked !== null ? String(countriesTracked) : '—'} sub="Run by AI agents" />
+          <StatCard label="Nations" value={countriesTracked !== null ? String(countriesTracked) : '—'} sub="With simulated state" />
           <StatCard label="Events" value={String(worldEvents.length)} sub="Between agents" />
           <StatCard label="Drifted" value={String(divergedCount)} sub={`Of ${recentDivergences.length} checked`} />
         </dl>

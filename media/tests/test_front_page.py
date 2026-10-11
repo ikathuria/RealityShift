@@ -4,21 +4,21 @@ No GMICloud, no B2. Covers prompt construction, the synthetic-media constraints,
 the watermark, and the index shape.
 """
 import io
-from datetime import date
+from datetime import date, datetime, timezone
 
 from PIL import Image
 
 from realityshift_media.contracts import DivergenceBrief, NarrativeBeat
 from realityshift_media.prompts import front_page_prompt, masthead
 from realityshift_media.watermark import apply_watermark
-from realityshift_media.index import MediaEntry, build_index, index_key
+from realityshift_media.index import MediaEntry, build_index, index_key, merge_entries
 
 
 def _brief(nation="IND"):
     return DivergenceBrief(
         fork_id="fork-1", parent_fork_id="live",
         divergence_date=date(2019, 3, 1), sim_date=date(2024, 6, 1),
-        nation_iso=nation, real_world_data_cutoff=date(2019, 3, 1),
+        nation_iso=nation, real_world_data_cutoff=datetime(2026, 8, 1, 9, 30, tzinfo=timezone.utc),
         beats=[
             NarrativeBeat(headline="Government sets its course", summary="s", entities=[nation], kind="policy"),
             NarrativeBeat(headline="Trade talks resume", summary="s", entities=[nation], kind="diplomacy"),
@@ -78,3 +78,31 @@ def test_presign_key_parsing_both_url_styles(monkeypatch):
     assert object_key_from_url("https://s3.us-west-004.backblazeb2.com/rs-media/assets/ab/cd/abcd.png") == "assets/ab/cd/abcd.png"
     # virtual-hosted: https://bucket.s3.../key
     assert object_key_from_url("https://rs-media.s3.us-west-004.backblazeb2.com/assets/ab/cd/abcd.png") == "assets/ab/cd/abcd.png"
+
+
+def test_merge_replaces_same_key_and_keeps_others():
+    existing = build_index("fork-1", [
+        MediaEntry("2024-01-01", "IND", "front_page", "old-ind", "m1", "h1"),
+        MediaEntry("2024-01-01", "IND", "broadcast", "bc-ind", "m2", "h2"),
+        MediaEntry("2023-01-01", "USA", "front_page", "old-usa", "m3", "h3"),
+    ])
+    idx = build_index("fork-1", [
+        MediaEntry("2024-01-01", "IND", "front_page", "new-ind", "m4", "h4", provenance={"x": 1}),
+        MediaEntry("2025-01-01", "BRA", "front_page", "new-bra", "m5", "h5"),
+    ], existing=existing)
+    urls = [m["b2_url"] for m in idx["media"]]
+    assert urls == ["old-usa", "bc-ind", "new-ind", "new-bra"]  # (sim_date, nation, kind)
+    assert idx["count"] == 4
+    assert idx["media"][2]["provenance"] == {"x": 1}
+
+
+def test_merge_is_order_independent():
+    a = MediaEntry("2024-01-01", "IND", "front_page", "a", "m", "h")
+    b = MediaEntry("2024-01-01", "USA", "front_page", "b", "m", "h")
+    assert merge_entries([], [a, b]) == merge_entries([], [b, a])
+
+
+def test_merge_rejects_other_worlds_index():
+    import pytest
+    with pytest.raises(ValueError):
+        build_index("fork-1", [], existing={"world_id": "fork-2", "media": []})

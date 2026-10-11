@@ -1,6 +1,6 @@
 # RealityShift — Living World Policy Simulator
 
-> A persistent multi-agent world simulation where AI agents run every country based on real history. Players can fork the simulation, take over any country, and watch the rest of the world react — creating a true parallel universe with no new real-world data injected.
+> A persistent multi-agent world simulation where AI agents run every country based on real history. Players can fork the simulation, take over any country, and watch the world react — creating a true parallel universe with no new real-world data injected after the fork.
 
 ---
 
@@ -10,7 +10,7 @@
 
 **Simulation mode (always on):** One AI agent per country runs continuously. Each agent is trained on 10–20 years of their country's real history and makes decisions autonomously. Once a month, agents receive the latest real-world news, compare their simulated state to reality, self-correct where needed, and publish divergence reports publicly — a living record of alternate history.
 
-**Game mode (player-triggered):** A player picks any country, takes over from its agent, and the world forks. From that moment, no new real-world data enters the fork. The player makes decisions manually; every other country's agent reacts to those decisions in real time. The fork is a true parallel universe.
+**Game mode (player-triggered):** A player picks any country, takes over from its agent, and the world forks. From that moment, no new real-world data enters the fork. The player makes decisions manually; each simulated year, the countries most connected to the player (allies, rivals, event partners, then the largest economies — currently up to 12 with curated history) react to those decisions. The UI says exactly which countries reacted. The fork is a true parallel universe.
 
 ---
 
@@ -18,10 +18,44 @@
 
 | | |
 |---|---|
-| **Market** | Nothing like this exists. Democracy 4, Power & Revolution, NationStates — all are either single-player sandboxes with no real persistence, no AI agents, or no multi-country simulation. The "living world + fork to play" concept is entirely novel. |
+| **Market** | *Revised Oct 2026 — see [Market Position](#market-position-oct-2026).* AI-native alternate history is now an established category with a funded leader (**Pax Historia**, YC W2026, ~35K DAU claimed, 4K+ community scenarios) plus Chronostates, Altworld, AltHistAI and World Order Sim. "AI runs every country" is **not** novel any more. What still looks unclaimed: a sim **anchored to real indicators** with a **public monthly "AI predicted vs. what happened" record**, and forks whose "no new real-world data" property is **verifiable** and published as media. |
 | **Feasibility** | Very hard — persistent multi-agent coordination, monthly news injection, divergence tracking, and a real-time game layer are each substantial systems. Correct phasing (simulation first, game layer second) makes it tractable. |
-| **Free to build** | Mostly — Supabase free tier (Postgres + pgvector), Cloudflare Workers free tier (cron + agent proxy), World Bank API (free), NewsAPI (free tier: 100 requests/day). Claude API is the main cost (~$20–50/month for background agents). |
-| **Monetization** | Open source — community-built. No revenue goal. |
+| **Free to build** | To build, yes; to run with real users, no. Supabase, Cloudflare Workers, World Bank and Groq free tiers cover development and the monthly live-world sync. But Groq's free tier (~1K requests/day) supports only a handful of fork-years per day, and NewsAPI's free Developer plan is development-only — production use needs a paid plan or a different source (e.g. GDELT). Budget paid inference + a licensed news source **before** inviting players. |
+| **Monetization** | Open source, no revenue goal **for now** — a portfolio/showcase and a free shareable-content engine. Options if that changes, most realistic first: (1) stay free + open source; (2) freemium — free spectator dashboard and divergence feed, paid forks or a supporter tier; (3) education licence — per-class fork packs, divergence reports as teaching material; (4) institutional foresight/wargaming — biggest budgets, but needs validated accuracy, auditability and security; effectively a different company. |
+| **Positioning** | Lead with **"the AI world that's graded against reality every month"** and **verifiable forks**, not "AI runs every country". |
+
+---
+
+## Market Position (Oct 2026)
+
+*Source: market analysis, 11 Oct 2026. User, sales and funding figures come from third-party trackers and company claims, not audited data. Player sentiment from Reddit could not be gathered.*
+
+**Segments**
+
+| Segment | Signal | Fit |
+|---|---|---|
+| Grand strategy (Paradox et al.) | Strategy-games market ~$17–18B; Europa Universalis V launched at ~77K concurrent on Steam | Huge audience, but it expects deterministic depth an LLM sim doesn't have |
+| Political / nation sims | Democracy 4 ~145K–490K copies; NationStates ~337K active nations | Small, loyal niche; the real-data framing appeals here |
+| **AI-native alternate history** | Pax Historia (YC W2026): ~35K DAU claimed, 100B+ tokens/week, 4K+ community scenarios | **Direct category, demand proven.** The closest comparable |
+| Education (Model UN, IR courses) | Paid diplomacy sims exist (~$35/student); professors build their own AI sims | Plausible wedge: divergence reports and historical-parallel cards suit teaching |
+| Institutional wargaming / foresight | Hadean, Scale AI Thunderforge, Aaru, Simile — multi-million-dollar contracts and rounds | Real budgets, but buyers need validation, security and accreditation. Not reachable from a solo open-source project today |
+
+**Competitors.** Pax Historia is the main threat: browser-based, natural-language moves, community presets, and a 1 free token/day plus $1/token plus subscription model. Reviewers criticise it as inconsistent, with no deterministic economic model. Others: Altworld (play a person, not a nation), Chronostates (steerable timelines, "World Bible"), AltHistAI (light scenario menu), World Order Sim (24/7 sim of 39 countries, bring-your-own-agent via MCP, little traction). Research code (WarAgent, PoliBot) commoditises the building blocks.
+
+**Our edges, honestly ranked**
+1. **Strong — the public divergence record.** It's ongoing, credible and works as content, and it's the bridge to education and forecasting. Nobody else grades their sim against reality in public.
+2. **Medium — generated front pages and broadcasts as a viral loop.** Hall of Worlds, share pages and Instagram already exist, but competitors could add media generation easily.
+3. **Weak as a selling point — hash-bound provenance.** It's elegant and matters to judges and institutions, but consumers won't pay for it. It's integrity, not C2PA.
+4. **Not a moat — the 3D globe and "AI runs every country".** Pax Historia already owns that premise.
+
+**Key risks**
+1. **Inference cost and limits.** Groq's free tier can't serve many players; any real usage needs paid inference, and therefore revenue.
+2. **News licensing.** The NewsAPI free plan is development-only.
+3. **Credibility.** The divergence claim only holds if agents are coherent. Thin history coverage (20 countries), a single model, and the LLM escalation bias documented in 2026 papers all threaten it.
+4. **Distribution.** The repo has 2 stars and no community channel, against an incumbent with Discord, presets and YC backing.
+5. **Content safety.** It depicts real governments. The no-photoreal-real-people and synthetic-watermark rules stay non-negotiable.
+
+**Strategy.** Keep the project free and open source. Lead every surface (README, landing page, share cards) with the reality-graded divergence record and verifiable forks. Invest in the sim's credibility (coverage, validation, honest UI) before growth features. Revisit monetization only once the divergence record has a few months of public track record — education is the most natural first paid wedge. See **M17**.
 
 ---
 
@@ -62,9 +96,9 @@
 | Database | Supabase (Postgres + pgvector) | Persistent world state, agent memory, divergence logs, fork branching |
 | Auth | Supabase Auth | Players need accounts to save forks and game sessions |
 | Country Data | World Bank API + REST Countries API | Free, 200+ countries, 1400+ indicators — seeds initial agent state |
-| News (monthly sync) | NewsAPI.org free tier | Real-world news injection for monthly agent self-correction |
+| News (monthly sync) | NewsAPI.org (free Developer plan for dev only) | Real-world news injection for monthly agent self-correction. Production needs a paid NewsAPI plan or a switch to GDELT (free, open) — see M17 |
 | Historical Knowledge | Curated `periods.json` + pgvector embeddings | RAG source for historical grounding in agent decisions |
-| AI Model | Groq — Llama 3.3 70B | Free forever, no credit card; 1k req/day free tier; OpenAI-compatible API so swapping to Claude is a one-line config change if needed |
+| AI Model | Groq — Llama 3.3 70B | Free, no credit card; ~1k req/day free tier caps players to a few fork-years/day (Worker rate-limits forks and simulate calls). OpenAI-compatible API, so swapping to Claude is a one-line config change when real usage needs paid inference |
 | Hosting | GitHub Pages (frontend) + Cloudflare Workers (agents + API) | Both free |
 | Public Dashboard | Same frontend, read-only route `/world` | Shows live simulation state and divergence reports |
 
@@ -74,19 +108,33 @@
 
 ```sql
 -- The canonical world state, branched per fork
-worlds          { id, fork_of, created_at, is_live, player_id, forked_at_year }
+worlds          { id, fork_of, created_at, is_live, player_id, forked_at_year,
+                  player_country_code, is_public, title, published_at,
+                  instagram_posted_at }
+                -- clients can't UPDATE worlds; publishing goes through
+                -- the publish_world(world_id, publish, title) RPC
 
--- Each country's state within a world
+-- Each country's state within a world (one row per sim year)
 country_states  { world_id, country_code, year, indicators{}, policies{},
-                  agent_memory_summary, last_updated }
+                  relations{}, agent_memory_summary, last_updated }
+latest_country_states  -- view: newest year per (world, country); read this,
+                       -- never all years (PostgREST caps responses at 1000 rows)
 
 -- Agent decisions log (what each agent decided and why)
 agent_decisions { world_id, country_code, year, decision{}, reasoning,
                   historical_parallel, created_at }
 
--- Monthly divergence reports (live world only)
+-- Monthly divergence reports (live world only); unique per
+-- (country_code, sim_year, real_date) so re-running the sync is idempotent
 divergences     { country_code, sim_year, real_date, sim_state{},
                   real_state{}, delta{}, narrative, published_at }
+
+-- World events, region policies (M8, M10)
+world_events    { world_id, from_country, to_country, event_type, details, sim_year }
+region_states   { world_id, country_code, region_code, region_name, year, policies{} }
+
+-- Service-role-only log the Worker uses for rate limiting
+api_calls       { player_id, action, world_id, created_at }
 
 -- Player game sessions
 game_sessions   { id, player_id, world_id, country_code, started_at,
@@ -110,6 +158,12 @@ VITE_CESIUM_ION_TOKEN=      # ion.cesium.com free account
 VITE_SUPABASE_URL=          # your Supabase project URL
 VITE_SUPABASE_ANON_KEY=     # Supabase anon key (safe to expose)
 VITE_AI_PROXY_URL=          # deployed Cloudflare Worker URL
+VITE_B2_PUBLIC_BASE=        # optional, public media bucket base
+
+# Cloudflare Worker (optional)
+SITE_URL=                   # frontend origin, used for CORS, RSS and share links
+MEDIA_PUBLIC_BASE=          # public media bucket, or instead:
+B2_KEY_ID= B2_APP_KEY= B2_BUCKET= B2_REGION=   # private bucket, re-presigned per request
 ```
 
 ---
@@ -138,7 +192,7 @@ Tasks:
 - [x] Create `src/data/worldbank.ts` — typed fetch functions for all 7 indicators — Done when: each returns typed data for any country code
 - [x] Load GeoJSON country boundaries in Globe as CesiumJS entities — Done when: country outlines visible
 - [x] Country click → fetch `country_states` for that country from Supabase → show in `src/components/CountryPanel.tsx` sidebar — Done when: clicking India shows real seeded data
-- [x] Choropleth: color globe by GDP per capita from live world state — Done when: visible color variation across all countries
+- [~] Choropleth: color globe by GDP per capita from live world state — *Oct 2026 review: never actually rendered (the color function always returned transparent and nothing enabled it); the dead code was removed in M16. Re-add as a real feature if wanted.*
 
 ---
 
@@ -149,7 +203,7 @@ Tasks:
 - [x] Create `src/data/history/country_histories.json` — for the 20 most common starting countries, a structured summary of the last 20 years: major policy changes, economic events, political shifts, international relations, with year tags. Sourced from Wikipedia and public records — Done when: each entry has at least 15 dated events covering 2005–2025
 - [x] Write `workers/src/agents/countryAgent.ts` — the core agent function: given `(world_id, country_code)`, reads the country's current state from Supabase, loads its historical summary, finds the 3 closest historical parallels (from `periods.json`), builds a Claude prompt, and returns a structured decision: `{ policies_adjusted{}, reasoning, historical_parallel, projected_indicators{} }` — Done when: calling the agent for India returns a plausible autonomous decision
 - [x] Agent prompt design in `workers/src/agents/prompt.ts`: the agent plays the role of the current government (matching real political leaning of the country), grounds decisions in documented history, reasons about neighboring countries' states, and explicitly flags if its decision resembles a historical pattern — Done when: India's agent makes decisions consistent with a center-left coalition government
-- [x] Write `workers/src/agents/runAgents.ts` — iterates over all countries in a world, calls `countryAgent` for each, writes decisions to `agent_decisions` and updates `country_states` — Done when: running manually advances the world by one simulated month for all countries
+- [x] Write `workers/src/agents/runAgents.ts` — iterates over all countries in a world, calls `countryAgent` for each, writes decisions to `agent_decisions` and updates `country_states` — Done when: running manually advances the world by one simulated year for all countries (see the *Time semantics* note — one agent step is one year)
 - [x] Expose a Worker endpoint `POST /api/agents/run` (protected by a secret header) that triggers `runAgents` for the live world — Done when: calling the endpoint updates Supabase
 
 ---
@@ -197,7 +251,8 @@ Tasks:
 - [x] Add Supabase Auth: email/password signup and login — Done when: player can create account and session persists across page refreshes
 - [x] "Take Over" button on any CountryPanel — creates a new row in `worlds` (`fork_of = 'live'`, `forked_at_year = current`, `player_id = auth.uid`) and copies all `country_states` from the live world into the new `world_id` — Done when: clicking Take Over for India creates a fork world in Supabase with all 195 countries' states copied
 - [x] Player policy editor: when playing a fork, the player can adjust policies, pass laws, and change budgets — same UI as before but writes to the forked `world_id` not the live world — Done when: player changes India's military budget in their fork without affecting the live world
-- [x] "Simulate Year" button: when player confirms changes, runs `countryAgent` for all other countries in the fork (reacting to India's new state), updates their `country_states`, advances year — Done when: India cuts taxes → other country agents receive the updated India state and respond (trade partners adjust, adversaries react, etc.)
+- [x] "Simulate Year" button: when player confirms changes, runs `countryAgent` for the countries that react to the player (reacting to India's new state), updates their `country_states`, advances year — Done when: India cuts taxes → other country agents receive the updated India state and respond (trade partners adjust, adversaries react, etc.)
+  - *Oct 2026 review:* this originally ran the same 8 hard-coded countries every year, reported failures as "ok", and exceeded the Workers free-plan subrequest limit. Now the reacting set is chosen per year (relations → event partners → largest economies, max 12 with curated history), runs 3 countries per request with a client-side cursor loop, and the UI lists who reacted.
 - [x] No news injection in forks: `runMonthlySync` only runs on `world_id = 'live'`; forks never receive real-world data — Done when: confirmed by code review that sync functions check `is_live` before running
 - [x] Fork dashboard: player can see their fork's state vs. the live world on the same globe — a toggle between "Your Universe" and "Real World Simulation" — Done when: toggle switches globe data source between fork and live world states
 
@@ -219,7 +274,7 @@ Tasks:
 **Goal:** The globe is the primary game surface — it reacts to simulation events, policy changes, and divergences in real time.
 
 Tasks:
-- [x] Choropleth overlays: GDP, Happiness Index, Military Spend, Divergence from Reality — Done when: each overlay re-colors the globe within 500ms
+- [~] Choropleth overlays: GDP, Happiness Index, Military Spend, Divergence from Reality — *Oct 2026 review: not functional (see M2); removed. A divergence-magnitude overlay is a good fit for the M17 leaderboard.*
 - [x] Animated events: when an agent emits a diplomatic/military/trade event, draw an animated arc between the two countries — Done when: trade deals show a brief gold arc, sanctions show a red arc
 - [x] Country pulse on player action: when player confirms a policy change, their country glows briefly — Done when: visible animation triggers within 200ms of confirmation
 - [x] Camera fly-to: selecting a country smoothly flies the globe to center it — Done when: transitions complete in ~1.5 seconds
@@ -231,7 +286,7 @@ Tasks:
 **Goal:** Players can zoom into a country and make sub-national policy decisions at the state/province level.
 
 Tasks:
-- [x] Load state/province GeoJSON (Natural Earth admin-1) for India, USA, UK, Germany, Brazil, China, France, Australia, Canada, Japan — Done when: zooming into India shows state outlines
+- [x] Load state/province GeoJSON (Natural Earth admin-1) for India, USA, Brazil, China, Australia, Canada — Done when: zooming into India shows state outlines. *(UK, Germany, France and Japan were dropped in M16: the 50m admin-1 file has no provinces for them, so drill-down showed an empty map. Add them back with the 10m file if wanted.)*
 - [x] Switch from country to state boundaries below camera altitude 2000km — Done when: smooth zoom transition
 - [x] Region click opens `src/components/RegionPanel.tsx` with region-level stats (World Bank sub-national or AI-estimated) — Done when: clicking Maharashtra shows population and basic stats
 - [x] 3 local policy types: Housing (rent control/zoning), Transport (transit funding), Local Tax (municipal rates) — Done when: sliders exist and write to region-level state in Supabase
@@ -269,6 +324,8 @@ structured narrative divergence — so the media layer is a natural consumer of 
 output, not a bolt-on.
 
 ### Governing constraints
+
+*(These constraints applied to the hackathon week only; M16 later changed `workers/`, `src/` and `supabase/`.)*
 
 1. **The simulation core is not modified.** `workers/`, `src/store/`, and `supabase/`
    stay untouched. This is enforced architecturally: the sim is TypeScript on Cloudflare
@@ -366,6 +423,45 @@ Tasks:
 
 ---
 
+### Milestone 16: Code-Review Hardening (Oct 2026)
+**Goal:** Fix every issue from the 11 Oct 2026 code review, so the deployed game actually works and the "verifiable" and "reality-graded" claims are true in code.
+
+Tasks:
+- [x] CORS + preflight on all Worker `/api/*` routes — Done when: take-over works from the deployed site and from `localhost:5173`
+- [x] Share-page XSS — `/share/:worldId` accepts only `live` or a UUID, and inline JSON is escaped
+- [x] Migrations valid and re-runnable — no `create policy if not exists` (unsupported in Postgres); `schema.sql` includes 005/006; region policy names unified. Done: verified on Postgres 16 (fresh install twice, upgrade path twice, identical policy sets)
+- [x] `latest_country_states` view replaces every all-years read (1000-row cap silently dropped late-alphabet countries from sync, forks and the UI)
+- [x] Time semantics fixed — one agent step = one sim year; the live world never runs past the real calendar year, so divergence compares like with like
+- [x] LLM output validated and clamped; `trade_openness_delta` applied; policies merged, not overwritten
+- [x] Fork simulate-year rebuilt (cursor batches under the 50-subrequest limit, real error reporting, server-side player country, dynamic reacting set)
+- [x] Rate limits (5 forks/hour, 20 simulate-years/day per player) via `api_calls`
+- [x] Players can no longer UPDATE `worlds` directly; `publish_world()` RPC sets `published_at` server-side; Instagram posts each world once, with a sanitised title
+- [x] Provenance cutoff = the fork's real creation timestamp (not Jan 1 of the sim year); live-world media has no cutoff; no fabricated fallback briefs; real SHA-256 demo hashes
+- [x] Demo data confined to the demo context — never mixed into live or fork worlds as if real
+- [x] Admin-1 drill-down limited to the 6 countries the data actually covers; CDN data URLs pinned
+- [x] Frontend bugs: stuck take-over button, reload kicks the user out, second click after sign-in, swallowed Supabase errors, stuck enrichment/admin-1 loading, StrictMode globe layers, fork region policies, live-world "Fork" chip
+- [x] Hygiene: RSS links, share 404s, generic error bodies, constant-time secret check, injection-safe filters and workflow inputs, DB write errors checked, idempotent divergence upserts, CI for frontend + workers + media, media packaging and pinning, merged media index, cross-platform TTS, a non-expiring media index via the Worker
+- [ ] Apply migration 006 to production Supabase and redeploy the Worker and Pages — Done when: take-over → simulate → publish works end to end on the live site
+- [ ] Clean up production data written under the old month/year mismatch — Done when: the live world's latest year equals the current calendar year (check before running agents again)
+
+---
+
+### Milestone 17: Market-Driven Roadmap
+**Goal:** Turn the one defensible edge — a sim graded against reality every month, with verifiable forks — into the product's front door. See [Market Position](#market-position-oct-2026).
+
+Tasks:
+- [ ] **Lead with the divergence record** — the landing page and README open with "how wrong was the AI this month", not "AI runs every country" — Done when: a first-time visitor sees the latest divergence scorecard above the fold
+- [ ] **Public divergence leaderboard** — per-country and global accuracy over time (most and least diverged, trend vs. last month), shareable per card — Done when: `/world` shows a monthly scorecard with share links
+- [ ] **Honest, wider fork coverage** — raise the reacting set beyond 12, toward all countries, as inference budget allows; always show who reacted — Done when: coverage is a config value and the UI states it
+- [ ] **More country histories** — grow `country_histories.json` from 20 to 50+ countries (biggest credibility lever; also the best first contribution) — Done when: 50 countries have 15+ dated events
+- [ ] **Agent quality checks** — a small eval set (does the agent stay in character, are the deltas plausible, is there escalation bias?) run in CI on prompt changes — Done when: prompt PRs show eval deltas
+- [ ] **One-click sharing of front pages and divergence cards** (OG images already exist via `/share`) — Done when: every card and front page has a share action
+- [ ] **Production data sources and budget** — switch news ingestion to GDELT (or a paid NewsAPI plan), and decide on a paid inference budget, or keep the live update rate deliberately low — Done when: no free-tier-only dependency sits on a production path
+- [ ] **Community channel** — Discord or GitHub Discussions, linked from the app, plus `CONTRIBUTING.md` (M11) — Done when: live and linked
+- [ ] **Education pilot (optional)** — a teacher guide using divergence reports and historical-parallel cards, piloted with one Model UN or IR class — Done when: one class has used it and given feedback
+
+---
+
 ## Day allocation (27 July → 3 August)
 
 | Day | Focus |
@@ -418,6 +514,10 @@ claude "Read PLAN.md. Without building anything new, test everything marked done
 - **Monthly sync scheduler — GitHub Actions, not Cloudflare Cron**: Cloudflare Workers free tier has a 10ms CPU time limit per invocation and a wall-clock duration limit — nowhere near enough to process 195 countries in one go. The paid Bundled plan ($5/month) removes this limit for cron triggers, but it's avoidable. Instead, a GitHub Actions scheduled workflow runs on the 1st of each month and calls the Worker once per country in sequence. Each Worker invocation handles one country (short, well within limits), and GitHub Actions execution time is free and generous.
 - **LLM — Groq by default, Claude as optional upgrade**: Groq's free tier (1k req/day, 30 rpm, Llama 3.3 70B) covers the monthly 195-country sync (~7 minutes at 30 rpm) and casual gameplay at zero cost. Because Groq uses an OpenAI-compatible API, all LLM calls go through a single `src/ai/llm.ts` wrapper — swapping to Claude is a one-line config change. If the game grows and free tier limits become an issue, Claude Haiku for minor countries and Sonnet for G20 is the upgrade path (~$10–30/month).
 
+- **Time semantics (Oct 2026)**: one agent step is one simulated **year**, everywhere. The live world receives real-news corrections monthly, **in place** on the current sim year, and the agent step refuses to advance the live world past the real calendar year — so the live sim year always equals the real year, and each divergence compares like with like. Forks advance one year per "Simulate Year". (Previously each monthly run advanced the live world by a full year while the prompt asked for monthly deltas.)
+
+- **Fork reaction set, not all countries**: running all ~195 agents per fork-year would cost ~195 LLM calls, which the Groq free tier can't sustain for more than a few players. Each fork-year runs the countries most connected to the player (max 12, curated history only), in batches of 3 per Worker request (50-subrequest limit), and the UI names them. Widening this is a budget decision (M17).
+
 - **Community knowledge base**: `periods.json` and `country_histories.json` are the most valuable community contribution targets. These are plain JSON — no code needed to add a historical period or improve a country's 20-year history. `CONTRIBUTING.md` should make this the easiest possible first PR.
 
 - **Divergence as content**: The public divergence dashboard is not just a debugging tool — it's the product's most interesting public-facing feature. "Here's what AI predicted India would do, and here's what actually happened" is genuinely compelling. Consider a social share button on each divergence card.
@@ -426,7 +526,7 @@ claude "Read PLAN.md. Without building anything new, test everything marked done
 
 ## Media Layer Decisions (27 July 2026)
 
-- **Positioning shift**: "Alternate history game" is soft framing. **"Counterfactual policy wargaming with generated media briefings"** is a real user with a real budget. Institutions run wargames constantly — slow, expensive, staffing-limited. This simulation runs continuously and now *publishes* its worlds. The reframing costs nothing and makes the project legible to judges.
+- **Positioning shift** *(revisited Oct 2026: the institutional wargaming/foresight market is real but crowded with well-funded players — Hadean, Scale AI Thunderforge, Aaru, Simile — and needs validation and accreditation a solo open-source project can't offer. Keep this framing for judges and write-ups; the practical positioning is now the reality-graded divergence record — see Market Position)*: "Alternate history game" is soft framing. **"Counterfactual policy wargaming with generated media briefings"** is a real user with a real budget. Institutions run wargames constantly — slow, expensive, staffing-limited. This simulation runs continuously and now *publishes* its worlds. The reframing costs nothing and makes the project legible to judges.
 
 - **The language split is a feature, not friction**: the sim is TypeScript on Cloudflare Workers; Genblaze is Python-only. The media layer therefore *cannot* be an in-process module — it must be a separate Python process whose only reachable surface is Supabase. "Don't modify the simulation core" stops being discipline and becomes a property the architecture enforces.
 

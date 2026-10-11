@@ -17,133 +17,172 @@ on:
         required: false
         default: 'live'
 
+permissions:
+  contents: read
+
+# One sync at a time; a second trigger waits rather than double-applying corrections.
+concurrency:
+  group: monthly-sync
+  cancel-in-progress: false
+
 jobs:
   sync:
-    name: Sync all countries
+    name: Sync countries
     runs-on: ubuntu-latest
     timeout-minutes: 120   # 195 countries × ~30s each (news + LLM) = ~97 min worst case
 
+    # Inputs reach the shell only through env vars (never ${{ }} inside run:),
+    # and are validated before use.
+    env:
+      WORKER_URL: ${{ secrets.WORKER_URL }}
+      WORKER_SECRET: ${{ secrets.WORKER_SECRET }}
+      INPUT_COUNTRY: ${{ inputs.country_code }}
+      INPUT_WORLD: ${{ inputs.world_id }}
+
     steps:
-      - name: Sync single country (manual test)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.country_code != '' }}
-        env:
-          WORKER_URL: ${{ secrets.WORKER_URL }}
-          WORKER_SECRET: ${{ secrets.WORKER_SECRET }}
+      - name: Validate inputs
+        id: inputs
         run: |
-          CODE="${{ inputs.country_code }}"
-          WORLD="${{ inputs.world_id }}"
-          echo "::group::Syncing $CODE in world $WORLD"
+          set -euo pipefail
+          WORLD="${INPUT_WORLD:-live}"
+          CODE="$(printf '%s' "${INPUT_COUNTRY:-}" | tr '[:lower:]' '[:upper:]' | tr -d '[:space:]')"
 
-          # 1. Sync real-world news → divergence check
-          echo "--- sync/country ---"
-          curl -sf -X POST \
-            -H "x-worker-secret: $WORKER_SECRET" \
-            -H "Content-Type: application/json" \
-            -d "{\"country_code\":\"$CODE\",\"world_id\":\"$WORLD\"}" \
-            "$WORKER_URL/api/sync/country" | jq .
-
-          # 2. Run agent decision
-          echo "--- agents/run ---"
-          curl -sf -X POST \
-            -H "x-worker-secret: $WORKER_SECRET" \
-            -H "Content-Type: application/json" \
-            -d "{\"country_code\":\"$CODE\",\"world_id\":\"$WORLD\"}" \
-            "$WORKER_URL/api/agents/run" | jq .
-
-          echo "::endgroup::"
-
-      - name: Fetch country list
-        if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.country_code == '') }}
-        id: countries
-        env:
-          WORKER_URL: ${{ secrets.WORKER_URL }}
-          WORKER_SECRET: ${{ secrets.WORKER_SECRET }}
-        run: |
-          WORLD="${{ inputs.world_id || 'live' }}"
-          CODES=$(curl -sf \
-            -H "x-worker-secret: $WORKER_SECRET" \
-            "$WORKER_URL/api/countries?world_id=$WORLD" \
-            | jq -r '.codes[]')
-
-          if [ -z "$CODES" ]; then
-            echo "No countries found in world $WORLD — is the DB seeded?"
+          if ! [[ "$WORLD" =~ ^(live|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$ ]]; then
+            echo "::error::world_id must be 'live' or a UUID"
+            exit 1
+          fi
+          if [ -n "$CODE" ] && ! [[ "$CODE" =~ ^[A-Z]{3}$ ]]; then
+            echo "::error::country_code must be a 3-letter ISO code (e.g. IND)"
+            exit 1
+          fi
+          if [ -z "${WORKER_URL:-}" ] || [ -z "${WORKER_SECRET:-}" ]; then
+            echo "::error::WORKER_URL and WORKER_SECRET secrets must be set"
             exit 1
           fi
 
-          COUNT=$(echo "$CODES" | wc -l)
-          echo "Found $COUNT countries to sync."
+          echo "world=$WORLD" >> "$GITHUB_OUTPUT"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
 
-          # Store for next step using multiline output
+      - name: Resolve country list
+        id: countries
+        env:
+          WORLD: ${{ steps.inputs.outputs.world }}
+          CODE: ${{ steps.inputs.outputs.code }}
+        run: |
+          set -euo pipefail
+          if [ -n "$CODE" ]; then
+            CODES="$CODE"
+          else
+            STATUS=$(curl -sS -o countries.json -w '%{http_code}' \
+              -H "x-worker-secret: $WORKER_SECRET" \
+              --get --data-urlencode "world_id=$WORLD" \
+              "$WORKER_URL/api/countries") || STATUS=000
+            if [ "$STATUS" != "200" ]; then
+              echo "::error::GET /api/countries returned HTTP $STATUS: $(head -c 300 countries.json 2>/dev/null || true)"
+              exit 1
+            fi
+            # Only well-formed ISO3 codes go any further.
+            CODES=$(jq -r '.codes[]? // empty' countries.json | grep -E '^[A-Z]{3}$' || true)
+          fi
+
+          if [ -z "$CODES" ]; then
+            echo "::error::No countries found in world $WORLD — is the DB seeded?"
+            exit 1
+          fi
+          echo "Found $(echo "$CODES" | wc -l | tr -d ' ') countries to sync."
           {
             echo "codes<<CODES_EOF"
             echo "$CODES"
             echo "CODES_EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Sync all countries sequentially
-        if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.country_code == '') }}
+      - name: Sync countries sequentially
         env:
-          WORKER_URL: ${{ secrets.WORKER_URL }}
-          WORKER_SECRET: ${{ secrets.WORKER_SECRET }}
+          WORLD: ${{ steps.inputs.outputs.world }}
+          CODES: ${{ steps.countries.outputs.codes }}
         run: |
-          WORLD="${{ inputs.world_id || 'live' }}"
+          set -uo pipefail
+
+          # POST a JSON body; sets STATUS (HTTP code, 000 on transport failure) and RESP.
+          post() {
+            local path="$1" body="$2"
+            STATUS=$(curl -sS -o resp.json -w '%{http_code}' --max-time 120 -X POST \
+              -H "x-worker-secret: $WORKER_SECRET" \
+              -H "Content-Type: application/json" \
+              -d "$body" \
+              "$WORKER_URL$path") || STATUS=000
+            RESP=$(cat resp.json 2>/dev/null || true)
+          }
+
+          # Success = HTTP 2xx AND a JSON body without an "error" field.
+          ok() {
+            [[ "$STATUS" =~ ^2[0-9][0-9]$ ]] || return 1
+            echo "$RESP" | jq -e 'type == "object" and (has("error") | not)' > /dev/null 2>&1
+          }
+
           TOTAL=0
-          SYNCED=0
-          ERRORED=0
+          SYNC_FAILED=0
+          AGENT_FAILED=0
+          AGENT_SKIPPED=0
+          FAILED_CODES=""
 
           while IFS= read -r CODE; do
             [ -z "$CODE" ] && continue
+            [[ "$CODE" =~ ^[A-Z]{3}$ ]] || { echo "Skipping malformed code"; continue; }
             TOTAL=$((TOTAL + 1))
             echo "::group::[$TOTAL] $CODE"
+            BODY=$(jq -cn --arg c "$CODE" --arg w "$WORLD" '{country_code: $c, world_id: $w}')
 
-            # --- Sync: real-world news → divergence ---
-            SYNC_RESP=$(curl -sf -X POST \
-              -H "x-worker-secret: $WORKER_SECRET" \
-              -H "Content-Type: application/json" \
-              -d "{\"country_code\":\"$CODE\",\"world_id\":\"$WORLD\"}" \
-              "$WORKER_URL/api/sync/country" 2>&1) || true
-
-            if echo "$SYNC_RESP" | jq -e '.error' > /dev/null 2>&1; then
-              echo "SYNC ERROR: $SYNC_RESP"
-              ERRORED=$((ERRORED + 1))
+            # --- Sync: real-world news → divergence (applied in place to the current sim year) ---
+            post /api/sync/country "$BODY"
+            if ok; then
+              echo "sync: $(echo "$RESP" | jq -r '"diverged=\(.diverged) — \((.explanation // "")[0:80])"')"
             else
-              echo "sync: $(echo "$SYNC_RESP" | jq -r '"diverged=\(.diverged) — \(.explanation[0:80])"')"
+              echo "::warning::$CODE sync failed (HTTP $STATUS): $(echo "$RESP" | head -c 300)"
+              SYNC_FAILED=$((SYNC_FAILED + 1))
+              FAILED_CODES="$FAILED_CODES $CODE(sync)"
             fi
 
-            # --- Agent: autonomous decision ---
-            AGENT_RESP=$(curl -sf -X POST \
-              -H "x-worker-secret: $WORKER_SECRET" \
-              -H "Content-Type: application/json" \
-              -d "{\"country_code\":\"$CODE\",\"world_id\":\"$WORLD\"}" \
-              "$WORKER_URL/api/agents/run" 2>&1) || true
-
-            if echo "$AGENT_RESP" | jq -e '.error' > /dev/null 2>&1; then
-              echo "AGENT ERROR: $AGENT_RESP"
-              ERRORED=$((ERRORED + 1))
+            # --- Agent: one annual step (the live world skips until a new real year starts) ---
+            post /api/agents/run "$BODY"
+            if ok; then
+              if [ "$(echo "$RESP" | jq -r '.skipped // false')" = "true" ]; then
+                AGENT_SKIPPED=$((AGENT_SKIPPED + 1))
+                echo "agent: skipped — $(echo "$RESP" | jq -r '.reason // ""')"
+              else
+                echo "agent: success"
+              fi
             else
-              SYNCED=$((SYNCED + 1))
-              echo "agent: success"
+              echo "::warning::$CODE agent failed (HTTP $STATUS): $(echo "$RESP" | head -c 300)"
+              AGENT_FAILED=$((AGENT_FAILED + 1))
+              FAILED_CODES="$FAILED_CODES $CODE(agent)"
             fi
 
             echo "::endgroup::"
 
-            # Respect Groq rate limit (30 rpm) — 2 LLM calls per country = 15 countries/min max
-            # Sleep 4s between countries keeps us under the limit with headroom
+            # Respect Groq rate limit (30 rpm) — 2 LLM calls per country = 15 countries/min max.
+            # Sleep 4s between countries keeps us under the limit with headroom.
             sleep 4
-
-          done <<< "${{ steps.countries.outputs.codes }}"
+          done <<< "$CODES"
 
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "Monthly sync complete"
-          echo "Total:   $TOTAL"
-          echo "Success: $SYNCED"
-          echo "Errors:  $ERRORED"
+          echo "Countries:      $TOTAL"
+          echo "Sync failures:  $SYNC_FAILED"
+          echo "Agent failures: $AGENT_FAILED"
+          echo "Agent skipped:  $AGENT_SKIPPED (live world already at the current real year)"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-          # Fail the workflow if more than 20% of countries errored
-          THRESHOLD=$(( TOTAL / 5 ))
-          if [ "$ERRORED" -gt "$THRESHOLD" ]; then
-            echo "Too many errors ($ERRORED / $TOTAL). Marking workflow as failed."
+          {
+            echo "### Monthly sync"
+            echo "| Countries | Sync failures | Agent failures | Agent skipped |"
+            echo "|---|---|---|---|"
+            echo "| $TOTAL | $SYNC_FAILED | $AGENT_FAILED | $AGENT_SKIPPED |"
+            [ -n "$FAILED_CODES" ] && echo "" && echo "Failed:$FAILED_CODES"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ $((SYNC_FAILED + AGENT_FAILED)) -gt 0 ]; then
+            echo "::error::$((SYNC_FAILED + AGENT_FAILED)) call(s) failed:$FAILED_CODES"
             exit 1
           fi

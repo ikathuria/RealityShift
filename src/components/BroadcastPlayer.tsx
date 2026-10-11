@@ -3,6 +3,7 @@ import { fetchMediaIndex, type MediaEntry } from '../lib/mediaIndex';
 import { countryName } from '../data/countries';
 import { useIsMobile } from '../lib/useIsMobile';
 import ProvenancePanel from './ProvenancePanel';
+import { worldChip } from '../lib/worldLabel';
 
 /**
  * Plays a divergence broadcast alongside its provenance.
@@ -14,13 +15,16 @@ import ProvenancePanel from './ProvenancePanel';
  */
 export default function BroadcastPlayer({ worldId = 'live' }: { worldId?: string }) {
   const [broadcasts, setBroadcasts] = useState<MediaEntry[] | null>(null);
+  const [sample, setSample] = useState(false);
   const [active, setActive] = useState(0);
   const isMobile = useIsMobile();
 
   useEffect(() => {
     let live = true;
     fetchMediaIndex(worldId).then(idx => {
-      if (live) setBroadcasts(idx ? idx.media.filter(m => m.kind === 'broadcast') : []);
+      if (!live) return;
+      setBroadcasts(idx ? idx.media.filter(m => m.kind === 'broadcast') : []);
+      setSample(!!idx?.sample);
     });
     return () => { live = false; };
   }, [worldId]);
@@ -37,12 +41,13 @@ export default function BroadcastPlayer({ worldId = 'live' }: { worldId?: string
       <p style={{ padding: 'var(--rs-space-5)', margin: 0, color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-sm)', lineHeight: 1.45 }}>
         Nothing on air yet. Broadcasts appear here once the newsroom renders one
         (run <code style={{ fontFamily: 'var(--rs-font-mono)', color: 'var(--rs-text-on-dark)' }}>rs-media batch … --broadcast IND</code>).
-        The front pages below are still worth a read.
+        Any front pages that have printed are below.
       </p>
     );
   }
 
   const entry = broadcasts[Math.min(active, broadcasts.length - 1)];
+  const chip = worldChip(worldId, sample);
 
   return (
     <div>
@@ -70,7 +75,7 @@ export default function BroadcastPlayer({ worldId = 'live' }: { worldId?: string
             src={entry.b2_url}
             controls
             playsInline
-            aria-label={`Broadcast from a forked ${countryName(entry.nation_iso)}, year ${entry.sim_date.slice(0, 4)}`}
+            aria-label={`Broadcast from ${chip.describe(countryName(entry.nation_iso))}, year ${entry.sim_date.slice(0, 4)}`}
             style={{
               width: '100%', display: 'block', borderRadius: 'var(--rs-radius-md)', background: 'var(--rs-ink)',
               border: 'var(--rs-border)', boxShadow: 'var(--rs-shadow-md)',
@@ -80,7 +85,7 @@ export default function BroadcastPlayer({ worldId = 'live' }: { worldId?: string
             marginTop: 'var(--rs-space-3)', fontSize: 'var(--rs-text-sm)', fontWeight: 700, color: 'var(--rs-text-on-dark)',
             display: 'flex', alignItems: 'center', gap: 'var(--rs-space-2)', flexWrap: 'wrap',
           }}>
-            <span className="game-badge rs-chip-fork">Fork</span>
+            <span className={chip.className}>{chip.label}</span>
             {countryName(entry.nation_iso)} evening news, year {entry.sim_date.slice(0, 4)}
             {entry.duration ? <span style={{ fontFamily: 'var(--rs-font-mono)', color: 'var(--rs-muted-on-dark)' }}>· {Math.round(entry.duration)}s</span> : null}
           </div>

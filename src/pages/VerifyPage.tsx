@@ -1,28 +1,20 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { sha256Hex, inspectProvenance, type ProvenanceReport } from '../lib/provenance';
+import { sha256Hex, inspectProvenance, formatCutoff, type ProvenanceReport } from '../lib/provenance';
 import { fetchMediaIndex } from '../lib/mediaIndex';
+import { DEMO_2026_MEDIA_ENTRIES } from '../data/demoSamples';
 import { countryName } from '../data/countries';
 
 type FileState =
   | { status: 'idle' }
   | { status: 'hashing'; name: string }
-  | { status: 'done'; name: string; size: number; sha: string; inIndex: boolean | null };
+  | { status: 'done'; name: string; size: number; sha: string; match: 'index' | 'sample' | 'none' | null };
 
+// "Load a sample" pastes the bundled USA sample broadcast's index entry. It is
+// flagged sample: true, and the report says so.
+const DEMO_ENTRY = DEMO_2026_MEDIA_ENTRIES.find(m => m.kind === 'broadcast' && m.nation_iso === 'USA')!;
 const DEMO_MANIFEST = JSON.stringify(
-  {
-    simulation: {
-      fork_id: 'usa-2026-demo',
-      parent_fork_id: null,
-      divergence_date: '2026-01-01',
-      sim_date: '2026-06-01',
-      real_world_data_cutoff: '2026-01-01',
-      nation_iso: 'USA',
-      is_counterfactual: true,
-      consensus_reality: false,
-    },
-    canonical_hash: 'd278900045a1559f001',
-  },
+  { simulation: DEMO_ENTRY.provenance, canonical_hash: DEMO_ENTRY.canonical_hash },
   null,
   2,
 );
@@ -37,15 +29,20 @@ export default function VerifyPage() {
     setFile({ status: 'hashing', name: f.name });
     const buf = await f.arrayBuffer();
     const sha = await sha256Hex(buf);
-    // Cross-reference the public media index: is this fingerprint attested?
-    let inIndex: boolean | null;
-    try {
-      const idx = await fetchMediaIndex('live');
-      inIndex = !!idx?.media.some(m => m.canonical_hash === sha);
-    } catch {
-      inIndex = null;
+    // Cross-reference the live world's media index, then the bundled samples
+    // (whose canonical_hash is the raw-file SHA-256, so they can match here).
+    let match: 'index' | 'sample' | 'none' | null;
+    if (DEMO_2026_MEDIA_ENTRIES.some(m => m.canonical_hash === sha)) {
+      match = 'sample';
+    } else {
+      try {
+        const idx = await fetchMediaIndex('live');
+        match = idx?.media.some(m => m.canonical_hash === sha) ? (idx.sample ? 'sample' : 'index') : 'none';
+      } catch {
+        match = null;
+      }
     }
-    setFile({ status: 'done', name: f.name, size: f.size, sha, inIndex });
+    setFile({ status: 'done', name: f.name, size: f.size, sha, match });
   }
 
   function inspect(text: string) {
@@ -56,7 +53,7 @@ export default function VerifyPage() {
     try {
       setReport(inspectProvenance(JSON.parse(text)));
     } catch {
-      setParseError('That isn\'t valid JSON. Paste the output of `genblaze extract` or a media-index entry, or hit "Load a demo".');
+      setParseError('That isn\'t valid JSON. Paste the output of `genblaze extract` or a media-index entry, or hit "Load a sample".');
     }
   }
 
@@ -129,15 +126,17 @@ export default function VerifyPage() {
               <code style={{ display: 'block', wordBreak: 'break-all', fontFamily: 'var(--rs-font-mono)', fontSize: 'var(--rs-text-xs)', lineHeight: 1.5 }}>
                 {file.sha}
               </code>
-              {file.inIndex !== null && (
+              {file.match !== null && (
                 <p style={{
                   margin: 'var(--rs-space-3) 0 0', padding: 'var(--rs-space-2) var(--rs-space-3)',
                   borderRadius: 'var(--rs-radius-sm)', border: 'var(--rs-border-thin)',
-                  background: file.inIndex ? 'var(--rs-real-tint)' : 'var(--rs-paper)', color: 'var(--rs-ink)', fontWeight: 700,
+                  background: file.match === 'none' ? 'var(--rs-paper)' : 'var(--rs-real-tint)', color: 'var(--rs-ink)', fontWeight: 700,
                 }}>
-                  {file.inIndex
-                    ? '✓ Match. The public media index vouches for this exact file.'
-                    : "No match in the current public index. That's expected unless the index stores raw-file SHA-256, so run genblaze verify for the canonical check."}
+                  {file.match === 'index'
+                    ? '✓ Match. The live world’s media index vouches for this exact file.'
+                    : file.match === 'sample'
+                      ? '✓ Match with a bundled 2026 demo sample. It is synthetic demo content, not output from a real world.'
+                      : "No match in the current public index. That's expected unless the index stores raw-file SHA-256, so run genblaze verify for the canonical check."}
                 </p>
               )}
             </div>
@@ -149,7 +148,7 @@ export default function VerifyPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--rs-space-3)', flexWrap: 'wrap' }}>
             <h2 id="verify-manifest" style={h2}>2. Inspect a provenance manifest</h2>
             <button type="button" onClick={() => inspect(DEMO_MANIFEST)} className="game-button game-button-dark" style={{ fontSize: 'var(--rs-text-sm)' }}>
-              Load a demo
+              Load a sample
             </button>
           </div>
           <p style={muted}>
@@ -188,11 +187,23 @@ export default function VerifyPage() {
                 </span>
               </h3>
 
+              {report.sample && (
+                <p className="game-badge" style={{ margin: 'var(--rs-space-3) 0 0' }}>
+                  Synthetic demo sample, not real output
+                </p>
+              )}
+
               {report.fields && (
                 <p style={{ margin: 'var(--rs-space-3) 0', fontSize: 'var(--rs-text-sm)', color: 'var(--rs-muted-on-paper)', fontWeight: 700 }}>
-                  Fork <strong style={{ color: 'var(--rs-ink)', fontFamily: 'var(--rs-font-mono)' }}>{report.fields.fork_id}</strong>
+                  {report.kind === 'live' ? 'World' : report.kind === 'sample' ? 'Demo' : 'Fork'}{' '}
+                  <strong style={{ color: 'var(--rs-ink)', fontFamily: 'var(--rs-font-mono)' }}>{report.fields.fork_id}</strong>
                   {' · '}{countryName(report.fields.nation_iso)}
-                  {' · cutoff '}<strong style={{ color: 'var(--rs-ink)', fontFamily: 'var(--rs-font-mono)' }}>{report.fields.real_world_data_cutoff}</strong>
+                  {' · cutoff '}
+                  <strong style={{ color: 'var(--rs-ink)', fontFamily: 'var(--rs-font-mono)' }}>
+                    {report.kind === 'sample' && !report.fields.real_world_data_cutoff
+                      ? 'none (sample)'
+                      : formatCutoff(report.fields.real_world_data_cutoff, report.fields.live_world)}
+                  </strong>
                 </p>
               )}
 

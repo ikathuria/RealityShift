@@ -2,12 +2,15 @@
 
 **A persistent multi-agent world simulation that publishes broadcasts from worlds that don't exist.**
 
-One AI agent runs each of ~195 countries, grounded in that country's real recent history.
-The simulation runs continuously and self-corrects against real news each month, publishing
-a public record of where its alternate history has drifted from reality.
+Every month the simulation is graded against reality: it self-corrects against real news and
+publishes a public record of where its alternate history drifted — "here's what the AI
+predicted, here's what actually happened". One AI agent runs each seeded country, grounded in
+real World Bank indicators and, for 20 countries, a curated 20-year history.
 
 Take over any country and the world **forks**. From that moment no new real-world data enters
-your universe — every other country's agent reacts only to you. The fork is a true parallel
+your universe. Each simulated year, the countries most connected to you (allies, rivals,
+event partners, then the largest economies — up to 12) react, and the game tells you
+exactly which ones did. The fork is a true parallel
 universe, and the media layer turns it into news segments and newspaper front pages that
 report events which never happened.
 
@@ -102,7 +105,11 @@ npm install
 
 Create a [Supabase](https://supabase.com) project and run [`supabase/schema.sql`](supabase/schema.sql)
 in its SQL editor. This creates `worlds`, `country_states`, `agent_decisions`, `divergences`,
-`world_events`, and `game_sessions`, plus row-level security policies.
+`world_events`, `region_states`, `game_sessions` and `api_calls`, the `latest_country_states`
+view, the `publish_world()` RPC, and row-level security policies. It is safe to re-run.
+
+**Upgrading an existing database?** Apply [`supabase/migrations/`](supabase/migrations) in
+order instead (002 → 006). Every migration is idempotent.
 
 Copy `.env.example` to `.env` and fill in your keys:
 
@@ -249,17 +256,19 @@ Everything is built and verified end to end against a real bucket. One account
    --nation IND --year 2027` makes just a broadcast.)
    It closes the M12/M13 checkpoint: images in B2 whose manifest hash carries
    `simulation.fork_id` and `simulation.real_world_data_cutoff`.
-4. **Point the frontend at the index.** Set in the root `.env`:
-   - **Private bucket:** `VITE_MEDIA_INDEX_URL` = the presigned index URL the
-     batch printed.
-   - **Public bucket:** `VITE_B2_PUBLIC_BASE` = the bucket's public base, and
-     add `--public` to the batch.
+4. **Point the frontend at the index.** The frontend asks the Worker first —
+   `GET /api/media/index/:worldId` — and falls back to B2 directly:
+   - **Private bucket:** give the Worker read access (`B2_KEY_ID`, `B2_APP_KEY`,
+     `B2_BUCKET`, `B2_REGION` as Worker secrets; a read-only key is enough). It
+     re-presigns the index and every asset URL on each request, so nothing
+     expires.
+   - **Public bucket:** set `MEDIA_PUBLIC_BASE` on the Worker and/or
+     `VITE_B2_PUBLIC_BASE` in the root `.env`, and add `--public` to the batch.
 
-> **Presigned URLs expire (B2 ceiling: 7 days).** With a private bucket the index
-> and image URLs lapse after a week — re-run `rs-media batch` and reset
-> `VITE_MEDIA_INDEX_URL` to refresh. A **public** bucket avoids the expiry
-> entirely and is free at this scale (a few small images, egress well under the
-> 1 GB/day free tier); `rs-media setup-cors` still applies.
+> Re-running a batch **merges** into the world's index (same kind + nation +
+> date replaces; everything else is kept). `VITE_MEDIA_INDEX_URL` (a baked-in
+> presigned URL) still works as a last-resort fallback but expires after B2's
+> 7-day ceiling.
 
 > Only **IND** and **USA** have simulated data past 2026 in the seeded world
 > (they were advanced during testing). Wider `--nations` / year ranges skip and
@@ -274,7 +283,15 @@ npm --prefix workers run deploy               # wrangler deploy
 for k in GROQ_API_KEY SUPABASE_URL SUPABASE_SERVICE_KEY NEWS_API_KEY WORKER_SECRET; do
   npm --prefix workers exec wrangler secret put "$k"
 done
+# optional — private-bucket media serving (see workers/wrangler.toml)
+for k in B2_KEY_ID B2_APP_KEY B2_BUCKET B2_REGION; do
+  npm --prefix workers exec wrangler secret put "$k"
+done
 ```
+
+The Worker only answers browser requests from `SITE_URL`'s origin,
+`https://ishani.kathuria.net` and `http://localhost:5173` (CORS). Set `SITE_URL` in
+`wrangler.toml` to your frontend's URL.
 
 Set `VITE_AI_PROXY_URL` in the root `.env` to the deployed `workers.dev` URL.
 
@@ -283,8 +300,8 @@ Set `VITE_AI_PROXY_URL` in the root `.env` to the deployed `workers.dev` URL.
 1. Repo **Settings → Pages → Source: GitHub Actions** (enables the workflow at
    `.github/workflows/deploy-pages.yml`, which already builds green).
 2. Repo **Settings → Secrets and variables → Actions**, add: `VITE_SUPABASE_URL`,
-   `VITE_SUPABASE_ANON_KEY`, `VITE_AI_PROXY_URL`, `VITE_MEDIA_INDEX_URL` (private
-   bucket) or `VITE_B2_PUBLIC_BASE` (public), and optionally `VITE_CESIUM_ION_TOKEN`.
+   `VITE_SUPABASE_ANON_KEY`, `VITE_AI_PROXY_URL`, optionally `VITE_B2_PUBLIC_BASE`
+   (public bucket) and `VITE_CESIUM_ION_TOKEN`.
 3. For the monthly-sync workflow, also add `WORKER_URL` and `WORKER_SECRET`.
 4. Push to `main` (or re-run the workflow) → site publishes at
    `https://<user>.github.io/RealityShift/`.
@@ -298,12 +315,20 @@ Set `VITE_AI_PROXY_URL` in the root `.env` to the deployed `workers.dev` URL.
 
 ## How the simulation runs
 
-There is no automatic clock. Two triggers advance the world:
+There is no automatic clock. One agent step is one simulated **year**. Two triggers move
+the live world:
 
-- **`POST /api/agents/run`** — every country's agent reads its state, finds its closest
-  historical parallels, decides, and writes to `agent_decisions` + `country_states`.
+- **`POST /api/agents/run`** — a country's agent reads its state, finds its closest
+  historical parallels, decides, and writes the next year to `agent_decisions` +
+  `country_states`. On the live world it never runs past the current calendar year (it
+  returns `skipped`), so the live sim year always equals the real year.
 - **Monthly sync** (GitHub Actions, 1st of each month) — each country fetches real news,
-  compares simulated state to reality, self-corrects, and publishes a divergence report.
+  compares simulated state to reality, self-corrects **in place** on the current year, and
+  publishes a divergence report (one per country per month; re-runs are idempotent).
+
+In a fork, **Simulate Year** runs the reacting countries in batches of 3 per request
+(Cloudflare's free-plan subrequest limit) and then advances your country. Players are
+rate-limited to 5 new forks per hour and 20 simulated years per day.
 
 Forks are excluded from the monthly sync by a hard `is_live` check. That is the enforcement
 point for the no-new-data property.
@@ -313,7 +338,8 @@ point for the no-new-data property.
 ```
 GET  /api/health              GET  /api/countries          POST /api/seed
 POST /api/agents/run          POST /api/sync/country       POST /api/fork/create
-POST /api/fork/simulate-year  GET  /api/world/feed.xml
+POST /api/fork/simulate-year  GET  /api/world/feed.xml       GET  /api/media/index/:worldId
+GET  /share/:worldId          GET  /api/datacommons/*
 ```
 
 ---

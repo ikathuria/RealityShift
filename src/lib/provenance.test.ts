@@ -1,13 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import { sha256Hex, extractProvenance, inspectProvenance } from './provenance'
+import { sha256Hex, extractProvenance, inspectProvenance, formatCutoff, LIVE_CUTOFF_TEXT } from './provenance'
 
 const good = {
   simulation: {
     fork_id: 'fork-abc',
-    parent_fork_id: null,
+    parent_fork_id: 'live',
     divergence_date: '2026-01-01',
-    sim_date: '2026-06-01',
-    real_world_data_cutoff: '2026-01-01',
+    sim_date: '2028-11-05',
+    real_world_data_cutoff: '2026-08-01T09:30:15.123Z',
+    live_world: false,
+    sample: false,
     nation_iso: 'USA',
     is_counterfactual: true,
     consensus_reality: false,
@@ -37,7 +39,7 @@ describe('extractProvenance', () => {
 
   it('reads a media-index entry with a nested provenance block', () => {
     const { fields } = extractProvenance({ provenance: good.simulation, canonical_hash: 'x' })
-    expect(fields?.real_world_data_cutoff).toBe('2026-01-01')
+    expect(fields?.real_world_data_cutoff).toBe('2026-08-01T09:30:15.123Z')
   })
 
   it('reads a flat provenance object', () => {
@@ -60,12 +62,54 @@ describe('inspectProvenance', () => {
     expect(report.canonicalHash).toBe('deadbeef')
   })
 
-  it('fails when the cutoff does not equal the divergence date', () => {
+  it('no longer requires the cutoff to equal the divergence date', () => {
+    const report = inspectProvenance(good)
+    expect(report.checks.some(c => /equals divergence/i.test(c.label))).toBe(false)
+    expect(report.kind).toBe('fork')
+  })
+
+  it('fails a fork whose cutoff is a bare date or missing', () => {
+    for (const cutoff of ['2026-08-01', null, 'yesterday']) {
+      const report = inspectProvenance({ simulation: { ...good.simulation, real_world_data_cutoff: cutoff } })
+      expect(report.consistent).toBe(false)
+      expect(report.checks.find(c => c.label === 'Real-world data cutoff is a valid timestamp')?.pass).toBe(false)
+    }
+  })
+
+  it('fails a fork whose cutoff precedes divergence', () => {
     const report = inspectProvenance({
-      simulation: { ...good.simulation, real_world_data_cutoff: '2026-03-01' },
+      simulation: { ...good.simulation, real_world_data_cutoff: '2025-12-31T23:00:00.000Z' },
+    })
+    expect(report.checks.find(c => c.label === 'Cutoff is on/after the divergence date')?.pass).toBe(false)
+  })
+
+  it('accepts the live world with a null cutoff', () => {
+    const report = inspectProvenance({
+      simulation: {
+        fork_id: 'live', parent_fork_id: null, divergence_date: '2026-01-01', sim_date: '2026-11-05',
+        real_world_data_cutoff: null, live_world: true, sample: false, nation_iso: 'IND',
+        is_counterfactual: false, consensus_reality: true,
+      },
+    })
+    expect(report.kind).toBe('live')
+    expect(report.consistent).toBe(true)
+    expect(report.fields?.real_world_data_cutoff).toBeNull()
+  })
+
+  it('fails a live world that claims a cutoff', () => {
+    const report = inspectProvenance({
+      simulation: { fork_id: 'live', parent_fork_id: null, divergence_date: '2026-01-01', sim_date: '2026-11-05', real_world_data_cutoff: '2026-08-01T00:00:00.000Z', live_world: true },
     })
     expect(report.consistent).toBe(false)
-    expect(report.checks.find(c => c.label === 'Cutoff equals divergence date')?.pass).toBe(false)
+  })
+
+  it('flags sample content as synthetic', () => {
+    const report = inspectProvenance({
+      simulation: { ...good.simulation, fork_id: 'sample', parent_fork_id: null, sample: true, real_world_data_cutoff: null },
+    })
+    expect(report.kind).toBe('sample')
+    expect(report.sample).toBe(true)
+    expect(report.checks.find(c => /synthetic demo sample/i.test(c.label))).toBeTruthy()
   })
 
   it('fails when the asset is not marked counterfactual', () => {
@@ -80,10 +124,24 @@ describe('inspectProvenance', () => {
     expect(report.consistent).toBe(false)
   })
 
-  it('fails when the reporting date precedes the cutoff', () => {
+  it('fails when the reporting date precedes divergence', () => {
     const report = inspectProvenance({
       simulation: { ...good.simulation, sim_date: '2025-01-01' },
     })
-    expect(report.checks.find(c => c.label === 'Reporting date is at/after the cutoff')?.pass).toBe(false)
+    expect(report.checks.find(c => c.label === 'Reporting date is at/after divergence')?.pass).toBe(false)
+  })
+})
+
+describe('formatCutoff', () => {
+  it('describes the live world when the cutoff is null', () => {
+    expect(formatCutoff(null, true)).toBe(LIVE_CUTOFF_TEXT)
+  })
+
+  it('formats a full timestamp in UTC', () => {
+    expect(formatCutoff('2026-08-01T09:30:15.123Z')).toBe('1 Aug 2026, 09:30 UTC')
+  })
+
+  it('formats a bare date without a time', () => {
+    expect(formatCutoff('2026-01-01')).toBe('1 Jan 2026')
   })
 })

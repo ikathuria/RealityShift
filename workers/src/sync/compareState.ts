@@ -9,6 +9,7 @@
 import { chat } from '../ai/llm.js';
 import type { Message } from '../ai/llm.js';
 import type { CountryStateRow } from '../agents/prompt.js';
+import { cleanText, finiteNumber, sanitizeIndicators } from '../lib/sanitize.js';
 
 export interface DivergenceResult {
   diverged: boolean;
@@ -22,8 +23,8 @@ function buildCompareMessages(
   state: CountryStateRow,
   newsBlock: string
 ): Message[] {
-  const indLines = Object.entries(state.indicators)
-    .map(([k, v]) => `  ${k}: ${typeof v === 'number' ? v.toFixed(2) : v}`)
+  const indLines = Object.entries(sanitizeIndicators(state.indicators))
+    .map(([k, v]) => `  ${k}: ${v.toFixed(2)}`)
     .join('\n');
 
   const system: Message = {
@@ -33,7 +34,9 @@ Your job is to identify where the simulation has drifted from reality.
 
 Rules:
 - Only flag a divergence if real news CLEARLY contradicts the simulated indicators.
-- Self-corrections must be small monthly adjustments (not snapping to reality in one step).
+- The simulation advances one step per YEAR; this check runs monthly and corrects the current
+  simulated year in place. Self-corrections must be small adjustments (not snapping to reality in one step).
+- All values in "delta" and "self_correction" must be plain JSON numbers (no strings, no units).
 - If news is ambiguous or the simulation is plausible, set diverged=false.
 - Output ONLY valid JSON — no prose, no markdown fences.
 
@@ -82,11 +85,12 @@ export async function compareState(
   }
 
   const messages = buildCompareMessages(countryName, state, newsBlock);
-  const raw = await chat(messages, apiKey, { temperature: 0.3, maxTokens: 512 });
+  const raw = await chat(messages, apiKey, { temperature: 0.3, maxTokens: 512, jsonMode: true });
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
 
+  let parsed: unknown;
   try {
-    return JSON.parse(cleaned) as DivergenceResult;
+    parsed = JSON.parse(cleaned);
   } catch {
     // If the LLM returns unparseable output, treat as no divergence
     return {
@@ -96,4 +100,43 @@ export async function compareState(
       self_correction: {},
     };
   }
+  return normalizeDivergence(parsed, sanitizeIndicators(state.indicators));
+}
+
+/** Largest single self-correction, as a fraction of the indicator's current value. */
+export const MAX_CORRECTION_FRACTION = 0.1;
+/** ...but always allow at least this absolute nudge (for small %-point indicators). */
+export const MIN_CORRECTION_ABS = 0.5;
+
+function numericMap(v: unknown, allowedKeys?: Set<string>): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return out;
+  for (const [k, raw] of Object.entries(v as Record<string, unknown>)) {
+    if (!/^[a-z][a-z0-9_]{0,39}$/.test(k)) continue;
+    if (allowedKeys && !allowedKeys.has(k)) continue;
+    const n = finiteNumber(raw);
+    if (n !== undefined) out[k] = n;
+  }
+  return out;
+}
+
+/**
+ * Validate the comparison JSON: numbers are coerced (strings like "0.5" would
+ * otherwise string-concatenate when applied), non-numerics are dropped, and
+ * each self-correction is limited to the indicators the country actually has
+ * and to a small nudge (max(10% of the current value, 0.5)).
+ */
+export function normalizeDivergence(raw: unknown, indicators: Record<string, number>): DivergenceResult {
+  const o = (raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}) as Record<string, unknown>;
+  const diverged = o.diverged === true || o.diverged === 'true';
+  const explanation = cleanText(o.explanation, 1000) || (diverged ? 'Divergence detected.' : 'No divergence detected.');
+  if (!diverged) return { diverged: false, delta: {}, explanation, self_correction: {} };
+
+  const delta = numericMap(o.delta);
+  const self_correction: Record<string, number> = {};
+  for (const [k, d] of Object.entries(numericMap(o.self_correction, new Set(Object.keys(indicators))))) {
+    const limit = Math.max(Math.abs(indicators[k]) * MAX_CORRECTION_FRACTION, MIN_CORRECTION_ABS);
+    self_correction[k] = Math.min(limit, Math.max(-limit, d));
+  }
+  return { diverged, delta, explanation, self_correction };
 }

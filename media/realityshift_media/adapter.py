@@ -13,12 +13,21 @@ the fork's country_states against world_id='live'.
 from __future__ import annotations
 
 import os
-from datetime import date
+from datetime import date, datetime
 
 from supabase import Client, create_client
 
-from .contracts import DivergenceBrief, NarrativeBeat
+from .contracts import LIVE_WORLD_ID, DivergenceBrief, NarrativeBeat
 from .countries import country_name
+
+
+class BriefUnavailable(RuntimeError):
+    """No brief can be built from real simulation data for this nation-year.
+
+    Raised instead of inventing a story: Supabase unreachable or misconfigured,
+    a query error, no country_states row, or a fork without a worlds row.
+    Callers skip the item and log the reason.
+    """
 
 # Indicators worth reporting a divergence on, and how to phrase a rise/fall.
 _INDICATOR_LABELS = {
@@ -32,8 +41,13 @@ _INDICATOR_LABELS = {
 
 
 def _client() -> Client:
-    url = os.environ["SUPABASE_URL"]
-    key = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ["SUPABASE_ANON_KEY"]
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_ANON_KEY")
+    if not url or not key:
+        raise BriefUnavailable(
+            "Supabase is not configured: set SUPABASE_URL and SUPABASE_SERVICE_KEY "
+            "(or SUPABASE_ANON_KEY) in the environment or media/.env"
+        )
     return create_client(url, key)
 
 
@@ -132,56 +146,76 @@ def _beats(db: Client, world_id: str, nation: str, sim_year: int,
     return beats
 
 
-def build_brief(nation_iso: str, sim_year: int, world_id: str = "live") -> DivergenceBrief:
-    """Assemble a DivergenceBrief for one nation-month."""
-    fork_state = None
-    db = None
+def _parse_created_at(value: object, world_id: str) -> datetime:
+    """worlds.created_at (timestamptz) -> aware datetime. Raises if unusable."""
+    if not isinstance(value, str) or not value:
+        raise BriefUnavailable(f"world {world_id!r} has no created_at; cannot state a data cutoff")
+    try:
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise BriefUnavailable(f"world {world_id!r} has a malformed created_at {value!r}") from exc
+    if dt.tzinfo is None:
+        raise BriefUnavailable(f"world {world_id!r} created_at {value!r} has no timezone")
+    return dt
+
+
+def build_brief(nation_iso: str, sim_year: int, world_id: str = LIVE_WORLD_ID) -> DivergenceBrief:
+    """Assemble a DivergenceBrief for one nation-year from real simulation data.
+
+    Raises BriefUnavailable when there is no real data to report on (Supabase
+    not configured or erroring, no country_states row for the year, unknown
+    fork). It never invents a story; use sample_brief() for an explicit,
+    synthetic offline demo.
+    """
     try:
         db = _client()
         fork_state = _latest_state(db, world_id, nation_iso, sim_year)
-    except Exception:
-        pass
-
-    divergence_dt = date(sim_year, 1, 1)
-    sim_dt = date(sim_year, 11, 5)
+    except BriefUnavailable:
+        raise
+    except Exception as exc:  # network / PostgREST errors: report, never fabricate
+        raise BriefUnavailable(
+            f"Supabase query failed for {world_id}/{nation_iso}@{sim_year}: "
+            f"{type(exc).__name__}: {exc}"
+        ) from exc
 
     if not fork_state:
-        beats = [
-            NarrativeBeat(
-                headline=f"{country_name(nation_iso)} 2026 Strategic Accord",
-                summary=f"National autonomous AI agent for {country_name(nation_iso)} executed multi-year economic and security posture initiatives.",
-                entities=[nation_iso],
-                kind="policy",
-            )
-        ]
-        return DivergenceBrief(
-            fork_id=world_id,
-            parent_fork_id=None,
-            divergence_date=divergence_dt,
-            sim_date=sim_dt,
-            nation_iso=nation_iso,
-            beats=beats,
-            real_world_data_cutoff=divergence_dt,
-            consensus_delta={},
+        raise BriefUnavailable(
+            f"no country_states row for {world_id}/{nation_iso}@{sim_year}"
         )
 
-    live_state = None if world_id == "live" else _latest_state(db, "live", nation_iso, sim_year)
-    delta = _consensus_delta(fork_state, live_state)
+    sim_dt = date(sim_year, 11, 5)
+    is_live = world_id == LIVE_WORLD_ID
 
-    if world_id == "live":
-        divergence_dt = date(sim_year, 1, 1)
-    else:
-        world = (
-            db.table("worlds").select("forked_at_year, fork_of")
-            .eq("id", world_id).limit(1).execute()
-        ).data or [{}]
-        divergence_dt = date(int(world[0].get("forked_at_year") or sim_year), 1, 1)
+    try:
+        if is_live:
+            live_state = None
+            parent = None
+            divergence_dt = date(sim_year, 1, 1)
+            cutoff = None  # the live world keeps ingesting real news: no cutoff
+        else:
+            live_state = _latest_state(db, LIVE_WORLD_ID, nation_iso, sim_year)
+            world = (
+                db.table("worlds").select("forked_at_year, fork_of, created_at")
+                .eq("id", world_id).limit(1).execute()
+            ).data or []
+            if not world:
+                raise BriefUnavailable(f"no worlds row for fork {world_id!r}")
+            row = world[0]
+            divergence_dt = date(int(row.get("forked_at_year") or sim_year), 1, 1)
+            parent = row.get("fork_of")
+            # The real moment the live state was copied into this fork.
+            cutoff = _parse_created_at(row.get("created_at"), world_id)
 
-    parent = None
-    if world_id != "live":
-        parent = world[0].get("fork_of") if world else None
+        delta = _consensus_delta(fork_state, live_state)
+        bts = _beats(db, world_id, nation_iso, sim_year, delta)
+    except BriefUnavailable:
+        raise
+    except Exception as exc:
+        raise BriefUnavailable(
+            f"Supabase query failed for {world_id}/{nation_iso}@{sim_year}: "
+            f"{type(exc).__name__}: {exc}"
+        ) from exc
 
-    bts = _beats(db, world_id, nation_iso, sim_year, delta)
     return DivergenceBrief(
         fork_id=world_id,
         parent_fork_id=parent,
@@ -189,6 +223,36 @@ def build_brief(nation_iso: str, sim_year: int, world_id: str = "live") -> Diver
         sim_date=sim_dt,
         nation_iso=nation_iso,
         beats=bts,
-        real_world_data_cutoff=divergence_dt,
+        real_world_data_cutoff=cutoff,
+        live_world=is_live,
         consensus_delta=delta,
+    )
+
+
+SAMPLE_WORLD_ID = "sample"
+
+
+def sample_brief(nation_iso: str, sim_year: int) -> DivergenceBrief:
+    """An explicit, synthetic brief for offline demos. Opt-in only.
+
+    Not drawn from any world: fork_id is "sample" and provenance carries
+    `"sample": true` with a null cutoff, so the output can never pass for real
+    live-world or fork media. Never returned by build_brief().
+    """
+    name = country_name(nation_iso)
+    return DivergenceBrief(
+        fork_id=SAMPLE_WORLD_ID,
+        parent_fork_id=None,
+        divergence_date=date(sim_year, 1, 1),
+        sim_date=date(sim_year, 11, 5),
+        nation_iso=nation_iso,
+        beats=[NarrativeBeat(
+            headline=f"SAMPLE: {name} (synthetic demo)",
+            summary=(f"Synthetic sample content for {name}, not drawn from any "
+                     "simulated world. For offline demos only."),
+            entities=[nation_iso],
+            kind="policy",
+        )],
+        real_world_data_cutoff=None,
+        sample=True,
     )

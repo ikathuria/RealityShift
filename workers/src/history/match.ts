@@ -7,6 +7,7 @@
 
 import { periods, buildQueryVector, periodVectors } from './embed.js';
 import type { Period } from './embed.js';
+import { sanitizeTags } from '../lib/sanitize.js';
 
 export interface MatchResult {
   period: Period;
@@ -72,16 +73,20 @@ function indicatorsToTags(state: CountryStateForMatch): {
   }
 
   // ─── Policy signals from policies{} ──────────────────────
-  if (typeof pol.trade_openness_delta === 'number') {
-    if (pol.trade_openness_delta < -0.3) { tags.push('autarky', 'trade_protectionism'); profileKeys.trade_openness = 1; }
-    if (pol.trade_openness_delta > 0.3)  { tags.push('trade_liberalisation', 'trade_openness'); profileKeys.trade_openness = 3; }
+  // trade_openness is a 0-10 level (agents move it by trade_openness_delta each
+  // year; players set it in the policy editor).
+  const trade = typeof pol.trade_openness === 'number' && Number.isFinite(pol.trade_openness)
+    ? pol.trade_openness
+    : undefined;
+  if (trade !== undefined) {
+    if (trade < 3) { tags.push('autarky', 'trade_protectionism'); profileKeys.trade_openness = 1; }
+    if (trade > 7) { tags.push('trade_liberalisation', 'trade_openness'); profileKeys.trade_openness = 3; }
   }
 
   // ─── Tags passed directly from prior agent reasoning ─────
   // The policies object can carry string tags set by prior agents
-  if (Array.isArray(pol.active_tags)) {
-    for (const t of pol.active_tags as string[]) tags.push(t);
-  }
+  // (player-writable in a fork, so only short snake_case words are accepted)
+  for (const t of sanitizeTags((state.policies as Record<string, unknown>).active_tags)) tags.push(t);
 
   return { tags, profileKeys };
 }

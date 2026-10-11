@@ -55,30 +55,31 @@ const ARC_COLORS: Record<string, Color> = {
 const entityIso3Map = new Map<string, string>();
 
 // ─── Admin-1 GeoJSON (cached at module level) ────────────────────────────────
-// Natural Earth 50m admin-1 state/province boundaries via jsDelivr CDN
+// Natural Earth 50m admin-1 state/province boundaries via jsDelivr, pinned to a
+// release tag so the geometry (and its property names) can't shift under us.
 const ADMIN1_URL =
-  'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_50m_admin_1_states_provinces.geojson';
+  'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@v5.1.2/geojson/ne_50m_admin_1_states_provinces.geojson';
 
-// Module-level cache: null = not started, 'loading' = in flight, FeatureCollection = loaded
-let admin1Cache: null | 'loading' | FeatureCollection = null;
-const admin1Waiters: Array<(fc: FeatureCollection) => void> = [];
+// world-atlas TopoJSON: simplified 110m country geometry with numeric ISO IDs.
+const COUNTRIES_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json';
+
+// One shared request. Every caller awaits the same promise while it is in
+// flight; a failed fetch clears it so the next drill-down retries.
+let admin1Promise: Promise<FeatureCollection> | null = null;
 
 function loadAdmin1(): Promise<FeatureCollection> {
-  if (admin1Cache && admin1Cache !== 'loading') {
-    return Promise.resolve(admin1Cache);
+  if (!admin1Promise) {
+    admin1Promise = fetch(ADMIN1_URL)
+      .then(r => {
+        if (!r.ok) throw new Error(`admin-1 fetch failed: ${r.status}`);
+        return r.json() as Promise<FeatureCollection>;
+      })
+      .catch(err => {
+        admin1Promise = null;
+        throw err;
+      });
   }
-  if (admin1Cache === 'loading') {
-    return new Promise(resolve => admin1Waiters.push(resolve));
-  }
-  admin1Cache = 'loading';
-  return fetch(ADMIN1_URL)
-    .then(r => r.json())
-    .then((fc: FeatureCollection) => {
-      admin1Cache = fc;
-      admin1Waiters.forEach(fn => fn(fc));
-      admin1Waiters.length = 0;
-      return fc;
-    });
+  return admin1Promise;
 }
 
 /** Filter admin-1 FeatureCollection to a single country by ISO3 code */
@@ -134,11 +135,6 @@ function drawArc(viewer: Viewer, event: WorldEvent, durationMs = 4000): void {
   setTimeout(() => {
     try { viewer.entities.remove(entity); } catch { /* viewer may be destroyed */ }
   }, durationMs);
-}
-
-function choroplethColor(): Color {
-  // Always transparent so the rich 3D cartoon globe imagery is 100% clean, crisp, and unobstructed
-  return Color.TRANSPARENT;
 }
 
 // ─── Tooltip overlay ─────────────────────────────────────────────────────────
@@ -240,7 +236,6 @@ export default function Globe() {
   const drillCountryRef = useRef<string | null>(null);
 
   const {
-    choroplethValues, loadChoropleth,
     selectedCountry, worldEvents, pulseCountry, setPulseCountry, setGlobeReady,
   } = useWorldStore();
 
@@ -258,20 +253,6 @@ export default function Globe() {
     setGlobeReady(globeStatus === 'ready');
   }, [globeStatus, setGlobeReady]);
   useEffect(() => () => setGlobeReady(false), [setGlobeReady]);
-
-  // ── Apply choropleth colors ──────────────────────────────────────────────
-  const applyColors = useCallback(() => {
-    const source = sourceRef.current;
-    if (!source) return;
-    for (const entity of source.entities.values) {
-      if (entity.polygon) {
-        entity.polygon.material = new ColorMaterialProperty(choroplethColor());
-      }
-    }
-  }, []);
-
-  useEffect(() => { loadChoropleth(); }, [loadChoropleth]);
-  useEffect(() => { applyColors(); }, [choroplethValues, applyColors]);
 
   // ── Camera fly-to when a country is selected ─────────────────────────────
   // Fixed altitude, deliberately: viewer.flyTo(entity) frames the polygon tightly
@@ -303,13 +284,11 @@ export default function Globe() {
       const iso3 = entityIso3Map.get(entity.id);
       if (iso3 !== pulseCountry || !entity.polygon) continue;
       // Imperative Cesium scene write: flash the polygon white, then restore its
-      // transparent color after 550ms.
-      // eslint-disable-next-line react-hooks/immutability
+      // transparent fill after 550ms so the illustrated Earth shows through.
       entity.polygon.material = new ColorMaterialProperty(Color.WHITE.withAlpha(0.95));
-      const restoreColor = choroplethColor();
       setTimeout(() => {
         if (entity.polygon) {
-          entity.polygon.material = new ColorMaterialProperty(restoreColor);
+          entity.polygon.material = new ColorMaterialProperty(Color.TRANSPARENT);
         }
         setPulseCountry(null);
       }, 550);
@@ -389,10 +368,16 @@ export default function Globe() {
         fill:        Color.fromCssColorString('#6366f1').withAlpha(0.15),
         strokeWidth: 1.5,
       });
+      // The viewer may have been torn down, or the user zoomed out, meanwhile.
+      if (viewer.isDestroyed() || drillCountryRef.current !== iso3) return;
       viewer.dataSources.add(src);
       regionSrcRef.current = src;
     } catch {
-      // Admin-1 fetch failed — silently degrade
+      // Admin-1 fetch failed — degrade to the country view; the next drill retries.
+      if (drillCountryRef.current === iso3) {
+        drillCountryRef.current = null;
+        setDrillCountry(null);
+      }
     }
   }, []);
 
@@ -408,6 +393,10 @@ export default function Globe() {
   // ── Cesium viewer initialisation ──────────────────────────────────────────
   useEffect(() => {
     if (!containerRef.current || viewerRef.current) return;
+    // Everything async below checks this, so a StrictMode remount or an
+    // unmount mid-load never touches a destroyed (or a different) viewer.
+    let cancelled = false;
+    const timers: number[] = [];
 
     const viewer = new Viewer(containerRef.current, {
       animation:             false,
@@ -459,15 +448,14 @@ export default function Globe() {
     }
 
 
-    // world-atlas TopoJSON: simplified geometry + numeric ISO IDs.
     // GeoJsonDataSource hardcodes arcType=RHUMB which overflows on large polygons (CesiumJS 1.141).
     // Fix: switch fill to GEODESIC + disable outline entirely before adding to the scene.
-    // ISO_A3 is added via numeric lookup so choropleth/click code stays unchanged.
+    // ISO3 codes come from a numeric lookup so click/hover code can resolve countries.
     GeoJsonDataSource.load(
-      'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json',
+      COUNTRIES_URL,
       { stroke: Color.WHITE.withAlpha(0.25), fill: Color.TRANSPARENT, strokeWidth: 0.5 }
     ).then(source => {
-      if (viewerRef.current?.isDestroyed()) return;
+      if (cancelled || viewer.isDestroyed()) return;
       entityIso3Map.clear();
       for (const entity of source.entities.values) {
         const iso3 = NUMERIC_TO_ISO3[entity.id];
@@ -477,9 +465,8 @@ export default function Globe() {
           entity.polygon.outline = new ConstantProperty(false);
         }
       }
-      viewerRef.current!.dataSources.add(source);
+      viewer.dataSources.add(source);
       sourceRef.current = source;
-      applyColors();
 
       // The fetch resolving is not the same as the globe being painted, so wait
       // for a couple of rendered frames before clearing the loading state.
@@ -488,23 +475,23 @@ export default function Globe() {
       // is updated during rendering, so in any environment where frames are not
       // ticking (a hidden tab, a throttled automation pane) it stays false
       // forever and the spinner never clears. The short timeout is the backstop.
-      const viewer = viewerRef.current!;
       let frames = 0;
       const onFrame = () => {
-        if (viewer.isDestroyed()) return;
+        if (cancelled || viewer.isDestroyed()) return;
         if (++frames >= 2) {
           viewer.scene.postRender.removeEventListener(onFrame);
           setGlobeStatus('ready');
         }
       };
       viewer.scene.postRender.addEventListener(onFrame);
-      window.setTimeout(() => {
-        if (!viewer.isDestroyed()) {
+      timers.push(window.setTimeout(() => {
+        if (!cancelled && !viewer.isDestroyed()) {
           viewer.scene.postRender.removeEventListener(onFrame);
           setGlobeStatus('ready');
         }
-      }, 5000);
+      }, 5000));
     }).catch(err => {
+      if (cancelled) return;
       console.error('[Globe] GeoJSON load failed:', err);
       setGlobeStatus('error');
     });
@@ -566,33 +553,37 @@ export default function Globe() {
 
     // Camera move → detect altitude + selected country for drill-down
     viewer.camera.changed.addEventListener(() => {
-      if (!viewerRef.current) return;
-      const altitude  = viewerRef.current.camera.positionCartographic.height;
+      if (cancelled || viewer.isDestroyed()) return;
+      const altitude  = viewer.camera.positionCartographic.height;
       const selected  = useWorldStore.getState().selectedCountry;
       const isDrillable = selected && SUPPORTED_DRILL_COUNTRIES.has(selected);
       const currentDrill = drillCountryRef.current;
 
       if (altitude < DRILL_ALTITUDE && isDrillable) {
         if (currentDrill !== selected) {
-          loadRegions(viewerRef.current, selected!);
+          loadRegions(viewer, selected!);
         }
       } else if (altitude >= DRILL_ALTITUDE && currentDrill) {
-        unloadRegions(viewerRef.current);
+        unloadRegions(viewer);
       }
     });
 
     return () => {
+      cancelled = true;
+      timers.forEach(t => window.clearTimeout(t));
       if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-      handlerRef.current?.destroy();
-      viewerRef.current?.destroy();
+      handler.destroy();
+      handlerRef.current = null;
+      if (!viewer.isDestroyed()) viewer.destroy();
       viewerRef.current = null;
+      drillCountryRef.current = null;
       sourceRef.current = null;
       regionSrcRef.current = null;
       pinSrcRef.current = null;
     };
-    // applyColors/loadRegions/unloadRegions are stable useCallback([]) refs, so
-    // listing them keeps this viewer-init effect running exactly once on mount.
-  }, [applyColors, loadRegions, unloadRegions]);
+    // loadRegions/unloadRegions are stable useCallback([]) refs, so listing
+    // them keeps this viewer-init effect running exactly once per mount.
+  }, [loadRegions, unloadRegions]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -633,7 +624,7 @@ function GlobeStatus({ status }: { status: 'loading' | 'error' }) {
       <div style={{ color: 'var(--text-muted)', fontSize: 12, maxWidth: 300, lineHeight: 1.5 }}>
         {failed
           ? 'The country geometry CDN did not respond. Check your connection and reload.'
-          : 'Loading boundaries for 210 countries. First load takes a few seconds.'}
+          : 'Loading country boundaries. First load takes a few seconds.'}
       </div>
       <style>{'@keyframes rs-spin{to{transform:rotate(360deg)}}'}</style>
     </div>

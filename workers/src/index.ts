@@ -2,8 +2,23 @@ import { runSeed } from './seed.js';
 import { runAgent } from './agents/runAgents.js';
 import { syncCountry } from './sync/syncCountry.js';
 import { getSupabase } from './lib/supabase.js';
-import { buildSharePage, shareTitle } from './social/share.js';
+import { buildSharePage, parseShareWorldId } from './social/share.js';
 import { postToInstagram, buildCaption, instagramConfigured } from './social/instagram.js';
+import { getForkShareData, SHARE_WORLD_COLUMNS, type ForkShareData, type ShareWorldRow } from './social/shareData.js';
+import { handleForkCreate, handleSimulateYear } from './fork/handlers.js';
+import { loadMediaIndex, mediaConfigured } from './media/mediaIndex.js';
+import { authenticatePlayer } from './lib/auth.js';
+import { loadLatestStates } from './lib/db.js';
+import { isIso3, isWorldId, finiteNumber } from './lib/sanitize.js';
+import {
+  json,
+  jsonError,
+  parseJsonObject,
+  preflight,
+  safeEqual,
+  siteUrl,
+  withCors,
+} from './lib/http.js';
 import {
   fetchCountryIndicators as fetchDcCountry,
   fetchGlobalIndicator as fetchDcGlobal,
@@ -19,10 +34,22 @@ export interface Env {
   WORKER_SECRET: string;
   ANTHROPIC_API_KEY?: string;
   // ── Sharing + social (optional; features no-op until set) ──
-  /** Public origin of the frontend SPA, e.g. https://ikathuria.github.io/RealityShift */
+  /** Public origin of the frontend SPA, e.g. https://ikathuria.github.io/RealityShift.
+   *  Its origin is also allowed by CORS. */
   SITE_URL?: string;
-  /** Public B2 base for reading media indexes, e.g. https://cdn.example.com/bucket */
+  /** Public B2/CDN base for reading media indexes. When set, the media index is
+   *  served as-is from `${MEDIA_PUBLIC_BASE}/index/<world>/media.json`. */
   MEDIA_PUBLIC_BASE?: string;
+  /** Private B2 bucket access (S3-compatible API) for the media index endpoint.
+   *  Same names as the media layer (media/realityshift_media/storage.py). When
+   *  MEDIA_PUBLIC_BASE is unset and these are set, the Worker presigns the index
+   *  and re-presigns every asset URL in it on each request. */
+  B2_KEY_ID?: string;
+  B2_APP_KEY?: string;
+  B2_BUCKET?: string;
+  B2_REGION?: string;
+  /** Optional S3 endpoint override; default https://s3.<B2_REGION>.backblazeb2.com */
+  B2_S3_ENDPOINT?: string;
   /** Instagram Graph API — a Business/Creator IG user id and a long-lived token. */
   IG_USER_ID?: string;
   IG_ACCESS_TOKEN?: string;
@@ -31,123 +58,22 @@ export interface Env {
   DATA_COMMONS_API_KEY?: string;
 }
 
-const DEFAULT_SITE_URL = 'https://ikathuria.github.io/RealityShift';
-
-interface ForkShareData {
-  title: string;
-  description: string;
-  imageUrl: string;
-  canonicalUrl: string;
-  countryCode: string | null;
-  simDate: string | null;
-  cutoff: string | null;
-  worldTitle: string | null;
-}
-
-/** First front-page image URL for a world, read from its public media index (if any). */
-async function firstFrontPage(
-  env: Env,
-  worldId: string,
-): Promise<{ imageUrl: string | null; simDate: string | null; cutoff: string | null }> {
-  if (!env.MEDIA_PUBLIC_BASE) return { imageUrl: null, simDate: null, cutoff: null };
-  try {
-    const base = env.MEDIA_PUBLIC_BASE.replace(/\/$/, '');
-    const res = await fetch(`${base}/index/${worldId}/media.json`, { cf: { cacheTtl: 300 } } as RequestInit);
-    if (!res.ok) return { imageUrl: null, simDate: null, cutoff: null };
-    const idx = (await res.json()) as {
-      media?: Array<{ kind?: string; b2_url?: string; sim_date?: string; provenance?: { real_world_data_cutoff?: string } }>;
-    };
-    const fp = idx.media?.find(m => m.kind === 'front_page') ?? idx.media?.[0];
-    return {
-      imageUrl: fp?.b2_url ?? null,
-      simDate: fp?.sim_date ?? null,
-      cutoff: fp?.provenance?.real_world_data_cutoff ?? null,
-    };
-  } catch {
-    return { imageUrl: null, simDate: null, cutoff: null };
-  }
-}
-
-/** Assemble everything a share page / social post needs for a published world. */
-async function getForkShareData(env: Env, worldId: string): Promise<ForkShareData | null> {
-  const siteUrl = (env.SITE_URL ?? DEFAULT_SITE_URL).replace(/\/$/, '');
-  const canonicalUrl = `${siteUrl}/wall/${worldId}`;
-  const fallbackImage = `${siteUrl}/earth-cartoon.png`;
-
-  let countryCode: string | null = null;
-  let forkedYear: number | null = null;
-  let worldTitle: string | null = null;
-
-  try {
-    const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
-    const { data } = await db
-      .from('worlds')
-      .select('player_country_code, forked_at_year, title, is_public, is_live')
-      .eq('id', worldId)
-      .single();
-    const row = data as
-      | { player_country_code: string | null; forked_at_year: number | null; title: string | null; is_public: boolean; is_live: boolean }
-      | null;
-    // Only fork-specific previews for published (or live) worlds; others get the generic card.
-    if (row && (row.is_public || row.is_live)) {
-      countryCode = row.player_country_code;
-      forkedYear = row.forked_at_year;
-      worldTitle = row.title;
-    }
-  } catch {
-    // Fall through to a generic preview.
-  }
-
-  const fp = await firstFrontPage(env, worldId);
-  const country = countryCode ?? 'A nation';
-  return {
-    title: shareTitle(country, forkedYear, worldTitle),
-    description:
-      'A continuous AI wargame across ~195 countries. Fork it on demand and read the news from a world that never happened — with verifiable provenance.',
-    imageUrl: fp.imageUrl ?? fallbackImage,
-    canonicalUrl,
-    countryCode,
-    simDate: fp.simDate,
-    cutoff: fp.cutoff,
-    worldTitle,
-  };
-}
-
-/** Countries with curated history — eligible for full agent simulation */
-const CURATED_COUNTRIES = [
-  'USA','CHN','RUS','IND','GBR','DEU','FRA','JPN',
-  'BRA','AUS','CAN','KOR','MEX','IDN','TUR','SAU','ZAF','NGA','PAK','UKR',
-];
-
-/** Verify a player JWT using the service-role client (passes JWT through to Supabase Auth). */
-async function verifyPlayerJWT(token: string, env: Env): Promise<string | null> {
-  const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
-  const { data: { user }, error } = await db.auth.getUser(token);
-  if (error || !user) return null;
-  return user.id;
-}
-
-function requireSecret(request: Request, env: Env): Response | null {
-  const secret = request.headers.get('x-worker-secret');
-  if (secret !== env.WORKER_SECRET) {
-    return new Response('Unauthorized', { status: 401 });
+/** Secret-protected (CI / admin) routes: constant-time check of x-worker-secret. */
+async function requireSecret(request: Request, env: Env): Promise<Response | null> {
+  const secret = request.headers.get('x-worker-secret') ?? '';
+  if (!env.WORKER_SECRET || !(await safeEqual(secret, env.WORKER_SECRET))) {
+    return jsonError('Unauthorized', 401);
   }
   return null;
-}
-
-async function parseBody<T>(request: Request): Promise<T> {
-  return request.json() as Promise<T>;
 }
 
 // ── Data Commons proxy helpers ──────────────────────────────────────────────
 /** Edge-cache TTL for Data Commons responses; real-world stats move ~yearly. */
 const DC_TTL = 86_400; // 24h
 
-/** JSON response with permissive CORS (SPA is served from a different origin). */
+/** JSON response for the Data Commons routes (CORS is added by the /api wrapper). */
 function dcResponse(data: unknown, ttl: number, status = 200): Response {
   const headers: Record<string, string> = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Cache-Control': ttl > 0 ? `public, max-age=${ttl}` : 'no-store',
   };
   if (data === null) return new Response(null, { status: 204, headers });
@@ -157,346 +83,149 @@ function dcResponse(data: unknown, ttl: number, status = 200): Response {
   });
 }
 
+// Edge cache. NOTE: caches.default is a no-op on *.workers.dev hostnames — it
+// only stores entries on a custom domain/route. On workers.dev every request
+// misses and we fall through to Data Commons (the browser still honours the
+// Cache-Control max-age). Both helpers swallow cache errors so a cache problem
+// can never fail the request.
 async function dcCacheGet(request: Request): Promise<Response | null> {
-  return (await caches.default.match(request)) ?? null;
+  try {
+    return (await caches.default.match(request)) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /** Build the response, stash a clone in the edge cache, and return it. */
 function dcCachePut(request: Request, data: unknown, ttl: number, ctx: ExecutionContext): Response {
   const res = dcResponse(data, ttl);
-  ctx.waitUntil(caches.default.put(request, res.clone()));
+  try {
+    ctx.waitUntil(caches.default.put(request, res.clone()).catch(() => undefined));
+  } catch {
+    // cache unavailable — serve uncached
+  }
   return res;
 }
 
-export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const url = new URL(request.url);
-
-    // ── Health ────────────────────────────────────────────────────────────────
-    if (url.pathname === '/api/health') {
-      return Response.json({ status: 'ok', service: 'realityshift-api' });
+async function handleDataCommons(request: Request, env: Env, url: URL, ctx: ExecutionContext): Promise<Response> {
+  // GET /api/datacommons/country?iso3=USA -> { indicators: { key: number|null } }
+  if (url.pathname === '/api/datacommons/country' && request.method === 'GET') {
+    const iso3 = (url.searchParams.get('iso3') ?? '').toUpperCase();
+    if (!isIso3(iso3)) return dcResponse({ error: 'iso3 (3-letter code) required' }, 0, 400);
+    if (!env.DATA_COMMONS_API_KEY) return dcResponse({ indicators: null, reason: 'not_configured' }, 300);
+    const cached = await dcCacheGet(request);
+    if (cached) return cached;
+    try {
+      const indicators = await fetchDcCountry(iso3, env.DATA_COMMONS_API_KEY);
+      return dcCachePut(request, { indicators, source: 'Data Commons (data.un.org)' }, DC_TTL, ctx);
+    } catch (e) {
+      return jsonError('Data Commons request failed', 502, e, 'datacommons');
     }
+  }
 
-    // ── Data Commons proxy (browser-facing, key hidden, edge-cached) ──────────
-    // Google's open knowledge graph — the same data behind data.un.org. The API
-    // key is free but must stay server-side, so the SPA calls these instead of
-    // Data Commons directly. Real-world stats change ~yearly, so we cache hard.
-    if (url.pathname.startsWith('/api/datacommons/')) {
-      if (request.method === 'OPTIONS') return dcResponse(null, 0);
-
-      // GET /api/datacommons/country?iso3=USA -> { indicators: { key: number|null } }
-      if (url.pathname === '/api/datacommons/country' && request.method === 'GET') {
-        const iso3 = (url.searchParams.get('iso3') ?? '').toUpperCase();
-        if (!/^[A-Z]{3}$/.test(iso3)) {
-          return dcResponse({ error: 'iso3 (3-letter code) required' }, 0, 400);
-        }
-        if (!env.DATA_COMMONS_API_KEY) return dcResponse({ indicators: null, reason: 'not_configured' }, 300);
-        const cached = await dcCacheGet(request);
-        if (cached) return cached;
-        try {
-          const indicators = await fetchDcCountry(iso3, env.DATA_COMMONS_API_KEY);
-          return dcCachePut(request, { indicators, source: 'Data Commons (data.un.org)' }, DC_TTL, ctx);
-        } catch (e) {
-          return dcResponse({ error: String(e) }, 0, 502);
-        }
-      }
-
-      // GET /api/datacommons/global?metric=life_expectancy -> { values: { ISO3: number } }
-      if (url.pathname === '/api/datacommons/global' && request.method === 'GET') {
-        const metric = url.searchParams.get('metric') ?? '';
-        if (!(metric in DC_VARIABLES)) {
-          return dcResponse({ error: `unknown metric; one of ${Object.keys(DC_VARIABLES).join(', ')}` }, 0, 400);
-        }
-        if (!env.DATA_COMMONS_API_KEY) return dcResponse({ values: {}, reason: 'not_configured' }, 300);
-        const cached = await dcCacheGet(request);
-        if (cached) return cached;
-        try {
-          const values = await fetchDcGlobal(metric as DcKey, env.DATA_COMMONS_API_KEY);
-          return dcCachePut(request, { values, source: 'Data Commons (data.un.org)' }, DC_TTL, ctx);
-        } catch (e) {
-          return dcResponse({ error: String(e) }, 0, 502);
-        }
-      }
-
-      return dcResponse({ error: 'Not Found' }, 0, 404);
+  // GET /api/datacommons/global?metric=life_expectancy -> { values: { ISO3: number } }
+  if (url.pathname === '/api/datacommons/global' && request.method === 'GET') {
+    const metric = url.searchParams.get('metric') ?? '';
+    if (!(metric in DC_VARIABLES)) {
+      return dcResponse({ error: `unknown metric; one of ${Object.keys(DC_VARIABLES).join(', ')}` }, 0, 400);
     }
-
-    // ── GET /api/countries — list all country codes in the live world ─────────
-    // Called by the GitHub Actions monthly-sync workflow to build its loop.
-    if (url.pathname === '/api/countries' && request.method === 'GET') {
-      const denied = requireSecret(request, env);
-      if (denied) return denied;
-      try {
-        const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
-        const worldId = url.searchParams.get('world_id') ?? 'live';
-        const { data } = await db
-          .from('country_states')
-          .select('country_code')
-          .eq('world_id', worldId)
-          .order('country_code');
-
-        const seen = new Set<string>();
-        const codes: string[] = [];
-        for (const row of (data ?? []) as { country_code: string }[]) {
-          if (!seen.has(row.country_code)) {
-            seen.add(row.country_code);
-            codes.push(row.country_code);
-          }
-        }
-        return Response.json({ codes });
-      } catch (e) {
-        return Response.json({ error: String(e) }, { status: 500 });
-      }
+    if (!env.DATA_COMMONS_API_KEY) return dcResponse({ values: {}, reason: 'not_configured' }, 300);
+    const cached = await dcCacheGet(request);
+    if (cached) return cached;
+    try {
+      const values = await fetchDcGlobal(metric as DcKey, env.DATA_COMMONS_API_KEY);
+      return dcCachePut(request, { values, source: 'Data Commons (data.un.org)' }, DC_TTL, ctx);
+    } catch (e) {
+      return jsonError('Data Commons request failed', 502, e, 'datacommons');
     }
+  }
 
-    // ── POST /api/seed ────────────────────────────────────────────────────────
-    if (url.pathname === '/api/seed' && request.method === 'POST') {
-      const denied = requireSecret(request, env);
-      if (denied) return denied;
-      try {
-        const result = await runSeed(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
-        return Response.json(result);
-      } catch (e) {
-        return Response.json({ error: String(e) }, { status: 500 });
-      }
+  return jsonError('Not Found', 404);
+}
+
+// ── GET /api/media/index/:worldId ────────────────────────────────────────────
+// Live and published worlds are public; a private fork needs the owner's token.
+async function handleMediaIndex(request: Request, env: Env, rawId: string): Promise<Response> {
+  let id: string;
+  try {
+    id = decodeURIComponent(rawId);
+  } catch {
+    return jsonError('Not Found', 404);
+  }
+  if (!isWorldId(id)) return jsonError('Not Found', 404);
+  if (id !== 'live') id = id.toLowerCase();
+
+  let isPublic = id === 'live';
+  if (!isPublic) {
+    const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
+    const { data, error } = await db.from('worlds').select('player_id, is_public, is_live').eq('id', id).maybeSingle();
+    if (error) return jsonError('Could not load the media index', 500, error.message, 'media/index');
+    const w = data as { player_id: string | null; is_public: boolean; is_live: boolean } | null;
+    if (!w) return jsonError('No media index for this world', 404);
+    isPublic = w.is_public || w.is_live;
+    if (!isPublic) {
+      const userId = await authenticatePlayer(request, env);
+      if (!userId) return jsonError('Unauthorized', 401);
+      if (userId !== w.player_id) return jsonError('Forbidden', 403);
     }
+  }
 
-    // ── POST /api/agents/run — run agent for one country ──────────────────────
-    // Body: { world_id: string, country_code: string }
-    if (url.pathname === '/api/agents/run' && request.method === 'POST') {
-      const denied = requireSecret(request, env);
-      if (denied) return denied;
-      try {
-        const { world_id, country_code } = await parseBody<{
-          world_id: string;
-          country_code: string;
-        }>(request);
-        if (!world_id || !country_code) {
-          return Response.json({ error: 'world_id and country_code required' }, { status: 400 });
-        }
-        const result = await runAgent(world_id, country_code, env);
-        return Response.json(result);
-      } catch (e) {
-        return Response.json({ error: String(e) }, { status: 500 });
-      }
-    }
+  if (!mediaConfigured(env)) return jsonError('No media index for this world', 404);
+  const index = await loadMediaIndex(env, id);
+  if (!index) return jsonError('No media index for this world', 404);
+  return json(index, 200, {
+    // Presigned URLs inside live for hours; keep shared caches short.
+    'Cache-Control': isPublic ? 'public, max-age=300' : 'private, no-store',
+  });
+}
 
-    // ── POST /api/sync/country — monthly real-world sync for one country ──────
-    // Body: { country_code: string, world_id?: string }
-    // Only affects the live world — forks are silently skipped.
-    if (url.pathname === '/api/sync/country' && request.method === 'POST') {
-      const denied = requireSecret(request, env);
-      if (denied) return denied;
-      try {
-        const { country_code, world_id = 'live' } = await parseBody<{
-          country_code: string;
-          world_id?: string;
-        }>(request);
-        if (!country_code) {
-          return Response.json({ error: 'country_code required' }, { status: 400 });
-        }
-        const result = await syncCountry(country_code, world_id, env);
-        return Response.json(result);
-      } catch (e) {
-        return Response.json({ error: String(e) }, { status: 500 });
-      }
-    }
+// ── GET /api/world/feed.xml — RSS 2.0 divergence feed ───────────────────────
+async function handleFeed(env: Env): Promise<Response> {
+  const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
+  const { data, error } = await db
+    .from('divergences')
+    .select('id, country_code, sim_year, narrative, published_at, delta')
+    .order('published_at', { ascending: false })
+    .limit(50);
+  if (error || !data) {
+    if (error) console.error('[feed] read divergences:', error.message);
+    return new Response('Internal Server Error', { status: 500 });
+  }
 
-    // ── POST /api/fork/create — fork the live world for a player ─────────────
-    // Auth: Bearer <player_jwt>
-    // Body: { country_code }
-    if (url.pathname === '/api/fork/create' && request.method === 'POST') {
-      const token = request.headers.get('authorization')?.replace('Bearer ', '') ?? '';
-      const userId = await verifyPlayerJWT(token, env);
-      if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  type DivRow = {
+    id: number;
+    country_code: string;
+    sim_year: number;
+    narrative: string | null;
+    published_at: string;
+    delta: Record<string, unknown> | null;
+  };
 
-      try {
-        const { country_code } = await parseBody<{ country_code: string }>(request);
-        if (!country_code) return Response.json({ error: 'country_code required' }, { status: 400 });
+  const escapeXml = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-        const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
+  // Links point at the SPA (SITE_URL), not at this Worker, which has no /world page.
+  const worldLink = `${siteUrl(env)}/world`;
 
-        // Get all latest country states from live world
-        const { data: allStates, error: statesErr } = await db
-          .from('country_states')
-          .select('*')
-          .eq('world_id', 'live')
-          .order('country_code')
-          .order('year', { ascending: false });
-
-        if (statesErr || !allStates) {
-          return Response.json({ error: 'Failed to read live world' }, { status: 500 });
-        }
-
-        // Deduplicate: keep latest year per country
-        type StateRow = {
-          world_id: string; country_code: string; year: number;
-          indicators: Record<string, number>; policies: Record<string, unknown>;
-          relations: Record<string, string>; agent_memory_summary: string | null;
-          last_updated: string;
-        };
-        const seen = new Set<string>();
-        const latestStates: StateRow[] = [];
-        for (const s of allStates as StateRow[]) {
-          if (!seen.has(s.country_code)) {
-            seen.add(s.country_code);
-            latestStates.push(s);
-          }
-        }
-
-        const playerState = latestStates.find(s => s.country_code === country_code);
-        const currentYear = playerState?.year ?? 2025;
-
-        // Create fork world
-        const forkId = crypto.randomUUID();
-        const { error: worldErr } = await db.from('worlds').insert({
-          id: forkId,
-          fork_of: 'live',
-          is_live: false,
-          player_id: userId,
-          forked_at_year: currentYear,
-          player_country_code: country_code,
-        });
-        if (worldErr) return Response.json({ error: worldErr.message }, { status: 500 });
-
-        // Copy all country states to the fork (in batches of 50)
-        const forkStates = latestStates.map(s => ({ ...s, world_id: forkId }));
-        for (let i = 0; i < forkStates.length; i += 50) {
-          const { error: insertErr } = await db.from('country_states').insert(forkStates.slice(i, i + 50));
-          if (insertErr) return Response.json({ error: insertErr.message }, { status: 500 });
-        }
-
-        // Create game session
-        await db.from('game_sessions').insert({
-          player_id: userId,
-          world_id: forkId,
-          country_code,
-        });
-
-        return Response.json({ worldId: forkId, year: currentYear, countryCode: country_code });
-      } catch (e) {
-        return Response.json({ error: String(e) }, { status: 500 });
-      }
-    }
-
-    // ── POST /api/fork/simulate-year — run agents for one year in a fork ──────
-    // Auth: Bearer <player_jwt>
-    // Body: { world_id, player_country_code }
-    // Runs agents for up to 8 curated countries (excluding player's) then advances player's country.
-    if (url.pathname === '/api/fork/simulate-year' && request.method === 'POST') {
-      const token = request.headers.get('authorization')?.replace('Bearer ', '') ?? '';
-      const userId = await verifyPlayerJWT(token, env);
-      if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-      try {
-        const { world_id, player_country_code } = await parseBody<{
-          world_id: string;
-          player_country_code: string;
-        }>(request);
-
-        if (!world_id || !player_country_code) {
-          return Response.json({ error: 'world_id and player_country_code required' }, { status: 400 });
-        }
-
-        const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
-
-        // Verify the world belongs to this player
-        const { data: world, error: worldErr } = await db
-          .from('worlds')
-          .select('player_id')
-          .eq('id', world_id)
-          .single();
-        if (worldErr || !world || (world as { player_id: string }).player_id !== userId) {
-          return Response.json({ error: 'Forbidden' }, { status: 403 });
-        }
-
-        // Run agents for curated countries (excluding player's), max 8
-        const toSimulate = CURATED_COUNTRIES
-          .filter(c => c !== player_country_code)
-          .slice(0, 8);
-
-        const results: Array<{ country: string; status: 'ok' | 'error'; error?: string }> = [];
-        for (const countryCode of toSimulate) {
-          try {
-            await runAgent(world_id, countryCode, env);
-            results.push({ country: countryCode, status: 'ok' });
-          } catch (e) {
-            results.push({ country: countryCode, status: 'error', error: String(e).slice(0, 80) });
-          }
-        }
-
-        // Advance the player's own country by copying current year state to year+1
-        const { data: playerState } = await db
-          .from('country_states')
-          .select('*')
-          .eq('world_id', world_id)
-          .eq('country_code', player_country_code)
-          .order('year', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (playerState) {
-          const ps = playerState as { year: number; [key: string]: unknown };
-          await db.from('country_states').upsert({
-            ...ps,
-            year: ps.year + 1,
-            last_updated: new Date().toISOString(),
-          });
-        }
-
-        return Response.json({ processed: results.length, results });
-      } catch (e) {
-        return Response.json({ error: String(e) }, { status: 500 });
-      }
-    }
-
-    // ── GET /api/world/feed.xml — RSS 2.0 divergence feed ────────────────────
-    if (url.pathname === '/api/world/feed.xml' && request.method === 'GET') {
-      try {
-        const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
-        const { data, error } = await db
-          .from('divergences')
-          .select('id, country_code, sim_year, narrative, published_at, delta')
-          .order('published_at', { ascending: false })
-          .limit(50);
-
-        if (error || !data) {
-          return new Response('Internal Server Error', { status: 500 });
-        }
-
-        type DivRow = {
-          id: number;
-          country_code: string;
-          sim_year: number;
-          narrative: string;
-          published_at: string;
-          delta: Record<string, number>;
-        };
-
-        const escapeXml = (s: string) =>
-          s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-        const origin = `${url.protocol}//${url.host}`;
-
-        const items = (data as DivRow[]).map(d => {
-          const magnitude = Object.values(d.delta).reduce((a, v) => a + Math.abs(v), 0);
-          const severity = magnitude > 5 ? '🔴' : magnitude > 2 ? '🟡' : '🟢';
-          const shortNarrative = d.narrative.split('\n\nNews used:')[0].slice(0, 400);
-          const pubDate = new Date(d.published_at).toUTCString();
-          return `    <item>
-      <title>${severity} ${escapeXml(d.country_code)} — sim yr ${d.sim_year} divergence (Δ${magnitude.toFixed(1)})</title>
-      <link>${escapeXml(origin)}/world</link>
-      <guid isPermaLink="false">divergence-${d.id}</guid>
+  const items = (data as DivRow[]).map(d => {
+    const magnitude = Object.values(d.delta ?? {}).reduce<number>((a, v) => a + Math.abs(finiteNumber(v) ?? 0), 0);
+    const severity = magnitude > 5 ? '🔴' : magnitude > 2 ? '🟡' : '🟢';
+    const shortNarrative = (d.narrative ?? '').split('\n\nNews used:')[0].slice(0, 400);
+    const pubDate = new Date(d.published_at).toUTCString();
+    return `    <item>
+      <title>${severity} ${escapeXml(String(d.country_code))} — sim yr ${Number(d.sim_year)} divergence (Δ${magnitude.toFixed(1)})</title>
+      <link>${escapeXml(worldLink)}</link>
+      <guid isPermaLink="false">divergence-${Number(d.id)}</guid>
       <pubDate>${pubDate}</pubDate>
       <description>${escapeXml(shortNarrative)}</description>
     </item>`;
-        }).join('\n');
+  }).join('\n');
 
-        const xml = `<?xml version="1.0" encoding="UTF-8"?>
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
     <title>RealityShift — Divergence Feed</title>
-    <link>${escapeXml(origin)}/world</link>
+    <link>${escapeXml(worldLink)}</link>
     <description>Live simulation vs. reality divergence tracker. Updated monthly.</description>
     <language>en</language>
     <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
@@ -504,22 +233,185 @@ ${items}
   </channel>
 </rss>`;
 
-        return new Response(xml, {
-          headers: {
-            'Content-Type': 'application/rss+xml; charset=utf-8',
-            'Cache-Control': 'public, max-age=3600',
-            'Access-Control-Allow-Origin': '*',
-          },
-        });
-      } catch {
-        return new Response('Internal Server Error', { status: 500 });
+  return new Response(xml, {
+    headers: {
+      'Content-Type': 'application/rss+xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600',
+      // Public feed: any origin may read it.
+      'Access-Control-Allow-Origin': '*',
+    },
+  });
+}
+
+// ── Instagram ────────────────────────────────────────────────────────────────
+function captionFor(share: ForkShareData): string {
+  return buildCaption({
+    country: share.countryCode ?? 'A nation',
+    simDate: share.simDate,
+    worldTitle: share.worldTitle,
+    cutoff: share.cutoff,
+    liveWorld: share.liveWorld,
+  });
+}
+
+/** Post a world's front page and record instagram_posted_at on success. */
+async function postWorld(env: Env, worldId: string, share: ForkShareData) {
+  const result = await postToInstagram(env, { imageUrl: share.imageUrl, caption: captionFor(share) });
+  if (result.ok) {
+    const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
+    const { error } = await db
+      .from('worlds')
+      .update({ instagram_posted_at: new Date().toISOString() })
+      .eq('id', worldId);
+    if (error) console.error(`[instagram] posted ${worldId} but could not record it:`, error.message);
+  } else if (!result.skipped) {
+    console.error(`[instagram] post ${worldId} failed:`, result.error);
+  }
+  return result;
+}
+
+/** Cron: post the newest published world that has media and was never posted. */
+async function instagramCron(env: Env): Promise<void> {
+  const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
+  const { data, error } = await db
+    .from('worlds')
+    .select(SHARE_WORLD_COLUMNS)
+    .eq('is_public', true)
+    .is('instagram_posted_at', null)
+    .order('published_at', { ascending: false })
+    .limit(10);
+  if (error) {
+    console.error('[instagram cron] read worlds:', error.message);
+    return;
+  }
+  for (const row of (data ?? []) as ShareWorldRow[]) {
+    const share = await getForkShareData(env, row.id, row);
+    if (!share?.hasMedia) continue;
+    await postWorld(env, row.id, share);
+    return; // one post per run, whatever the outcome
+  }
+}
+
+// ── Router ───────────────────────────────────────────────────────────────────
+async function routeApi(request: Request, env: Env, url: URL, ctx: ExecutionContext): Promise<Response> {
+  const { pathname } = url;
+  const method = request.method;
+
+  if (pathname === '/api/health') {
+    return json({ status: 'ok', service: 'realityshift-api' });
+  }
+
+  // Data Commons proxy (browser-facing, key hidden, edge-cached). Google's open
+  // knowledge graph — the same data behind data.un.org.
+  if (pathname.startsWith('/api/datacommons/')) return handleDataCommons(request, env, url, ctx);
+
+  // GET /api/countries — country codes in a world (monthly-sync workflow loop).
+  if (pathname === '/api/countries' && method === 'GET') {
+    const denied = await requireSecret(request, env);
+    if (denied) return denied;
+    const worldId = url.searchParams.get('world_id') ?? 'live';
+    if (!isWorldId(worldId)) return jsonError('Invalid world_id', 400);
+    try {
+      const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
+      const states = await loadLatestStates(db, worldId);
+      return json({ codes: states.map(s => s.country_code) });
+    } catch (e) {
+      return jsonError('Could not list countries', 500, e, 'countries');
+    }
+  }
+
+  // POST /api/seed
+  if (pathname === '/api/seed' && method === 'POST') {
+    const denied = await requireSecret(request, env);
+    if (denied) return denied;
+    try {
+      return json(await runSeed(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY));
+    } catch (e) {
+      return jsonError('Seed failed', 500, e, 'seed');
+    }
+  }
+
+  // POST /api/agents/run — one agent step (= one sim year) for one country.
+  // Body: { world_id, country_code }. On the live world this returns
+  // { skipped: true, reason } once the live year has reached the real year.
+  if (pathname === '/api/agents/run' && method === 'POST') {
+    const denied = await requireSecret(request, env);
+    if (denied) return denied;
+    const body = await parseJsonObject(request);
+    const worldId = body?.world_id;
+    const countryCode = typeof body?.country_code === 'string' ? body.country_code.toUpperCase() : '';
+    if (!isWorldId(worldId) || !isIso3(countryCode)) {
+      return jsonError('world_id and country_code (ISO3) required', 400);
+    }
+    const result = await runAgent(worldId, countryCode, env);
+    return json(result, result.success ? 200 : 500);
+  }
+
+  // POST /api/sync/country — monthly real-world sync for one country, applied
+  // in place to the live world's current sim year. Body: { country_code, world_id? }
+  if (pathname === '/api/sync/country' && method === 'POST') {
+    const denied = await requireSecret(request, env);
+    if (denied) return denied;
+    const body = await parseJsonObject(request);
+    const worldId = body?.world_id ?? 'live';
+    const countryCode = typeof body?.country_code === 'string' ? body.country_code.toUpperCase() : '';
+    if (!isWorldId(worldId) || !isIso3(countryCode)) {
+      return jsonError('country_code (ISO3) required', 400);
+    }
+    const result = await syncCountry(countryCode, worldId, env);
+    return json(result, result.error ? 500 : 200);
+  }
+
+  if (pathname === '/api/fork/create' && method === 'POST') return handleForkCreate(request, env);
+  if (pathname === '/api/fork/simulate-year' && method === 'POST') return handleSimulateYear(request, env);
+
+  const mediaMatch = /^\/api\/media\/index\/([^/]+)\/?$/.exec(pathname);
+  if (mediaMatch && method === 'GET') return handleMediaIndex(request, env, mediaMatch[1]);
+
+  if (pathname === '/api/world/feed.xml' && method === 'GET') return handleFeed(env);
+
+  // POST /api/social/instagram/post — publish one world's front page.
+  // Secret-protected (CI / manual). No-ops when IG creds are unset. Body: { world_id }
+  if (pathname === '/api/social/instagram/post' && method === 'POST') {
+    const denied = await requireSecret(request, env);
+    if (denied) return denied;
+    const body = await parseJsonObject(request);
+    const worldId = body?.world_id;
+    if (!isWorldId(worldId)) return jsonError('world_id required', 400);
+    if (!instagramConfigured(env)) {
+      return json({ skipped: true, reason: 'IG_USER_ID / IG_ACCESS_TOKEN not set' });
+    }
+    const share = await getForkShareData(env, worldId);
+    if (!share?.hasMedia) return jsonError('No public front-page image found for this world', 404);
+    const result = await postWorld(env, worldId, share);
+    if (result.ok || result.skipped) return json(result);
+    return jsonError('Instagram post failed', 502);
+  }
+
+  return jsonError('Not Found', 404);
+}
+
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const url = new URL(request.url);
+
+    // Every /api/* route answers CORS preflight and carries CORS headers.
+    if (url.pathname.startsWith('/api/')) {
+      if (request.method === 'OPTIONS') return preflight(request, env);
+      let res: Response;
+      try {
+        res = await routeApi(request, env, url, ctx);
+      } catch (e) {
+        res = jsonError('Internal error', 500, e, url.pathname);
       }
+      return withCors(request, env, res);
     }
 
-    // ── GET /share/:worldId — server-rendered OG preview for social crawlers ──
+    // GET /share/:worldId — server-rendered OG preview for social crawlers.
     // Humans are redirected to the SPA wall; crawlers read the meta tags.
+    // Only `live` or a UUID is accepted; anything else 404s.
     if (url.pathname.startsWith('/share/') && request.method === 'GET') {
-      const worldId = decodeURIComponent(url.pathname.slice('/share/'.length)).replace(/\/$/, '');
+      const worldId = parseShareWorldId(url.pathname);
       if (!worldId) return new Response('Not Found', { status: 404 });
       const data = await getForkShareData(env, worldId);
       if (!data) return new Response('Not Found', { status: 404 });
@@ -531,71 +423,18 @@ ${items}
       });
     }
 
-    // ── POST /api/social/instagram/post — publish one world's front page ──────
-    // Secret-protected (CI / cron / manual). No-ops when IG creds are unset.
-    // Body: { world_id: string }
-    if (url.pathname === '/api/social/instagram/post' && request.method === 'POST') {
-      const denied = requireSecret(request, env);
-      if (denied) return denied;
-      try {
-        const { world_id } = await parseBody<{ world_id: string }>(request);
-        if (!world_id) return Response.json({ error: 'world_id required' }, { status: 400 });
-        if (!instagramConfigured(env)) {
-          return Response.json({ skipped: true, reason: 'IG_USER_ID / IG_ACCESS_TOKEN not set' });
-        }
-        const data = await getForkShareData(env, world_id);
-        if (!data || data.imageUrl.endsWith('/earth-cartoon.png')) {
-          return Response.json({ error: 'No public front-page image found for this world' }, { status: 404 });
-        }
-        const result = await postToInstagram(env, {
-          imageUrl: data.imageUrl,
-          caption: buildCaption({
-            country: data.countryCode ?? 'A nation',
-            simDate: data.simDate,
-            worldTitle: data.worldTitle,
-            cutoff: data.cutoff,
-          }),
-        });
-        return Response.json(result, { status: result.ok || result.skipped ? 200 : 502 });
-      } catch (e) {
-        return Response.json({ error: String(e) }, { status: 500 });
-      }
-    }
-
     return new Response('Not Found', { status: 404 });
   },
 
-  // ── Cron: auto-post the newest published world's front page to Instagram ────
+  // ── Cron: auto-post the newest unposted published world to Instagram ────────
   // Wired via [triggers].crons in wrangler.toml. No-ops until IG creds are set.
   async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     if (!instagramConfigured(env)) return;
     ctx.waitUntil(
-      (async () => {
-        try {
-          const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
-          const { data } = await db
-            .from('worlds')
-            .select('id')
-            .eq('is_public', true)
-            .order('published_at', { ascending: false })
-            .limit(1);
-          const world = (data as { id: string }[] | null)?.[0];
-          if (!world) return;
-          const share = await getForkShareData(env, world.id);
-          if (!share || share.imageUrl.endsWith('/earth-cartoon.png')) return;
-          await postToInstagram(env, {
-            imageUrl: share.imageUrl,
-            caption: buildCaption({
-              country: share.countryCode ?? 'A nation',
-              simDate: share.simDate,
-              worldTitle: share.worldTitle,
-              cutoff: share.cutoff,
-            }),
-          });
-        } catch {
-          // Best-effort; a failed post should not throw out of the cron.
-        }
-      })(),
+      instagramCron(env).catch(e => {
+        // Best-effort; a failed post should not throw out of the cron.
+        console.error('[instagram cron]', e instanceof Error ? e.message : e);
+      }),
     );
   },
 };

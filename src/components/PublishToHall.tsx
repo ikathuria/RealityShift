@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, WORLD_TITLE_MAX } from '../store/gameStore';
 import type { Fork } from '../store/gameStore';
 
 /**
@@ -13,13 +13,16 @@ export default function PublishToHall({ fork }: { fork: Fork }) {
   const [title, setTitle] = useState(fork.title ?? '');
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const shareUrl = `${window.location.origin}${import.meta.env.BASE_URL}wall/${fork.worldId}`;
 
   async function toggle(next: boolean) {
     setBusy(true);
-    await publishFork(fork.worldId, next, next ? title : undefined);
+    setError(null);
+    const err = await publishFork(fork.worldId, next, next ? title.slice(0, WORLD_TITLE_MAX) : undefined);
     setBusy(false);
+    setError(err);
   }
 
   async function copyLink() {
@@ -50,11 +53,18 @@ export default function PublishToHall({ fork }: { fork: Fork }) {
           <input
             id={`world-title-${fork.worldId}`}
             value={title}
-            onChange={e => setTitle(e.target.value)}
+            onChange={e => setTitle(e.target.value.slice(0, WORLD_TITLE_MAX))}
             placeholder="Name your world (optional)"
-            maxLength={80}
-            style={{ ...inputStyle, marginBottom: 'var(--rs-space-2)' }}
+            maxLength={WORLD_TITLE_MAX}
+            aria-describedby={`world-title-count-${fork.worldId}`}
+            style={{ ...inputStyle, marginBottom: 'var(--rs-space-1)' }}
           />
+          <div
+            id={`world-title-count-${fork.worldId}`}
+            style={{ color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-2xs)', textAlign: 'right', marginBottom: 'var(--rs-space-2)' }}
+          >
+            {title.length}/{WORLD_TITLE_MAX}
+          </div>
           <button
             onClick={() => toggle(true)}
             disabled={busy}
@@ -91,6 +101,12 @@ export default function PublishToHall({ fork }: { fork: Fork }) {
             {busy ? 'Making it private…' : 'Unpublish and make private'}
           </button>
         </>
+      )}
+
+      {error && (
+        <p role="alert" style={{ color: 'var(--rs-bad-on-dark)', fontSize: 'var(--rs-text-xs)', fontWeight: 700, margin: 'var(--rs-space-2) 0 0' }}>
+          {error}
+        </p>
       )}
     </section>
   );

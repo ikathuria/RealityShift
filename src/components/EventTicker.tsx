@@ -3,6 +3,7 @@ import { useWorldStore } from '../store/worldStore';
 import { countryName } from '../data/countries';
 import { useIsMobile } from '../lib/useIsMobile';
 import { EventIcon, Flag } from './GameIcons';
+import { isDemoWorld } from '../lib/demo';
 
 const ROTATE_MS = 6_000;
 
@@ -50,7 +51,7 @@ export default function EventTicker() {
           <EventIcon type={e.event_type} />
           <span style={{ minWidth: 0 }}>
             <span style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 2 }}>
-              <span className="game-toast-tag">{i === 0 ? 'Breaking' : `Year ${e.sim_year}`}</span>
+              <span className="game-toast-tag">{isDemoWorld(e.world_id) ? 'Sample' : i === 0 ? 'Breaking' : `Year ${e.sim_year}`}</span>
               <Flag iso3={e.from_country} height={12} />
               <strong style={{ fontWeight: 700 }}>
                 {countryName(e.from_country)}{e.to_country ? ` → ${countryName(e.to_country)}` : ''}

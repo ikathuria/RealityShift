@@ -19,6 +19,12 @@ export interface ChatOptions {
   model?: string;
   temperature?: number;
   maxTokens?: number;
+  /**
+   * Ask for a JSON object via OpenAI-style `response_format: { type: 'json_object' }`.
+   * Groq supports this for llama-3.3-70b-versatile (the prompt must mention
+   * "JSON", which ours do). Callers still validate the parsed output.
+   */
+  jsonMode?: boolean;
 }
 
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
@@ -33,6 +39,7 @@ export async function chat(
     model = DEFAULT_MODEL,
     temperature = 0.7,
     maxTokens = 2048,
+    jsonMode = false,
   } = options;
 
   const response = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
@@ -46,19 +53,21 @@ export async function chat(
       messages,
       temperature,
       max_tokens: maxTokens,
+      ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
     }),
   });
 
   if (!response.ok) {
-    const error = await response.text();
+    // Logged server-side only; callers map this to a generic client error.
+    const error = (await response.text()).slice(0, 500);
     throw new Error(`LLM request failed (${response.status}): ${error}`);
   }
 
   const data = await response.json() as {
-    choices: Array<{ message: { content: string } }>;
+    choices?: Array<{ message?: { content?: string } }>;
   };
 
-  const content = data.choices[0]?.message?.content;
+  const content = data.choices?.[0]?.message?.content;
   if (!content) throw new Error('LLM returned an empty response');
   return content;
 }

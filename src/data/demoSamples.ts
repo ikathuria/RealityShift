@@ -1,5 +1,5 @@
 import type { AgentDecision, CountryState, WorldEvent } from '../store/worldStore';
-import type { MediaEntry } from '../lib/mediaIndex';
+import type { MediaEntry, SimProvenance } from '../lib/mediaIndex';
 
 import usaFrontPage from '../assets/newspapers/newspaper_usa_2026_1785783848253.jpg';
 import indFrontPage from '../assets/newspapers/newspaper_ind_2026_1785783861440.jpg';
@@ -15,7 +15,7 @@ import rusBroadcast from '../assets/broadcasts/rus_broadcast_2026.mp4';
 
 export const DEMO_2026_REALITY_STATES: Record<string, CountryState> = {
   USA: {
-    world_id: 'live',
+    world_id: '2026-demo',
     country_code: 'USA',
     year: 2026,
     indicators: {
@@ -33,7 +33,7 @@ export const DEMO_2026_REALITY_STATES: Record<string, CountryState> = {
     last_updated: '2026-08-03T12:00:00Z',
   },
   IND: {
-    world_id: 'live',
+    world_id: '2026-demo',
     country_code: 'IND',
     year: 2026,
     indicators: {
@@ -51,7 +51,7 @@ export const DEMO_2026_REALITY_STATES: Record<string, CountryState> = {
     last_updated: '2026-08-03T12:00:00Z',
   },
   GBR: {
-    world_id: 'live',
+    world_id: '2026-demo',
     country_code: 'GBR',
     year: 2026,
     indicators: {
@@ -69,7 +69,7 @@ export const DEMO_2026_REALITY_STATES: Record<string, CountryState> = {
     last_updated: '2026-08-03T12:00:00Z',
   },
   CHN: {
-    world_id: 'live',
+    world_id: '2026-demo',
     country_code: 'CHN',
     year: 2026,
     indicators: {
@@ -87,7 +87,7 @@ export const DEMO_2026_REALITY_STATES: Record<string, CountryState> = {
     last_updated: '2026-08-03T12:00:00Z',
   },
   RUS: {
-    world_id: 'live',
+    world_id: '2026-demo',
     country_code: 'RUS',
     year: 2026,
     indicators: {
@@ -110,7 +110,7 @@ export const DEMO_2026_AGENT_DECISIONS: Record<string, AgentDecision[]> = {
   USA: [
     {
       id: 101,
-      world_id: 'live',
+      world_id: '2026-demo',
       country_code: 'USA',
       year: 2026,
       decision: { education_spend_delta: 0.4, military_spend_delta: 0.15 },
@@ -121,7 +121,7 @@ export const DEMO_2026_AGENT_DECISIONS: Record<string, AgentDecision[]> = {
     },
     {
       id: 102,
-      world_id: 'live',
+      world_id: '2026-demo',
       country_code: 'USA',
       year: 2025,
       decision: { military_spend_delta: 0.25 },
@@ -134,7 +134,7 @@ export const DEMO_2026_AGENT_DECISIONS: Record<string, AgentDecision[]> = {
   IND: [
     {
       id: 201,
-      world_id: 'live',
+      world_id: '2026-demo',
       country_code: 'IND',
       year: 2026,
       decision: { education_spend_delta: 0.5, tax_rate_delta: -0.3 },
@@ -147,7 +147,7 @@ export const DEMO_2026_AGENT_DECISIONS: Record<string, AgentDecision[]> = {
   GBR: [
     {
       id: 301,
-      world_id: 'live',
+      world_id: '2026-demo',
       country_code: 'GBR',
       year: 2026,
       decision: { healthcare_spend_delta: 0.3, education_spend_delta: 0.2 },
@@ -160,7 +160,7 @@ export const DEMO_2026_AGENT_DECISIONS: Record<string, AgentDecision[]> = {
   CHN: [
     {
       id: 401,
-      world_id: 'live',
+      world_id: '2026-demo',
       country_code: 'CHN',
       year: 2026,
       decision: { military_spend_delta: 0.1, education_spend_delta: 0.4 },
@@ -173,7 +173,7 @@ export const DEMO_2026_AGENT_DECISIONS: Record<string, AgentDecision[]> = {
   RUS: [
     {
       id: 501,
-      world_id: 'live',
+      world_id: '2026-demo',
       country_code: 'RUS',
       year: 2026,
       decision: { military_spend_delta: 0.6 },
@@ -185,6 +185,29 @@ export const DEMO_2026_AGENT_DECISIONS: Record<string, AgentDecision[]> = {
   ],
 };
 
+/**
+ * Provenance for the bundled samples, in the same shape the media layer writes.
+ * `sample: true` marks them as synthetic demo content: not the live world and
+ * not anyone's fork, so there is no real-world cutoff to attest.
+ */
+function sampleProvenance(nationIso: string): SimProvenance {
+  return {
+    fork_id: 'sample',
+    parent_fork_id: null,
+    divergence_date: '2026-01-01',
+    sim_date: '2026-11-05',
+    real_world_data_cutoff: null,
+    live_world: false,
+    sample: true,
+    nation_iso: nationIso,
+    is_counterfactual: true,
+    consensus_reality: false,
+  };
+}
+
+// canonical_hash here is the SHA-256 of the bundled file's raw bytes (what
+// `shasum -a 256 src/assets/...` prints), which is exactly what the Verify page
+// computes in the browser, so dropping a downloaded sample there finds a match.
 export const DEMO_2026_MEDIA_ENTRIES: MediaEntry[] = [
   // 🗞️ Front Pages
   {
@@ -193,7 +216,8 @@ export const DEMO_2026_MEDIA_ENTRIES: MediaEntry[] = [
     kind: 'front_page',
     b2_url: usaFrontPage,
     manifest_uri: 'manifest://usa_2026_frontpage',
-    canonical_hash: 'usa_2026_hash_001',
+    canonical_hash: '36fb1a12c5bd99ded416c86cefcdd595bcdeac4515a0d72184dd0debbb4e67a6',
+    provenance: sampleProvenance('USA'),
   },
   {
     sim_date: '2026-11-05',
@@ -201,7 +225,8 @@ export const DEMO_2026_MEDIA_ENTRIES: MediaEntry[] = [
     kind: 'front_page',
     b2_url: indFrontPage,
     manifest_uri: 'manifest://ind_2026_frontpage',
-    canonical_hash: 'ind_2026_hash_002',
+    canonical_hash: '101b6961dc7eef6373548a8fb1216d421b737d4b6f06a838d4191d9451512c12',
+    provenance: sampleProvenance('IND'),
   },
   {
     sim_date: '2026-11-05',
@@ -209,7 +234,8 @@ export const DEMO_2026_MEDIA_ENTRIES: MediaEntry[] = [
     kind: 'front_page',
     b2_url: gbrFrontPage,
     manifest_uri: 'manifest://gbr_2026_frontpage',
-    canonical_hash: 'gbr_2026_hash_003',
+    canonical_hash: 'e5234177897c3ff7614a85c2ab375649a5b4a1ae5e7765ee535da52d709a9127',
+    provenance: sampleProvenance('GBR'),
   },
   {
     sim_date: '2026-11-05',
@@ -217,7 +243,8 @@ export const DEMO_2026_MEDIA_ENTRIES: MediaEntry[] = [
     kind: 'front_page',
     b2_url: chnFrontPage,
     manifest_uri: 'manifest://chn_2026_frontpage',
-    canonical_hash: 'chn_2026_hash_004',
+    canonical_hash: '932ff967747c991d95cabfbd770ff6ffb12c74f79205093022df860c28c89202',
+    provenance: sampleProvenance('CHN'),
   },
   {
     sim_date: '2026-11-05',
@@ -225,7 +252,8 @@ export const DEMO_2026_MEDIA_ENTRIES: MediaEntry[] = [
     kind: 'front_page',
     b2_url: rusFrontPage,
     manifest_uri: 'manifest://rus_2026_frontpage',
-    canonical_hash: 'rus_2026_hash_005',
+    canonical_hash: '633e68f67517d171da95fe7d0215816a530b02a1343faf9b3f0d3cd698cadd3e',
+    provenance: sampleProvenance('RUS'),
   },
 
   // 📺 TV Broadcasts
@@ -235,18 +263,9 @@ export const DEMO_2026_MEDIA_ENTRIES: MediaEntry[] = [
     kind: 'broadcast',
     b2_url: usaBroadcast,
     manifest_uri: 'manifest://usa_2026_broadcast',
-    canonical_hash: 'd278900045a1559f001',
+    canonical_hash: '9ff8e3d59953a98b6b8db1c361e475eea4321276b718eeb7535486fbe47631e1',
     duration: 23,
-    provenance: {
-      fork_id: 'live',
-      parent_fork_id: null,
-      divergence_date: '2026-01-01',
-      sim_date: '2026-11-05',
-      real_world_data_cutoff: '2026-01-01',
-      nation_iso: 'USA',
-      is_counterfactual: false,
-      consensus_reality: true,
-    },
+    provenance: sampleProvenance('USA'),
   },
   {
     sim_date: '2026-11-05',
@@ -254,18 +273,9 @@ export const DEMO_2026_MEDIA_ENTRIES: MediaEntry[] = [
     kind: 'broadcast',
     b2_url: indBroadcast,
     manifest_uri: 'manifest://ind_2026_broadcast',
-    canonical_hash: 'f7e6c998f8f87b7f002',
+    canonical_hash: '87a06e2b8c2b17c626dea44473290e6d439aced3b0305b54cd2642c08c58e4a7',
     duration: 21,
-    provenance: {
-      fork_id: 'live',
-      parent_fork_id: null,
-      divergence_date: '2026-01-01',
-      sim_date: '2026-11-05',
-      real_world_data_cutoff: '2026-01-01',
-      nation_iso: 'IND',
-      is_counterfactual: false,
-      consensus_reality: true,
-    },
+    provenance: sampleProvenance('IND'),
   },
   {
     sim_date: '2026-11-05',
@@ -273,18 +283,9 @@ export const DEMO_2026_MEDIA_ENTRIES: MediaEntry[] = [
     kind: 'broadcast',
     b2_url: gbrBroadcast,
     manifest_uri: 'manifest://gbr_2026_broadcast',
-    canonical_hash: '7e01d3e5d99aae99003',
+    canonical_hash: 'f7ae2b393fea9ed840ca3c2dff25e2c8a459f0f36a93959b92a138eb36ede6ad',
     duration: 23,
-    provenance: {
-      fork_id: 'live',
-      parent_fork_id: null,
-      divergence_date: '2026-01-01',
-      sim_date: '2026-11-05',
-      real_world_data_cutoff: '2026-01-01',
-      nation_iso: 'GBR',
-      is_counterfactual: false,
-      consensus_reality: true,
-    },
+    provenance: sampleProvenance('GBR'),
   },
   {
     sim_date: '2026-11-05',
@@ -292,18 +293,9 @@ export const DEMO_2026_MEDIA_ENTRIES: MediaEntry[] = [
     kind: 'broadcast',
     b2_url: chnBroadcast,
     manifest_uri: 'manifest://chn_2026_broadcast',
-    canonical_hash: 'bf5fa45cc08fb5fb004',
+    canonical_hash: '1045aff956915342990b73359e861dcba56d313a5de6265fa68f0a578a749373',
     duration: 21,
-    provenance: {
-      fork_id: 'live',
-      parent_fork_id: null,
-      divergence_date: '2026-01-01',
-      sim_date: '2026-11-05',
-      real_world_data_cutoff: '2026-01-01',
-      nation_iso: 'CHN',
-      is_counterfactual: false,
-      consensus_reality: true,
-    },
+    provenance: sampleProvenance('CHN'),
   },
   {
     sim_date: '2026-11-05',
@@ -311,25 +303,16 @@ export const DEMO_2026_MEDIA_ENTRIES: MediaEntry[] = [
     kind: 'broadcast',
     b2_url: rusBroadcast,
     manifest_uri: 'manifest://rus_2026_broadcast',
-    canonical_hash: '48b621765fc08ce1005',
+    canonical_hash: '6d465fbb5c30842a9a0c2d3001420853d4b58efa8a86b090b7bfeee8ccf6d618',
     duration: 21,
-    provenance: {
-      fork_id: 'live',
-      parent_fork_id: null,
-      divergence_date: '2026-01-01',
-      sim_date: '2026-11-05',
-      real_world_data_cutoff: '2026-01-01',
-      nation_iso: 'RUS',
-      is_counterfactual: false,
-      consensus_reality: true,
-    },
+    provenance: sampleProvenance('RUS'),
   },
 ];
 
 export const DEMO_2026_WORLD_EVENTS: WorldEvent[] = [
   {
     id: 1001,
-    world_id: 'live',
+    world_id: '2026-demo',
     from_country: 'USA',
     to_country: 'IND',
     event_type: 'trade_deal',
@@ -339,7 +322,7 @@ export const DEMO_2026_WORLD_EVENTS: WorldEvent[] = [
   },
   {
     id: 1002,
-    world_id: 'live',
+    world_id: '2026-demo',
     from_country: 'GBR',
     to_country: 'USA',
     event_type: 'military_posture',
@@ -349,7 +332,7 @@ export const DEMO_2026_WORLD_EVENTS: WorldEvent[] = [
   },
   {
     id: 1003,
-    world_id: 'live',
+    world_id: '2026-demo',
     from_country: 'CHN',
     to_country: 'RUS',
     event_type: 'alliance_formed',

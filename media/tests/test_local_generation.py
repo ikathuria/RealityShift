@@ -6,7 +6,7 @@ path gives, with no credentials at all.
 """
 import os
 import urllib.parse
-from datetime import date
+from datetime import date, datetime, timezone
 
 import pytest
 
@@ -21,7 +21,7 @@ def _brief():
     return DivergenceBrief(
         fork_id="fork-42", parent_fork_id="live",
         divergence_date=date(2019, 3, 1), sim_date=date(2027, 1, 1),
-        nation_iso="IND", real_world_data_cutoff=date(2019, 3, 1),
+        nation_iso="IND", real_world_data_cutoff=datetime(2026, 8, 1, 9, 30, tzinfo=timezone.utc),
         beats=[
             NarrativeBeat(headline="Government sets its course", summary="s", entities=["IND"], kind="policy"),
             NarrativeBeat(headline="Echoes of an earlier era", summary="s", entities=["IND"], kind="policy"),
@@ -44,7 +44,8 @@ def test_local_pipeline_produces_verifiable_manifest():
     # provenance bound into the hash
     sim = result.run.metadata["simulation"]
     assert sim["fork_id"] == "fork-42"
-    assert sim["real_world_data_cutoff"] == "2019-03-01"
+    assert sim["real_world_data_cutoff"] == "2026-08-01T09:30:00.000Z"
+    assert sim["live_world"] is False and sim["sample"] is False
 
     # the headline is carried in step metadata (and thus the hash)
     assert result.run.steps[-1].metadata["newspaper"]["headline"] == "Government sets its course"

@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend (typecheck, lint, tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc -b
+      # Root eslint also lints workers/**/*.ts.
+      - name: Lint
+        run: npx eslint .
+      - name: Unit tests
+        run: npx vitest run
+
+  workers:
+    name: Worker (typecheck, tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: workers
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: workers/package-lock.json
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Unit tests
+        run: npx vitest run
+
+  media:
+    name: Media (pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: media/pyproject.toml
+      # Base + [dev] extras only. The [local] extra (torch/diffusers, ~2 GB) is
+      # deliberately skipped; the tests run in stub mode without it.
+      - name: Install
+        run: python -m pip install -e "media[dev]"
+      - name: Tests
+        working-directory: media
+        env:
+          RS_MEDIA_STUB: '1'
+        run: python -m pytest -q

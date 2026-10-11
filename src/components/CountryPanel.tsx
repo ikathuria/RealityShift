@@ -11,6 +11,7 @@ import DecisionLog from './DecisionLog';
 import { AgentAvatar, Flag } from './GameIcons';
 import AuthModal from './AuthModal';
 import { useCountryEnrichment } from '../lib/useCountryEnrichment';
+import { isDemoWorld } from '../lib/demo';
 import { DC_KEYS, DC_INDICATOR_META } from '../data/dataCommons';
 
 const INDICATOR_LABELS: Record<string, { label: string; unit: string; decimals: number }> = {
@@ -189,8 +190,8 @@ function CountryData({ data, iso3 }: { data: CountryState; iso3: string }) {
 type PanelTab = 'indicators' | 'decisions';
 
 export default function CountryPanel() {
-  const { selectedCountry, countryData, countryDecisions, selectCountry, activeWorldId } = useWorldStore();
-  const { user, session } = useAuthStore();
+  const { selectedCountry, countryData, countryStatus, countryDecisions, selectCountry, activeWorldId } = useWorldStore();
+  const user = useAuthStore(s => s.user);
   const { createFork, enterFork } = useGameStore();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -202,18 +203,29 @@ export default function CountryPanel() {
   if (!selectedCountry) return null;
 
   const data = countryData[selectedCountry];
+  const status = countryStatus[selectedCountry];
   const latestDecision = countryDecisions[selectedCountry]?.[0];
   const isLive = activeWorldId === 'live';
+  const isSample = isDemoWorld(activeWorldId);
 
   const handleTakeOver = async () => {
-    if (!user || !session) { setShowAuth(true); return; }
+    // Read auth at call time: this also runs from AuthModal's onSuccess, whose
+    // closure was created before sign-in, when the rendered `user` was null.
+    const { user: currentUser, session } = useAuthStore.getState();
+    if (!currentUser || !session) { setShowAuth(true); return; }
+    const code = selectedCountry;
     setTakingOver(true);
     setTakeoverError(null);
-    const result = await createFork(selectedCountry, session.access_token);
-    setTakingOver(false);
-    if (typeof result === 'string') { setTakeoverError(result); return; }
-    enterFork({ worldId: result.worldId, countryCode: selectedCountry, year: result.year, createdAt: new Date().toISOString() });
-    navigate(`/play/${result.worldId}`);
+    try {
+      const result = await createFork(code, session.access_token);
+      if (typeof result === 'string') { setTakeoverError(result); return; }
+      enterFork({ worldId: result.worldId, countryCode: code, year: result.year, createdAt: new Date().toISOString() });
+      navigate(`/play/${result.worldId}`);
+    } catch {
+      setTakeoverError('Something went wrong forking the world. Try again.');
+    } finally {
+      setTakingOver(false);
+    }
   };
 
   return (
@@ -280,8 +292,21 @@ export default function CountryPanel() {
       {/* Body */}
       {tab === 'indicators' ? (
         !data
-          ? <div style={{ color: 'var(--rs-muted-on-paper)', fontSize: 13, textAlign: 'center', padding: 20 }}>Loading indicators…</div>
+          ? <div role="status" style={{ color: 'var(--rs-muted-on-paper)', fontSize: 13, textAlign: 'center', padding: 20 }}>
+              {status === 'missing'
+                ? (isSample
+                    ? `There is no sample data for ${countryName(selectedCountry)}.`
+                    : `${countryName(selectedCountry)} has no simulated state in this world yet.`)
+                : status === 'error'
+                  ? 'Could not load this country’s indicators. Try selecting it again.'
+                  : 'Loading indicators…'}
+            </div>
           : <>
+              {isSample && (
+                <div className="game-badge" style={{ marginBottom: 'var(--rs-space-3)' }} title="Bundled 2026 sample data, not the live simulation">
+                  Sample data
+                </div>
+              )}
               {latestDecision && <AgentQuote decision={latestDecision} onOpenLog={() => setTab('decisions')} />}
               <CountryData data={data} iso3={selectedCountry} />
             </>
@@ -310,7 +335,7 @@ export default function CountryPanel() {
           background: 'var(--rs-paper)', borderTop: 'var(--rs-border-thin)',
         }}>
           {takeoverError && (
-            <div style={{
+            <div role="alert" style={{
               color: 'var(--rs-ink)', fontSize: 'var(--rs-text-sm)', fontWeight: 700, marginBottom: 'var(--rs-space-2)',
               background: 'var(--rs-fork-tint)', padding: 'var(--rs-space-2) var(--rs-space-3)', borderRadius: 'var(--rs-radius-sm)',
               border: 'var(--rs-border-thin)',

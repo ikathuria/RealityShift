@@ -24,6 +24,9 @@ export interface ProvenanceCheck {
 export interface ProvenanceReport {
   fields: SimProvenance | null;
   canonicalHash: string | null;
+  kind: ProvenanceKind | null;
+  /** Synthetic demo content: well-formed or not, it attests nothing real. */
+  sample: boolean;
   checks: ProvenanceCheck[];
   /** True only if every structural/consistency check passed. */
   consistent: boolean;
@@ -37,7 +40,38 @@ export async function sha256Hex(bytes: ArrayBuffer): Promise<string> {
     .join('');
 }
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}/;
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const ISO_DATE_PREFIX = /^\d{4}-\d{2}-\d{2}/;
+// Full ISO-8601 UTC timestamp as JS toISOString() writes it (ms optional).
+const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$/;
+
+export const LIVE_CUTOFF_TEXT = 'Live world, updated monthly with real news';
+
+export type ProvenanceKind = 'fork' | 'live' | 'sample';
+
+/** Which kind of world a provenance block describes. */
+export function provenanceKind(p: Pick<SimProvenance, 'sample' | 'live_world'>): ProvenanceKind {
+  if (p.sample) return 'sample';
+  if (p.live_world) return 'live';
+  return 'fork';
+}
+
+/**
+ * Human-readable real-world data cutoff.
+ * - null on the live world → "Live world, updated monthly with real news"
+ * - a full timestamp → "1 Aug 2026, 09:30 UTC"
+ * - a bare date (older manifests) → "1 Aug 2026"
+ */
+export function formatCutoff(cutoff: string | null | undefined, liveWorld = false): string {
+  if (!cutoff) return liveWorld ? LIVE_CUTOFF_TEXT : 'None recorded';
+  const ms = Date.parse(cutoff);
+  if (Number.isNaN(ms)) return cutoff;
+  const d = new Date(ms);
+  const date = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  if (ISO_DATE.test(cutoff)) return date;
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' });
+  return `${date}, ${time} UTC`;
+}
 
 /**
  * Pull the SimProvenance block and canonical hash out of whatever the user
@@ -68,7 +102,9 @@ export function extractProvenance(
     parent_fork_id: raw.parent_fork_id == null ? null : String(raw.parent_fork_id),
     divergence_date: String(raw.divergence_date ?? ''),
     sim_date: String(raw.sim_date ?? ''),
-    real_world_data_cutoff: String(raw.real_world_data_cutoff ?? ''),
+    real_world_data_cutoff: raw.real_world_data_cutoff == null ? null : String(raw.real_world_data_cutoff),
+    live_world: raw.live_world === true,
+    sample: raw.sample === true,
     nation_iso: raw.nation_iso == null ? null : String(raw.nation_iso),
     is_counterfactual: raw.is_counterfactual === true,
     consensus_reality: raw.consensus_reality === true,
@@ -77,10 +113,16 @@ export function extractProvenance(
 }
 
 /**
- * Validate a provenance block against RealityShift's documented invariants
- * (see B2_AND_GENBLAZE.md). These are consistency checks on the attested
- * fields — they do not prove the hash, they prove the claim is well-formed and
- * internally coherent with "once a fork splits, no real-world data enters it".
+ * Validate a provenance block against RealityShift's documented invariants.
+ * These are consistency checks on the attested fields: they do not prove the
+ * hash, they prove the claim is well-formed and coherent.
+ *
+ * - Fork: the cutoff is the real moment the fork was created (a full UTC
+ *   timestamp, on/after the divergence date); it is counterfactual and not
+ *   consensus reality.
+ * - Live world: no cutoff (null), because it keeps ingesting real news.
+ * - Sample: synthetic demo content. Its block can be well-formed, but the
+ *   report's `sample` flag says it attests nothing real.
  */
 export function inspectProvenance(input: unknown): ProvenanceReport {
   const { fields, canonicalHash } = extractProvenance(input);
@@ -90,10 +132,15 @@ export function inspectProvenance(input: unknown): ProvenanceReport {
     return {
       fields: null,
       canonicalHash,
+      kind: null,
+      sample: false,
       checks: [{ label: 'Provenance block present', pass: false, detail: 'No simulation.* provenance found in the input.' }],
       consistent: false,
     };
   }
+
+  const kind = provenanceKind(fields);
+  const cutoff = fields.real_world_data_cutoff;
 
   checks.push({
     label: 'Fork identity present',
@@ -101,38 +148,77 @@ export function inspectProvenance(input: unknown): ProvenanceReport {
     detail: fields.fork_id ? `fork_id = ${fields.fork_id}` : 'Missing fork_id.',
   });
 
-  const cutoffOk = ISO_DATE.test(fields.real_world_data_cutoff);
-  checks.push({
-    label: 'Real-world data cutoff is a valid date',
-    pass: cutoffOk,
-    detail: cutoffOk ? fields.real_world_data_cutoff : 'Missing or malformed real_world_data_cutoff.',
-  });
-
-  checks.push({
-    label: 'Cutoff equals divergence date',
-    pass: !!fields.real_world_data_cutoff && fields.real_world_data_cutoff === fields.divergence_date,
-    detail: 'The no-new-data cutoff must be the moment the fork split — no real-world data after divergence.',
-  });
-
-  checks.push({
-    label: 'Marked counterfactual',
-    pass: fields.is_counterfactual === true,
-    detail: 'Forked media must declare is_counterfactual = true.',
-  });
-
-  checks.push({
-    label: 'Not consensus reality',
-    pass: fields.consensus_reality === false,
-    detail: 'A fork is not the consensus timeline (consensus_reality = false).',
-  });
-
-  if (ISO_DATE.test(fields.sim_date) && cutoffOk) {
+  if (kind === 'sample') {
     checks.push({
-      label: 'Reporting date is at/after the cutoff',
-      pass: fields.sim_date >= fields.real_world_data_cutoff,
-      detail: `sim_date ${fields.sim_date} vs cutoff ${fields.real_world_data_cutoff}`,
+      label: 'Flagged as a synthetic demo sample',
+      pass: true,
+      detail: 'sample = true: bundled demo content, not output from the live world or a real fork.',
+    });
+    checks.push({
+      label: 'Cutoff is empty or a valid timestamp',
+      pass: cutoff === null || ISO_TIMESTAMP.test(cutoff),
+      detail: cutoff === null ? 'No cutoff (samples have no real-world data to cut off).' : cutoff,
+    });
+  } else if (kind === 'live') {
+    checks.push({
+      label: 'Live world has no data cutoff',
+      pass: cutoff === null,
+      detail: cutoff === null
+        ? `${LIVE_CUTOFF_TEXT}, so there is no cutoff.`
+        : `The live world must not claim a cutoff, but this one says ${cutoff}.`,
+    });
+    checks.push({
+      label: 'Identifies as the live world',
+      pass: fields.fork_id === 'live' && fields.parent_fork_id === null,
+      detail: 'live_world = true requires fork_id = "live" and no parent fork.',
+    });
+  } else {
+    const cutoffOk = cutoff !== null && ISO_TIMESTAMP.test(cutoff) && !Number.isNaN(Date.parse(cutoff));
+    checks.push({
+      label: 'Real-world data cutoff is a valid timestamp',
+      pass: cutoffOk,
+      detail: cutoffOk
+        ? `${formatCutoff(cutoff)} (when the fork was created)`
+        : cutoff === null
+          ? 'Missing real_world_data_cutoff. Only the live world may omit it.'
+          : `Malformed real_world_data_cutoff: ${cutoff}. Expected a full UTC timestamp.`,
+    });
+
+    if (cutoffOk && ISO_DATE_PREFIX.test(fields.divergence_date)) {
+      checks.push({
+        label: 'Cutoff is on/after the divergence date',
+        pass: cutoff!.slice(0, 10) >= fields.divergence_date.slice(0, 10),
+        detail: `A fork copies the live world at creation, so ${formatCutoff(cutoff)} must not precede divergence on ${fields.divergence_date}.`,
+      });
+    }
+
+    checks.push({
+      label: 'Marked counterfactual',
+      pass: fields.is_counterfactual === true,
+      detail: 'Forked media must declare is_counterfactual = true.',
+    });
+
+    checks.push({
+      label: 'Not consensus reality',
+      pass: fields.consensus_reality === false,
+      detail: 'A fork is not the consensus timeline (consensus_reality = false).',
     });
   }
 
-  return { fields, canonicalHash, checks, consistent: checks.every(c => c.pass) };
+  if (ISO_DATE_PREFIX.test(fields.sim_date) && ISO_DATE_PREFIX.test(fields.divergence_date)) {
+    checks.push({
+      label: 'Reporting date is at/after divergence',
+      pass: fields.sim_date.slice(0, 10) >= fields.divergence_date.slice(0, 10),
+      detail: `sim_date ${fields.sim_date} vs divergence ${fields.divergence_date}`,
+    });
+  }
+
+  return {
+    fields,
+    canonicalHash,
+    kind,
+    sample: kind === 'sample',
+    checks,
+    consistent: checks.every(c => c.pass),
+  };
 }

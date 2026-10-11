@@ -51,3 +51,6 @@ public/index/
 # Generated media output (lives in B2, not git)
 out/
 media/out/
+
+# Claude Code per-user local settings (personal permission allowlist)
+.claude/settings.local.json

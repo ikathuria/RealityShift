@@ -7,6 +7,7 @@ import { useAuthStore } from '../store/authStore';
 import { useGameStore } from '../store/gameStore';
 import AuthModal from './AuthModal';
 import { Flag } from './GameIcons';
+import { isDemoWorld } from '../lib/demo';
 
 const COLUMNS: { field: SortField; label: string }[] = [
   { field: 'name', label: 'Nation' },
@@ -38,18 +39,18 @@ type SortField =
   | 'tax_rate'
   | 'divergence';
 
-function fmtVal(field: SortField, val: number): string {
-  if (field === 'gdp_per_capita') return `$${Math.round(val).toLocaleString()}`;
-  if (field === 'divergence') return `${val.toFixed(1)} pts`;
-  if (field === 'year') return `${val}`;
-  if (field === 'name') return '';
-  return `${val.toFixed(1)}%`;
+/** Indicator value, or null when this world has no number for it. */
+function indicator(ind: Record<string, number>, key: string): number | null {
+  const v = ind[key];
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
 }
 
+const pct = (v: number | null, digits: number) => (v === null ? '—' : `${v.toFixed(digits)}%`);
+
 export default function CountryTable() {
-  const { countryData, recentDivergences, selectCountry, selectedCountry, loadAllCountries } = useWorldStore();
-  const { user, session } = useAuthStore();
+  const { countryData, recentDivergences, selectCountry, selectedCountry, loadAllCountries, allCountriesStatus, activeWorldId } = useWorldStore();
   const { createFork, enterFork } = useGameStore();
+  const isSample = isDemoWorld(activeWorldId);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -61,6 +62,8 @@ export default function CountryTable() {
   const [sortAsc, setSortAsc] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [targetTakeover, setTargetTakeover] = useState<string | null>(null);
+  const [takingOver, setTakingOver] = useState<string | null>(null);
+  const [takeoverError, setTakeoverError] = useState<string | null>(null);
 
   // Derive total divergence score per country
   const divergenceMap = useMemo(() => {
@@ -80,12 +83,12 @@ export default function CountryTable() {
         code,
         name: countryName(code),
         year: state.year,
-        gdp_per_capita: ind.gdp_per_capita ?? 0,
-        military_spend: ind.military_spend ?? 0,
-        education_spend: ind.education_spend ?? 0,
-        healthcare_spend: ind.healthcare_spend ?? 0,
-        unemployment: ind.unemployment ?? 0,
-        tax_rate: ind.tax_rate ?? 0,
+        gdp_per_capita: indicator(ind, 'gdp_per_capita'),
+        military_spend: indicator(ind, 'military_spend'),
+        education_spend: indicator(ind, 'education_spend'),
+        healthcare_spend: indicator(ind, 'healthcare_spend'),
+        unemployment: indicator(ind, 'unemployment'),
+        tax_rate: indicator(ind, 'tax_rate'),
         divergence: divergenceMap.get(code) ?? 0,
       };
     });
@@ -99,8 +102,10 @@ export default function CountryTable() {
       if (sortField === 'name') {
         return sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
       }
-      const valA = a[sortField] ?? 0;
-      const valB = b[sortField] ?? 0;
+      // Missing values always sink to the bottom, whichever way we sort.
+      const valA = a[sortField];
+      const valB = b[sortField];
+      if (valA === null || valB === null) return valA === valB ? 0 : valA === null ? 1 : -1;
       return sortAsc ? valA - valB : valB - valA;
     });
   }, [countryData, divergenceMap, search, sortField, sortAsc]);
@@ -115,15 +120,25 @@ export default function CountryTable() {
   };
 
   const handleTakeOver = async (code: string) => {
+    // Read auth at call time; AuthModal's onSuccess closure predates sign-in.
+    const { user, session } = useAuthStore.getState();
     if (!user || !session) {
       setTargetTakeover(code);
       setShowAuth(true);
       return;
     }
-    const result = await createFork(code, session.access_token);
-    if (typeof result === 'string') return;
-    enterFork({ worldId: result.worldId, countryCode: code, year: result.year, createdAt: new Date().toISOString() });
-    navigate(`/play/${result.worldId}`);
+    setTakingOver(code);
+    setTakeoverError(null);
+    try {
+      const result = await createFork(code, session.access_token);
+      if (typeof result === 'string') { setTakeoverError(`${countryName(code)}: ${result}`); return; }
+      enterFork({ worldId: result.worldId, countryCode: code, year: result.year, createdAt: new Date().toISOString() });
+      navigate(`/play/${result.worldId}`);
+    } catch {
+      setTakeoverError('Something went wrong forking the world. Try again.');
+    } finally {
+      setTakingOver(null);
+    }
   };
 
   return (
@@ -143,10 +158,11 @@ export default function CountryTable() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 'var(--rs-space-3)', marginBottom: 'var(--rs-space-4)' }}>
           <div>
             <div className="game-eyebrow" style={{ marginBottom: 'var(--rs-space-1)' }}>
-              {rows.length} nations tracked
+              {Object.keys(countryData).length} nations with simulated state
+              {isSample && <span className="game-badge" style={{ marginLeft: 'var(--rs-space-2)' }}>Sample data</span>}
             </div>
             <h2 id="country-table-title" style={{ margin: 0, font: '700 var(--rs-text-xl)/1 var(--rs-font-display)' }}>
-              Every nation, by the numbers
+              Nations by the numbers
             </h2>
           </div>
           <input
@@ -169,6 +185,16 @@ export default function CountryTable() {
           />
         </div>
 
+        {takeoverError && (
+          <p role="alert" style={{
+            margin: '0 0 var(--rs-space-3)', padding: 'var(--rs-space-2) var(--rs-space-3)',
+            background: 'var(--rs-fork-tint)', color: 'var(--rs-ink)', border: 'var(--rs-border-thin)',
+            borderRadius: 'var(--rs-radius-sm)', font: '700 var(--rs-text-sm) var(--rs-font-body)',
+          }}>
+            {takeoverError}
+          </p>
+        )}
+
         {/* Scrollable data table: focusable so keyboard users can scroll it */}
         <div
           tabIndex={0}
@@ -177,7 +203,7 @@ export default function CountryTable() {
           style={{ flex: 1, overflow: 'auto', border: 'var(--rs-border-thin)', borderRadius: 'var(--rs-radius-md)', background: 'var(--rs-hud)' }}
         >
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', font: '500 var(--rs-text-sm) var(--rs-font-body)', color: 'var(--rs-text-on-dark)' }}>
-            <caption className="rs-sr-only">Simulated indicators for every nation. Select a column header to sort.</caption>
+            <caption className="rs-sr-only">Simulated indicators for each nation this world tracks. Select a column header to sort.</caption>
             <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
               <tr>
                 <th scope="col" style={{ ...th, padding: 'var(--rs-space-3)' }}>#</th>
@@ -215,7 +241,11 @@ export default function CountryTable() {
                   <td colSpan={10} style={{ ...cell, padding: 'var(--rs-space-6)', textAlign: 'center', color: 'var(--rs-muted-on-dark)' }}>
                     {search.trim()
                       ? 'No nation by that name. Try a three-letter code like FRA.'
-                      : 'Loading every nation’s numbers…'}
+                      : allCountriesStatus === 'error'
+                        ? 'Could not load the nations table. Reload to try again.'
+                        : allCountriesStatus === 'ready'
+                          ? 'No nation has simulated state in this world yet.'
+                          : 'Loading the nations table…'}
                   </td>
                 </tr>
               ) : (
@@ -242,11 +272,11 @@ export default function CountryTable() {
                         </span>
                       </th>
                       <td style={{ ...num, color: 'var(--rs-muted-on-dark)' }}>{r.year}</td>
-                      <td style={num}>{fmtVal('gdp_per_capita', r.gdp_per_capita)}</td>
-                      <td style={num}>{r.military_spend.toFixed(2)}%</td>
-                      <td style={num}>{r.education_spend.toFixed(2)}%</td>
-                      <td style={num}>{r.healthcare_spend.toFixed(2)}%</td>
-                      <td style={num}>{r.unemployment.toFixed(1)}%</td>
+                      <td style={num}>{r.gdp_per_capita === null ? '—' : `$${Math.round(r.gdp_per_capita).toLocaleString()}`}</td>
+                      <td style={num}>{pct(r.military_spend, 2)}</td>
+                      <td style={num}>{pct(r.education_spend, 2)}</td>
+                      <td style={num}>{pct(r.healthcare_spend, 2)}</td>
+                      <td style={num}>{pct(r.unemployment, 1)}</td>
                       <td style={cell}>
                         {r.divergence > 0 ? (
                           <span className="rs-pill rs-pill-fork" style={{ whiteSpace: 'nowrap' }}>
@@ -263,11 +293,12 @@ export default function CountryTable() {
                             e.stopPropagation();
                             handleTakeOver(r.code);
                           }}
+                          disabled={takingOver !== null}
                           className="game-button game-button-dark"
                           aria-label={`Take over ${r.name}`}
                           style={{ minHeight: 44, padding: '0 var(--rs-space-3)', fontSize: 'var(--rs-text-sm)', whiteSpace: 'nowrap' }}
                         >
-                          Take over
+                          {takingOver === r.code ? 'Forking…' : 'Take over'}
                         </button>
                       </td>
                     </tr>

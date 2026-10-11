@@ -2,10 +2,12 @@
 
   rs-media front-page --nation IND --year 2027 [--world live]
 
-Generation requires GMI_API_KEY + B2 credentials in the environment (or
-media/.env). `--dry-run` builds the brief and prints the prompt and the
-provenance block without any network generation, which is how the pipeline is
-exercised while credentials are pending.
+Briefs are built from real simulation data in Supabase (SUPABASE_URL + key in
+the environment or media/.env). If there is no data for a nation-year, the
+command fails with the reason; it never invents a story. `--dry-run` builds the
+brief and prints the prompt and the provenance block without generating media.
+`--sample` uses an explicit synthetic brief instead (provenance carries
+`"sample": true`), for offline demos; sample media is never uploaded to B2.
 """
 from __future__ import annotations
 
@@ -30,6 +32,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="local diffusion (default, free, on-device) or cloud (GMICloud)")
     fp.add_argument("--out", default=None, help="Directory to save the PNG locally (when not uploading to B2).")
     fp.add_argument("--dry-run", action="store_true", help="Build the brief and prompt only; no generation.")
+    fp.add_argument("--sample", action="store_true",
+                    help="Use a synthetic sample brief (marked sample in provenance; offline only, never uploaded).")
 
     bt = sub.add_parser("batch", help="Generate many front pages and publish the index.")
     bt.add_argument("--nations", required=True, help="Comma-separated ISO3 codes, e.g. IND,USA,BRA")
@@ -46,6 +50,8 @@ def main(argv: list[str] | None = None) -> int:
     bc.add_argument("--year", required=True, type=int)
     bc.add_argument("--world", default="live")
     bc.add_argument("--out", default="out")
+    bc.add_argument("--sample", action="store_true",
+                    help="Use a synthetic sample brief (marked sample in provenance; offline only, never uploaded).")
 
     sub.add_parser("setup-cors", help="Set the B2 bucket CORS rule so the browser can read media.")
 
@@ -89,18 +95,35 @@ def _batch(args) -> int:
     return 0 if res.generated else 1
 
 
+def _load_brief(args):
+    """Real brief, or an explicit sample. Prints the reason and returns None
+    when there is no real data (never falls back to invented content)."""
+    from .adapter import BriefUnavailable, build_brief, sample_brief
+
+    if getattr(args, "sample", False):
+        print("using a SYNTHETIC sample brief (provenance: sample=true); it will not be uploaded.",
+              file=sys.stderr)
+        return sample_brief(args.nation, args.year)
+    try:
+        return build_brief(args.nation, args.year, world_id=args.world)
+    except BriefUnavailable as exc:
+        print(f"no brief for {args.world}/{args.nation}@{args.year}: {exc}", file=sys.stderr)
+        return None
+
+
 def _broadcast(args) -> int:
-    from .adapter import build_brief
     from .broadcast import generate_broadcast
 
-    brief = build_brief(args.nation, args.year, world_id=args.world)
+    brief = _load_brief(args)
+    if brief is None:
+        return 1
     print(f"generating broadcast for {args.nation} @ {args.year} (local; this takes a minute)…")
     res = generate_broadcast(brief, out_dir=args.out)
     print(f"mp4: {res['mp4']}  ({res['duration']}s)")
     print(f"manifest verifies: {res['verified']}  hash: {res['canonical_hash'][:16]}…")
 
     # Upload to B2 + register in the media index when credentials are present.
-    if os.environ.get("B2_BUCKET") and os.environ.get("B2_KEY_ID"):
+    if not brief.sample and os.environ.get("B2_BUCKET") and os.environ.get("B2_KEY_ID"):
         from .presign import put_file
         key = f"broadcasts/{args.world}/{args.nation}-{args.year}.mp4"
         try:
@@ -114,11 +137,12 @@ def _broadcast(args) -> int:
 
 
 def _front_page(args) -> int:
-    from .adapter import build_brief
     from .prompts import front_page_prompt
     from .provenance import simulation_metadata
 
-    brief = build_brief(args.nation, args.year, world_id=args.world)
+    brief = _load_brief(args)
+    if brief is None:
+        return 1
     prompt = front_page_prompt(brief)
 
     if args.dry_run:
@@ -136,7 +160,7 @@ def _front_page(args) -> int:
 
     # Upload to B2 only when credentials are present; otherwise save locally.
     sink = None
-    if os.environ.get("B2_BUCKET") and os.environ.get("B2_KEY_ID"):
+    if not brief.sample and os.environ.get("B2_BUCKET") and os.environ.get("B2_KEY_ID"):
         from .storage import backblaze_sink
         sink = backblaze_sink()
 

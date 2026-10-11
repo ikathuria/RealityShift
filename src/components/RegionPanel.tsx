@@ -35,7 +35,7 @@ function formatPop(pop: number | null): string {
 }
 
 export default function RegionPanel() {
-  const { selectedRegion, regionStates, regionDraft, setRegionDraft, saveRegionPolicy, selectRegion } = useRegionStore();
+  const { selectedRegion, regionStates, regionDraft, regionError, setRegionDraft, saveRegionPolicy, selectRegion } = useRegionStore();
   const { activeFork } = useGameStore();
   const { activeWorldId } = useWorldStore();
 
@@ -137,6 +137,12 @@ export default function RegionPanel() {
         {!isInFork && (
           <p style={{ fontSize: 'var(--rs-text-xs)', color: 'var(--rs-muted-on-paper)', margin: 'var(--rs-space-1) 0 var(--rs-space-2)', textAlign: 'center' }}>
             Reality is read-only. Take over a country to start meddling locally.
+          </p>
+        )}
+
+        {isInFork && regionError && (
+          <p role="alert" style={{ fontSize: 'var(--rs-text-xs)', color: 'var(--rs-bad)', fontWeight: 700, margin: '0 0 var(--rs-space-2)' }}>
+            {regionError}
           </p>
         )}
 

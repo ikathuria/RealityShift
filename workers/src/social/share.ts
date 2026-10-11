@@ -11,6 +11,24 @@ export interface SharePageOptions {
   canonicalUrl: string;
 }
 
+import { isWorldId } from '../lib/sanitize.js';
+
+/**
+ * The world id from a /share/<id> path, or null when it is not `live` or a
+ * UUID. Anything else (including malformed percent-encoding) is a 404.
+ */
+export function parseShareWorldId(pathname: string): string | null {
+  const raw = pathname.replace(/^\/share\//, '').replace(/\/+$/, '');
+  let id: string;
+  try {
+    id = decodeURIComponent(raw);
+  } catch {
+    return null;
+  }
+  if (!isWorldId(id)) return null;
+  return id === 'live' ? id : id.toLowerCase();
+}
+
 function esc(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -18,6 +36,20 @@ function esc(s: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+/**
+ * JSON for an inline <script>: JSON.stringify alone is not enough, since a
+ * value containing "</script>" or "<!--" would end the script block. Escape
+ * <, >, & and the JS line terminators U+2028/U+2029.
+ */
+export function inlineJson(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
 }
 
 /** Full HTML document with OG/Twitter meta and a human redirect to the SPA. */
@@ -49,7 +81,7 @@ export function buildSharePage(opts: SharePageOptions): string {
 <body style="background:#0b1020;color:#e6ebff;font-family:system-ui,sans-serif;text-align:center;padding:40px">
 <p>Opening this world…</p>
 <p><a href="${canonical}" style="color:#4fd6ff">View it on RealityShift →</a></p>
-<script>location.replace(${JSON.stringify(opts.canonicalUrl)});</script>
+<script>location.replace(${inlineJson(opts.canonicalUrl)});</script>
 </body>
 </html>`;
 }

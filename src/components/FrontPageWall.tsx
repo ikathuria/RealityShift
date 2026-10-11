@@ -4,6 +4,8 @@ import { fetchMediaIndex, type MediaEntry } from '../lib/mediaIndex';
 import { Link } from 'react-router-dom';
 import { countryName } from '../data/countries';
 import { Flag } from './GameIcons';
+import { worldChip } from '../lib/worldLabel';
+import { DEMO_WORLD_ID, isDemoWorld } from '../lib/demo';
 
 // Year straight from the ISO string. new Date('2025-01-01').getFullYear() parses
 // as UTC midnight and shifts to the previous year in negative-offset zones.
@@ -12,12 +14,12 @@ const isoYear = (d: string): string => d.slice(0, 4);
 /**
  * A wall of generated newspaper front pages for one world.
  *
- * Reads the media index straight from B2 (see lib/mediaIndex) and streams each
- * image from its durable URL — no Worker or Supabase round-trip. Front-page
- * entries only; broadcasts render elsewhere.
+ * Reads the world's media index (see lib/mediaIndex) and streams each image
+ * from the URL it lists. Front-page entries only; broadcasts render elsewhere.
  */
 export default function FrontPageWall({ worldId = 'live' }: { worldId?: string }) {
   const [entries, setEntries] = useState<MediaEntry[] | null>(null);
+  const [sample, setSample] = useState(false);
   const [simDate, setSimDate] = useState<string>('all');
   const [selectedImage, setSelectedImage] = useState<MediaEntry | null>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -26,7 +28,9 @@ export default function FrontPageWall({ worldId = 'live' }: { worldId?: string }
   useEffect(() => {
     let live = true;
     fetchMediaIndex(worldId).then(idx => {
-      if (live) setEntries(idx ? idx.media.filter(m => m.kind === 'front_page') : []);
+      if (!live) return;
+      setEntries(idx ? idx.media.filter(m => m.kind === 'front_page') : []);
+      setSample(!!idx?.sample);
     });
     return () => { live = false; };
   }, [worldId]);
@@ -73,10 +77,15 @@ export default function FrontPageWall({ worldId = 'live' }: { worldId?: string }
     return (
       <p style={{ padding: 'var(--rs-space-5)', margin: 0, color: 'var(--rs-muted-on-dark)', fontSize: 'var(--rs-text-sm)', lineHeight: 1.45 }}>
         The presses haven't run for this world yet. Front pages appear here once the media batch
-        prints them. Until then, <Link to="/hall" style={{ color: 'var(--rs-sun)' }}>browse other worlds in the Hall</Link>.
+        prints them. Until then, <Link to="/hall" style={{ color: 'var(--rs-sun)' }}>browse other worlds in the Hall</Link>
+        {!isDemoWorld(worldId) && (
+          <> or <Link to={`/wall/${DEMO_WORLD_ID}`} style={{ color: 'var(--rs-sun)' }}>see the 2026 sample front pages</Link></>
+        )}.
       </p>
     );
   }
+
+  const chip = worldChip(worldId, sample);
 
   const open = (e: MediaEntry, el: HTMLElement) => {
     openerRef.current = el;
@@ -120,14 +129,14 @@ export default function FrontPageWall({ worldId = 'live' }: { worldId?: string }
               >
                 <img
                   src={e.b2_url}
-                  alt={`Newspaper front page from a forked ${countryName(e.nation_iso)}, ${isoYear(e.sim_date)}`}
+                  alt={`Newspaper front page from ${chip.describe(countryName(e.nation_iso))}, ${isoYear(e.sim_date)}`}
                   width={300}
                   height={400}
                   loading="lazy"
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                 />
-                <span className="game-badge rs-chip-fork" style={{ position: 'absolute', top: 'var(--rs-space-2)', left: 'var(--rs-space-2)', pointerEvents: 'none' }}>
-                  Fork
+                <span className={chip.className} style={{ position: 'absolute', top: 'var(--rs-space-2)', left: 'var(--rs-space-2)', pointerEvents: 'none' }}>
+                  {chip.label}
                 </span>
               </button>
               <figcaption style={{
@@ -177,7 +186,7 @@ export default function FrontPageWall({ worldId = 'live' }: { worldId?: string }
               gap: 'var(--rs-space-3)', marginBottom: 'var(--rs-space-3)', flexShrink: 0,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--rs-space-2)' }}>
-                <span className="game-badge rs-chip-fork">Fork</span>
+                <span className={chip.className}>{chip.label}</span>
                 <h2 id="fpw-lightbox-title" style={{ margin: 0, fontFamily: 'var(--rs-font-display)', fontSize: 'var(--rs-text-lg)', lineHeight: 1 }}>
                   {countryName(selectedImage.nation_iso)}, {isoYear(selectedImage.sim_date)}
                 </h2>
@@ -214,7 +223,7 @@ export default function FrontPageWall({ worldId = 'live' }: { worldId?: string }
             >
               <img
                 src={selectedImage.b2_url}
-                alt={`Newspaper front page from a forked ${countryName(selectedImage.nation_iso)}, ${isoYear(selectedImage.sim_date)}, full size`}
+                alt={`Newspaper front page from ${chip.describe(countryName(selectedImage.nation_iso))}, ${isoYear(selectedImage.sim_date)}, full size`}
                 width={1200}
                 height={1600}
                 onClick={(e) => e.stopPropagation()}

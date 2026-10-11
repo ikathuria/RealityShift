@@ -6,7 +6,8 @@ alter table worlds
   add column if not exists player_country_code text;
 
 -- Players can read agent_decisions in their own forks
-create policy if not exists "players read own fork decisions" on agent_decisions
+drop policy if exists "players read own fork decisions" on agent_decisions;
+create policy "players read own fork decisions" on agent_decisions
   for select using (
     world_id in (select id from worlds where player_id = auth.uid())
   );
@@ -14,7 +15,8 @@ create policy if not exists "players read own fork decisions" on agent_decisions
 -- Players can also insert/update agent_decisions in their own forks
 -- (needed for the simulate-year worker endpoint which uses service role, but
 --  good to have for direct client writes too)
-create policy if not exists "players write own fork decisions" on agent_decisions
+drop policy if exists "players write own fork decisions" on agent_decisions;
+create policy "players write own fork decisions" on agent_decisions
   for insert with check (
     world_id in (select id from worlds where player_id = auth.uid())
   );

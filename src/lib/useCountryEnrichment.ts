@@ -4,7 +4,28 @@ import { fetchCountryEnrichment, type DcIndicators } from '../data/dataCommons';
 // Module-level memo: real-world baselines don't change within a session, so
 // re-selecting a country never refetches. Shared across all hook instances.
 const cache = new Map<string, DcIndicators | null>();
-const inflight = new Set<string>();
+// One shared request per country. Every subscriber awaits the same promise, so
+// an instance that mounts while another's fetch is in flight (StrictMode's
+// double mount, or switching A→B→A) still re-renders when it lands.
+const inflight = new Map<string, Promise<void>>();
+
+function load(iso3: string): Promise<void> {
+  let p = inflight.get(iso3);
+  if (!p) {
+    p = fetchCountryEnrichment(iso3)
+      .catch(() => null)
+      .then(result => { cache.set(iso3, result); })
+      .finally(() => { inflight.delete(iso3); });
+    inflight.set(iso3, p);
+  }
+  return p;
+}
+
+/** Test hook: forget everything cached between test cases. */
+export function resetEnrichmentCache(): void {
+  cache.clear();
+  inflight.clear();
+}
 
 export interface EnrichmentState {
   data: DcIndicators | null;
@@ -22,12 +43,9 @@ export function useCountryEnrichment(iso3: string | null): EnrichmentState {
   const [, bump] = useState(0);
 
   useEffect(() => {
-    if (!iso3 || cache.has(iso3) || inflight.has(iso3)) return;
-    inflight.add(iso3);
+    if (!iso3 || cache.has(iso3)) return;
     let cancelled = false;
-    fetchCountryEnrichment(iso3).then(result => {
-      cache.set(iso3, result);
-      inflight.delete(iso3);
+    load(iso3).then(() => {
       if (!cancelled) bump(v => v + 1);
     });
     return () => { cancelled = true; };

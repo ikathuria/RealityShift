@@ -1,8 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-import { fetchAllCountriesIndicator } from '../data/worldbank';
-import type { CountryIndicators } from '../data/worldbank';
-import { COUNTRY_NAMES } from '../data/countries';
+import { isDemoWorld } from '../lib/demo';
 import {
   DEMO_2026_REALITY_STATES,
   DEMO_2026_AGENT_DECISIONS,
@@ -54,30 +52,31 @@ export interface WorldEvent {
   created_at: string;
 }
 
-export type ChoroplethMode =
-  // 'none' leaves the illustrated Earth texture visible. Data overlays are
-  // opt-in: painted country fills and a cartoon globe compete for the same
-  // surface, and always-on fills bury the imagery underneath.
-  | 'none'
-  | 'gdp_per_capita'
-  | 'military_spend'
-  | 'unemployment'
-  | 'education_spend'
-  | 'healthcare_spend'
-  | 'divergence';
+/**
+ * Per-country load state, so a panel can tell "still loading" apart from
+ * "this world has no simulated state for that country" and "the request failed".
+ */
+export type CountryStatus = 'loading' | 'ready' | 'missing' | 'error';
+
+/** Load state of the all-countries table/leaderboard. */
+export type LoadStatus = 'idle' | 'loading' | 'ready' | 'error';
+
+// The view returns exactly one row (the latest year) per (world, country), so
+// "current state" reads never pull every year and never hit PostgREST's
+// 1000-row cap.
+const LATEST_STATES = 'latest_country_states';
 
 interface WorldStore {
   // Globe / country state
   selectedCountry: string | null;
   countryData: Record<string, CountryState>;
-  choroplethMode: ChoroplethMode;
-  choroplethValues: Map<string, number>;
+  countryStatus: Record<string, CountryStatus>;
+  allCountriesStatus: LoadStatus;
   /** Which world_id to query — 'live' by default; overridden when in a fork game */
   activeWorldId: string;
 
   // Divergence dashboard
   recentDivergences: Divergence[];
-  divergenceMagnitudes: Map<string, number>; // iso3 → max absolute delta sum
   countryDecisions: Record<string, AgentDecision[]>;
 
   // World events feed
@@ -97,10 +96,8 @@ interface WorldStore {
   selectCountry: (iso3: string | null) => void;
   loadCountry: (iso3: string) => Promise<void>;
   loadAllCountries: () => Promise<void>;
-  setChoroplethMode: (mode: ChoroplethMode) => void;
   setActiveWorldId: (worldId: string) => void;
   setPulseCountry: (iso3: string | null) => void;
-  loadChoropleth: () => Promise<void>;
   loadRecentDivergences: (limit?: number) => Promise<void>;
   loadCountryDecisions: (iso3: string) => Promise<void>;
   loadWorldEvents: (worldId?: string, limit?: number) => Promise<void>;
@@ -108,48 +105,13 @@ interface WorldStore {
   setGlobeReady: (ready: boolean) => void;
 }
 
-/** Sum of absolute values in a delta object — proxy for "how diverged is this country" */
-function deltaMagnitude(delta: Record<string, number>): number {
-  return Object.values(delta).reduce((acc, v) => acc + Math.abs(v), 0);
-}
-
-/**
- * Deterministic baseline state for a country, seeded from its ISO code.
- * Used to seed the map before real data arrives and — importantly — as a
- * fallback whenever Supabase is unconfigured, unreachable, or returns nothing,
- * so a selected country always resolves to data instead of an endless spinner.
- */
-function syntheticCountryState(worldId: string, code: string): CountryState {
-  let hash = 0;
-  for (let i = 0; i < code.length; i++) hash = (hash * 31 + code.charCodeAt(i)) & 0xffffff;
-  return {
-    world_id: worldId,
-    country_code: code,
-    year: 2024,
-    indicators: {
-      gdp_per_capita: 5000 + (hash % 65000),
-      population: 500000 + ((hash * 13) % 80000000),
-      tax_rate: +(12 + (hash % 20)).toFixed(1),
-      military_spend: +(0.8 + ((hash * 7) % 35) / 10).toFixed(2),
-      education_spend: +(2.0 + ((hash * 11) % 40) / 10).toFixed(2),
-      healthcare_spend: +(3.0 + ((hash * 17) % 60) / 10).toFixed(2),
-      unemployment: +(3.5 + ((hash * 23) % 90) / 10).toFixed(1),
-    },
-    policies: {},
-    relations: {},
-    agent_memory_summary: null,
-    last_updated: new Date().toISOString(),
-  };
-}
-
 export const useWorldStore = create<WorldStore>((set, get) => ({
   selectedCountry: null,
   countryData: {},
-  choroplethMode: 'none',
-  choroplethValues: new Map(),
+  countryStatus: {},
+  allCountriesStatus: 'idle',
   activeWorldId: 'live',
   recentDivergences: [],
-  divergenceMagnitudes: new Map(),
   countryDecisions: {},
   worldEvents: [],
   countriesTracked: null,
@@ -167,137 +129,107 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
   },
 
   loadCountry: async (iso3) => {
-    if (get().activeWorldId === '2026-demo' && DEMO_2026_REALITY_STATES[iso3]) {
-      set(s => ({ countryData: { ...s.countryData, [iso3]: DEMO_2026_REALITY_STATES[iso3] } }));
-      return;
-    }
     const worldId = get().activeWorldId;
-
-    // Fallback so the country panel always resolves, even with no DB / a failed
-    // request. If data is already present (e.g. from loadAllCountries), keep it.
-    const resolveFallback = () => {
-      if (get().countryData[iso3]) return;
+    const setStatus = (status: CountryStatus, row?: CountryState) => {
+      // Drop the answer if the player switched worlds while it was in flight.
+      if (get().activeWorldId !== worldId) return;
       set(s => ({
-        countryData: { ...s.countryData, [iso3]: syntheticCountryState(worldId, iso3) },
+        countryStatus: { ...s.countryStatus, [iso3]: status },
+        ...(row ? { countryData: { ...s.countryData, [iso3]: row } } : {}),
       }));
     };
 
-    if (!supabase) {
-      resolveFallback();
+    if (!supabase || isDemoWorld(worldId)) {
+      const demo = DEMO_2026_REALITY_STATES[iso3];
+      setStatus(demo ? 'ready' : 'missing', demo);
       return;
     }
 
+    if (!get().countryData[iso3]) setStatus('loading');
     try {
       const { data, error } = await supabase
-        .from('country_states')
+        .from(LATEST_STATES)
         .select('*')
         .eq('world_id', worldId)
         .eq('country_code', iso3)
-        .order('year', { ascending: false })
-        .limit(1)
-        .single();
-      if (!error && data) {
-        set(s => ({ countryData: { ...s.countryData, [iso3]: data as CountryState } }));
-      } else {
-        resolveFallback();
-      }
+        .maybeSingle();
+      if (error) setStatus(get().countryData[iso3] ? 'ready' : 'error');
+      else if (!data) setStatus('missing');
+      else setStatus('ready', data as CountryState);
     } catch {
-      resolveFallback();
+      setStatus(get().countryData[iso3] ? 'ready' : 'error');
     }
   },
 
   loadAllCountries: async () => {
     const worldId = get().activeWorldId;
-    const map: Record<string, CountryState> = worldId === '2026-demo' ? { ...DEMO_2026_REALITY_STATES } : {};
 
-    if (supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('country_states')
-          .select('*')
-          .eq('world_id', worldId);
+    if (!supabase || isDemoWorld(worldId)) {
+      const map = { ...DEMO_2026_REALITY_STATES };
+      set({
+        countryData: map,
+        countryStatus: Object.fromEntries(Object.keys(map).map(c => [c, 'ready' as const])),
+        countriesTracked: Object.keys(map).length,
+        allCountriesStatus: 'ready',
+      });
+      return;
+    }
 
-        if (!error && data && (data as CountryState[]).length > 0) {
-          for (const row of data as CountryState[]) {
-            if (!map[row.country_code]) map[row.country_code] = row;
-          }
-        }
-      } catch {
-        // Network/DB failure — fall through to synthetic baselines below.
+    set({ allCountriesStatus: 'loading' });
+    try {
+      const { data, error } = await supabase
+        .from(LATEST_STATES)
+        .select('*')
+        .eq('world_id', worldId);
+      if (get().activeWorldId !== worldId) return;
+      if (error || !data) {
+        set({ allCountriesStatus: 'error' });
+        return;
       }
+      // Only real rows. Countries this world has no state for are simply absent,
+      // so tables and rankings never show made-up numbers as if they were real.
+      const map: Record<string, CountryState> = {};
+      for (const row of data as CountryState[]) map[row.country_code] = row;
+      set({
+        countryData: map,
+        countryStatus: Object.fromEntries(Object.keys(map).map(c => [c, 'ready' as const])),
+        countriesTracked: Object.keys(map).length,
+        allCountriesStatus: 'ready',
+      });
+    } catch {
+      if (get().activeWorldId === worldId) set({ allCountriesStatus: 'error' });
     }
-
-    // Populate all remaining ISO-3 countries from COUNTRY_NAMES with baseline indicators
-    for (const code of Object.keys(COUNTRY_NAMES)) {
-      if (!map[code]) map[code] = syntheticCountryState(worldId, code);
-    }
-
-    set({ countryData: map, countriesTracked: Object.keys(map).length });
-  },
-
-  setChoroplethMode: (mode) => {
-    set({ choroplethMode: mode });
-    get().loadChoropleth();
   },
 
   setActiveWorldId: (worldId) => {
-    set({ activeWorldId: worldId, countryData: {}, countryDecisions: {} });
-  },
-
-  loadChoropleth: async () => {
-    const mode = get().choroplethMode;
-    const worldId = get().activeWorldId;
-
-    // No overlay selected — clear the values so country fills go transparent
-    // and the illustrated Earth shows through. Also skips a pointless query.
-    if (mode === 'none') {
-      set({ choroplethValues: new Map() });
-      return;
-    }
-
-    if (mode === 'divergence' && worldId === 'live') {
-      set({ choroplethValues: new Map(get().divergenceMagnitudes) });
-      return;
-    }
-
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('country_states')
-        .select('country_code, indicators')
-        .eq('world_id', worldId);
-
-      if (!error && data && (data as CountryState[]).length > 0) {
-        const values = new Map<string, number>();
-        for (const row of data as CountryState[]) {
-          const val = row.indicators[mode === 'divergence' ? 'gdp_per_capita' : mode];
-          if (typeof val === 'number') values.set(row.country_code, val);
-        }
-        set({ choroplethValues: values });
-        return;
-      }
-    }
-
-    // Fall back to live World Bank API when DB is empty or unavailable
-    const wbKey = (mode === 'divergence' ? 'gdp_per_capita' : mode) as keyof CountryIndicators;
-    const values = await fetchAllCountriesIndicator(wbKey);
-    set({ choroplethValues: values });
+    if (worldId === get().activeWorldId) return;
+    set({
+      activeWorldId: worldId,
+      countryData: {},
+      countryStatus: {},
+      countryDecisions: {},
+      worldEvents: [],
+      countriesTracked: null,
+      allCountriesStatus: 'idle',
+    });
   },
 
   setGlobeReady: (ready) => set({ globeReady: ready }),
 
-  // Counts distinct countries rather than rows: a country gains a row per
-  // simulated year, so country_states holds more rows than countries.
   loadCountriesTracked: async (worldId) => {
-    if (!supabase) return;
     const id = worldId ?? get().activeWorldId;
-    const { data, error } = await supabase
-      .from('country_states')
-      .select('country_code')
+    if (!supabase || isDemoWorld(id)) {
+      set({ countriesTracked: Object.keys(DEMO_2026_REALITY_STATES).length });
+      return;
+    }
+    // One row per country in the view, so an exact head count is the number of
+    // distinct countries — no rows are transferred.
+    const { count, error } = await supabase
+      .from(LATEST_STATES)
+      .select('country_code', { count: 'exact', head: true })
       .eq('world_id', id);
-
-    if (error || !data) return;
-    const codes = new Set((data as { country_code: string }[]).map(r => r.country_code));
-    set({ countriesTracked: codes.size });
+    if (error || count === null) return;
+    set({ countriesTracked: count });
   },
 
   loadRecentDivergences: async (limit = 50) => {
@@ -309,32 +241,20 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
       .limit(limit);
 
     if (error || !data) return;
-
-    const divs = data as Divergence[];
-
-    // Build per-country magnitude map (max magnitude per country from recent records)
-    const magnitudes = new Map<string, number>();
-    for (const d of divs) {
-      const mag = deltaMagnitude(d.delta);
-      const prev = magnitudes.get(d.country_code) ?? 0;
-      if (mag > prev) magnitudes.set(d.country_code, mag);
-    }
-
-    set({ recentDivergences: divs, divergenceMagnitudes: magnitudes });
-
-    // If we're currently in divergence choropleth mode, refresh the globe colours
-    if (get().choroplethMode === 'divergence') {
-      set({ choroplethValues: new Map(magnitudes) });
-    }
+    set({ recentDivergences: data as Divergence[] });
   },
 
   loadCountryDecisions: async (iso3) => {
-    if (DEMO_2026_AGENT_DECISIONS[iso3]) {
-      set(s => ({ countryDecisions: { ...s.countryDecisions, [iso3]: DEMO_2026_AGENT_DECISIONS[iso3] } }));
+    const worldId = get().activeWorldId;
+    const put = (rows: AgentDecision[]) => {
+      if (get().activeWorldId !== worldId) return;
+      set(s => ({ countryDecisions: { ...s.countryDecisions, [iso3]: rows } }));
+    };
+
+    if (!supabase || isDemoWorld(worldId)) {
+      put(DEMO_2026_AGENT_DECISIONS[iso3] ?? []);
       return;
     }
-    if (!supabase) return;
-    const worldId = get().activeWorldId;
     const { data, error } = await supabase
       .from('agent_decisions')
       .select('*')
@@ -343,26 +263,24 @@ export const useWorldStore = create<WorldStore>((set, get) => ({
       .order('year', { ascending: false })
       .limit(20);
 
-    if (!error && data && data.length > 0) {
-      set(s => ({ countryDecisions: { ...s.countryDecisions, [iso3]: data as AgentDecision[] } }));
-    }
+    // An empty list renders as "no decisions yet"; never as someone else's log.
+    put(!error && data ? (data as AgentDecision[]) : []);
   },
 
   loadWorldEvents: async (worldId = 'live', limit = 40) => {
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('world_events')
-        .select('*')
-        .eq('world_id', worldId)
-        .order('sim_year', { ascending: false })
-        .order('created_at', { ascending: false })
-        .limit(limit);
-
-      if (!error && data && data.length > 0) {
-        set({ worldEvents: data as WorldEvent[] });
-        return;
-      }
+    if (!supabase || isDemoWorld(worldId)) {
+      set({ worldEvents: DEMO_2026_WORLD_EVENTS.slice(0, limit) });
+      return;
     }
-    set({ worldEvents: DEMO_2026_WORLD_EVENTS });
+    const { data, error } = await supabase
+      .from('world_events')
+      .select('*')
+      .eq('world_id', worldId)
+      .order('sim_year', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    // A world with no events shows an empty feed, not sample events.
+    set({ worldEvents: !error && data ? (data as WorldEvent[]) : [] });
   },
 }));

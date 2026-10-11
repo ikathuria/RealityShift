@@ -26,38 +26,34 @@ CREATE INDEX IF NOT EXISTS idx_region_states_world_country
 CREATE INDEX IF NOT EXISTS idx_region_states_world_region
   ON region_states (world_id, region_code);
 
--- RLS: public read on live world
+-- RLS: public read on live world; players read/write their own fork's regions.
+-- Policy names match schema.sql exactly so running both never creates duplicates.
+-- (Earlier revisions of this file used capitalised names; drop those too.)
 ALTER TABLE region_states ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Public read live regions"
+DROP POLICY IF EXISTS "Public read live regions"        ON region_states;
+DROP POLICY IF EXISTS "Players read own fork regions"   ON region_states;
+DROP POLICY IF EXISTS "Players upsert own fork regions" ON region_states;
+DROP POLICY IF EXISTS "Players update own fork regions" ON region_states;
+
+DROP POLICY IF EXISTS "public read live regions" ON region_states;
+CREATE POLICY "public read live regions"
   ON region_states FOR SELECT
   USING (world_id = 'live');
 
--- Players can read their own fork's region states
-CREATE POLICY "Players read own fork regions"
+DROP POLICY IF EXISTS "players read own fork regions" ON region_states;
+CREATE POLICY "players read own fork regions"
   ON region_states FOR SELECT
-  USING (
-    world_id IN (
-      SELECT id FROM worlds
-      WHERE player_id = auth.uid()
-    )
-  );
+  USING (world_id IN (SELECT id FROM worlds WHERE player_id = auth.uid()));
 
--- Players can upsert region policies in their own fork
-CREATE POLICY "Players upsert own fork regions"
+DROP POLICY IF EXISTS "players insert own fork regions" ON region_states;
+CREATE POLICY "players insert own fork regions"
   ON region_states FOR INSERT
-  WITH CHECK (
-    world_id IN (
-      SELECT id FROM worlds WHERE player_id = auth.uid()
-    )
-  );
+  WITH CHECK (world_id IN (SELECT id FROM worlds WHERE player_id = auth.uid()));
 
-CREATE POLICY "Players update own fork regions"
+DROP POLICY IF EXISTS "players update own fork regions" ON region_states;
+CREATE POLICY "players update own fork regions"
   ON region_states FOR UPDATE
-  USING (
-    world_id IN (
-      SELECT id FROM worlds WHERE player_id = auth.uid()
-    )
-  );
+  USING (world_id IN (SELECT id FROM worlds WHERE player_id = auth.uid()));
 
 -- Service role (Workers) has full access via service key (bypasses RLS)

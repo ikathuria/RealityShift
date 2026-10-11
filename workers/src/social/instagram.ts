@@ -7,6 +7,8 @@
 // The image must be a PUBLIC https URL (Graph API fetches it server-side), so
 // this pairs with a public B2 base (MEDIA_PUBLIC_BASE).
 
+import { cleanText } from '../lib/sanitize.js';
+
 const GRAPH_VERSION = 'v21.0';
 
 export interface InstagramEnv {
@@ -25,21 +27,49 @@ export function instagramConfigured(env: InstagramEnv): boolean {
   return !!(env.IG_USER_ID && env.IG_ACCESS_TOKEN);
 }
 
+/** Max length of a user-supplied world title in a caption. */
+export const CAPTION_TITLE_MAX = 80;
+
+/**
+ * Make a user-supplied string safe to put in a public caption: strip control
+ * and invisible characters, fold to one line, cap the length, and neutralise
+ * @mentions, #hashtags and links so a world title can't tag accounts, hijack
+ * hashtags or advertise URLs from the project's account.
+ */
+export function sanitizeCaptionText(v: unknown, max = CAPTION_TITLE_MAX): string {
+  let s = cleanText(v, 500, { singleLine: true });
+  s = s
+    .replace(/\b(?:https?:\/\/|www\.)\S+/gi, '[link]')
+    .replace(/\b[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.(?:com|net|org|io|co|me|ly|gg|app|dev|xyz|info|biz|tv|link|site|online|shop)\b\S*/gi, '[link]')
+    .replace(/@/g, '\uff20') // fullwidth @: not parsed as a mention
+    .replace(/#/g, '\uff03'); // fullwidth #: not parsed as a hashtag
+  s = s.replace(/\s{2,}/g, ' ').trim();
+  return s.length > max ? s.slice(0, max - 1).trimEnd() + '\u2026' : s;
+}
+
 /** Compose a caption for a front page. Keeps within IG's 2,200-char limit. */
 export function buildCaption(opts: {
   country: string;
   simDate?: string | null;
   worldTitle?: string | null;
+  /** Real-world data cutoff (ISO timestamp) for a fork; null for the live world. */
   cutoff?: string | null;
+  /** True for the live world, which keeps ingesting real news (no cutoff). */
+  liveWorld?: boolean;
 }): string {
   const lines: string[] = [];
+  const title = sanitizeCaptionText(opts.worldTitle);
+  const country = sanitizeCaptionText(opts.country, 40) || 'A nation';
   lines.push(
-    opts.worldTitle?.trim()
-      ? `📰 ${opts.worldTitle.trim()}`
-      : `📰 ${opts.country}: a front page from a world that never happened`,
+    title
+      ? `\u{1F4F0} ${title}`
+      : `\u{1F4F0} ${country}: a front page from a world that never happened`,
   );
-  if (opts.simDate) lines.push(`🗓️ Simulated ${opts.simDate}`);
-  if (opts.cutoff) lines.push(`🔏 No real-world data after ${opts.cutoff} — verifiable provenance.`);
+  const simDate = sanitizeCaptionText(opts.simDate, 40);
+  if (simDate) lines.push(`\u{1F5D3}\uFE0F Simulated ${simDate}`);
+  const cutoff = sanitizeCaptionText(opts.cutoff, 40);
+  if (cutoff) lines.push(`\u{1F50F} No real-world data after ${cutoff} \u2014 verifiable provenance.`);
+  else if (opts.liveWorld) lines.push('\u{1F30D} Live world \u00b7 updated monthly with real news.');
   lines.push('');
   lines.push('AI-generated alternate history from RealityShift. Fork your own timeline.');
   lines.push('');

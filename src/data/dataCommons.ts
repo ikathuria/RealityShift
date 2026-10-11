@@ -1,9 +1,9 @@
 // Frontend client for the Data Commons enrichment, served through our Worker
 // proxy (workers/src/data/dataCommons.ts) so the API key stays server-side.
 //
-// These indicators COMPLEMENT the World Bank set in worldbank.ts (life
+// These indicators COMPLEMENT the simulation's seven economic indicators (life
 // expectancy, inequality, emissions, connectivity, energy, poverty) — data the
-// UN System Data Commons (data.un.org) surfaces that World Bank's 7 don't.
+// UN System Data Commons (data.un.org) surfaces that the sim doesn't model.
 // Keys here must match DC_VARIABLES in the Worker.
 
 /** Worker proxy origin, read per-call so it stays overridable in tests. */
@@ -59,7 +59,7 @@ interface GlobalResponse {
   values?: Record<string, number>;
 }
 
-/** One enrichment indicator for every country (choropleth). Empty map on failure. */
+/** One enrichment indicator for every country (leaderboard). Empty map on failure. */
 export async function fetchGlobalEnrichment(metric: DcKey): Promise<Map<string, number>> {
   const base = workerBase();
   if (!base) return new Map();

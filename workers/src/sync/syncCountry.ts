@@ -8,6 +8,7 @@ import { fetchCountryNews, formatHeadlines } from './fetchNews.js';
 import { compareState } from './compareState.js';
 import { publishDivergence } from './publishDivergence.js';
 import { getSupabase } from '../lib/supabase.js';
+import { DbError } from '../lib/db.js';
 import countryHistories from '../data/history/country_histories.json';
 import type { CountryStateRow } from '../agents/prompt.js';
 import type { Env } from '../index.js';
@@ -29,11 +30,15 @@ export async function syncCountry(
   const db = getSupabase(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
 
   // Safety check: only sync live worlds
-  const { data: world } = await db
+  const { data: world, error: worldErr } = await db
     .from('worlds')
     .select('is_live')
     .eq('id', worldId)
-    .single();
+    .maybeSingle();
+  if (worldErr) {
+    console.error(`[syncCountry] ${countryCode}: read world failed:`, worldErr.message);
+    return { country_code: countryCode, diverged: false, explanation: 'Sync failed.', error: 'db_error' };
+  }
 
   if (!world?.is_live) {
     return {
@@ -43,22 +48,21 @@ export async function syncCountry(
     };
   }
 
-  // Fetch most recent country state
+  // Current (latest-year) state; corrections are applied to this year in place.
   const { data: stateData, error: stateError } = await db
-    .from('country_states')
+    .from('latest_country_states')
     .select('*')
     .eq('world_id', worldId)
     .eq('country_code', countryCode)
-    .order('year', { ascending: false })
-    .limit(1)
-    .single();
+    .maybeSingle();
 
   if (stateError || !stateData) {
+    if (stateError) console.error(`[syncCountry] ${countryCode}: read state failed:`, stateError.message);
     return {
       country_code: countryCode,
       diverged: false,
       explanation: 'No state found.',
-      error: stateError?.message,
+      error: stateError ? 'db_error' : 'no_state',
     };
   }
 
@@ -85,11 +89,13 @@ export async function syncCountry(
       explanation: result.explanation,
     };
   } catch (err) {
+    // Detail is logged only; the client gets a short code.
+    console.error(`[syncCountry] ${countryCode}:`, err instanceof Error ? err.message : err);
     return {
       country_code: countryCode,
       diverged: false,
       explanation: 'Sync failed.',
-      error: String(err),
+      error: err instanceof DbError ? 'db_error' : 'sync_failed',
     };
   }
 }

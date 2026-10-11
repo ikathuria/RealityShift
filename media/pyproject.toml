@@ -11,7 +11,7 @@ dependencies = [
   "genblaze==0.4.5",
   "genblaze-core==0.3.8",
   "genblaze-s3==0.3.6",
-  "genblaze-gmicloud",
+  "genblaze-gmicloud==0.3.5",
   "pydantic>=2,<3",
   "supabase>=2,<3",
   "python-dotenv>=1,<2",
@@ -20,7 +20,7 @@ dependencies = [
 # The CLI is NOT part of the genblaze umbrella (see GENBLAZE_FEEDBACK.md #1);
 # `genblaze verify` — the demo's provenance check — needs this installed too.
 [project.optional-dependencies]
-cli = ["genblaze-cli"]
+cli = ["genblaze-cli==0.3.6"]
 dev = ["pytest>=8"]
 # Local on-device image generation (SDXL-Turbo via diffusers on Apple Silicon
 # MPS). ~2 GB of wheels + a ~7 GB model on first run. Not needed for the cloud
@@ -34,5 +34,7 @@ rs-media = "realityshift_media.cli:main"
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-packages = ["realityshift_media", "realityshift_media.pipelines"]
+# Discover every subpackage (pipelines, providers, ...) so a non-editable install
+# ships them all; an explicit list silently dropped `providers` before.
+[tool.setuptools.packages.find]
+include = ["realityshift_media*"]

@@ -22,10 +22,12 @@ create index if not exists world_events_target
 -- RLS: live world events are public; fork events visible to fork owner
 alter table world_events enable row level security;
 
-create policy if not exists "public read live world events" on world_events
+drop policy if exists "public read live world events" on world_events;
+create policy "public read live world events" on world_events
   for select using (world_id = 'live');
 
-create policy if not exists "players read own fork events" on world_events
+drop policy if exists "players read own fork events" on world_events;
+create policy "players read own fork events" on world_events
   for select using (
     world_id in (select id from worlds where player_id = auth.uid())
   );

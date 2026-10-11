@@ -2,7 +2,8 @@
 
 Entirely local and free, same posture as the front page:
   - script:  Groq Llama 3.3 70B (free, OpenAI-compatible) writes the anchor VO
-  - voice:   macOS `say` (on-device TTS) — a spoken synthetic disclaimer leads
+  - voice:   on-device TTS — macOS `say`, else espeak-ng / espeak (Linux,
+             Windows); a spoken synthetic disclaimer leads
   - b-roll:  SDXL-Turbo stills, one per beat (on-device diffusion)
   - motion:  ffmpeg Ken Burns (zoompan) on each still, timed to its narration
   - layout:  every text element (chyron, watermark, fork/date bug, and the
@@ -17,6 +18,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 import urllib.request
@@ -31,7 +33,15 @@ W, H, FPS = 1280, 720, 30
 DISCLAIMER = "This is an AI-generated broadcast from a simulated world. No real footage or voices."
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MODEL = "llama-3.3-70b-versatile"
-VOICE = os.environ.get("RS_TTS_VOICE", "Rishi")
+VOICE = os.environ.get("RS_TTS_VOICE") or "Rishi"           # macOS `say` voice
+ESPEAK_VOICE = os.environ.get("RS_ESPEAK_VOICE") or "en-gb" # espeak-ng / espeak voice
+
+# Preference order. `say` first keeps macOS behaviour unchanged.
+TTS_BACKENDS = ("say", "espeak-ng", "espeak")
+
+
+class TTSUnavailable(RuntimeError):
+    """No supported text-to-speech engine is installed."""
 
 
 # ── script ────────────────────────────────────────────────────────────────────
@@ -89,13 +99,51 @@ def write_script(brief: DivergenceBrief) -> list[str]:
 
 
 # ── voice ───────────────────────────────────────────────────────────────────--
-def tts(text: str, out_wav: str) -> float:
-    """Speak `text` to a wav via macOS `say`; return its duration in seconds."""
-    aiff = out_wav + ".aiff"
-    subprocess.run(["say", "-v", VOICE, "-o", aiff, text], check=True)
+def tts_backend() -> str:
+    """Pick the TTS engine: RS_TTS_BACKEND if set, else the first of
+    `say`, `espeak-ng`, `espeak` found on PATH.
+
+    Raises TTSUnavailable with install instructions when none is available.
+    The broadcast has no silent mode: the spoken synthetic-content disclaimer
+    and the narration timing both depend on the voiceover.
+    """
+    forced = os.environ.get("RS_TTS_BACKEND", "").strip()
+    if forced:
+        if forced not in TTS_BACKENDS:
+            raise TTSUnavailable(
+                f"RS_TTS_BACKEND={forced!r} is not supported; use one of {', '.join(TTS_BACKENDS)}"
+            )
+        if not shutil.which(forced):
+            raise TTSUnavailable(f"RS_TTS_BACKEND={forced!r} but `{forced}` is not on PATH")
+        return forced
+    for name in TTS_BACKENDS:
+        if shutil.which(name):
+            return name
+    raise TTSUnavailable(
+        "No text-to-speech engine found for the broadcast voiceover. macOS ships "
+        "`say`; on Linux install espeak-ng (e.g. `apt install espeak-ng`, "
+        "`dnf install espeak-ng`, `pacman -S espeak-ng`); on Windows install "
+        "espeak-ng from https://github.com/espeak-ng/espeak-ng/releases and put it on PATH."
+    )
+
+
+def _tts_command(backend: str, text: str, raw_out: str) -> tuple[list[str], str | None]:
+    """(argv, stdin) that synthesises `text` to `raw_out` with `backend`."""
+    if backend == "say":
+        return ["say", "-v", VOICE, "-o", raw_out, text], None
+    # espeak-ng / espeak: text on stdin so it can never be parsed as an option.
+    return [backend, "-v", ESPEAK_VOICE, "-w", raw_out, "--stdin"], text
+
+
+def tts(text: str, out_wav: str, backend: str | None = None) -> float:
+    """Speak `text` to a 44.1 kHz stereo wav; return its duration in seconds."""
+    backend = backend or tts_backend()
+    raw = out_wav + (".aiff" if backend == "say" else ".raw.wav")
+    argv, stdin = _tts_command(backend, text, raw)
+    subprocess.run(argv, input=stdin, text=stdin is not None, check=True)
     subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
-                    "-i", aiff, "-ar", "44100", "-ac", "2", out_wav], check=True)
-    os.remove(aiff)
+                    "-i", raw, "-ar", "44100", "-ac", "2", out_wav], check=True)
+    os.remove(raw)
     return _duration(out_wav)
 
 
@@ -255,6 +303,7 @@ def assemble_broadcast(brief: DivergenceBrief, illustrator, *, out_mp4: str) -> 
     disclaimer intro), each shown for exactly its spoken length so audio and
     video stay in lock-step.
     """
+    voice = tts_backend()  # fail fast, before any diffusion work
     segments = write_script(brief)
     beats = brief.beats or []
     paper = masthead(brief.nation_iso)
@@ -265,7 +314,7 @@ def assemble_broadcast(brief: DivergenceBrief, illustrator, *, out_mp4: str) -> 
 
     for i, seg in enumerate(segments):
         wav = os.path.join(work, f"vo{i}.wav")
-        dur = tts(seg, wav)
+        dur = tts(seg, wav, backend=voice)
 
         # segment 0 is the disclaimer intro (lead art); segments 1..N map to beats.
         beat = beats[i - 1] if 0 < i <= len(beats) else (beats[0] if beats else None)
@@ -332,7 +381,7 @@ def generate_broadcast(brief: DivergenceBrief, *, out_dir: str = "out",
     asset = Asset(url=f"file://{raw}", media_type="video/mp4",
                   sha256=hashlib.sha256(data).hexdigest(), size_bytes=len(data),
                   duration=round(duration, 2))
-    step = Step(provider="local-broadcast", model="sdxl-turbo+say+ffmpeg",
+    step = Step(provider="local-broadcast", model=f"sdxl-turbo+{tts_backend()}+ffmpeg",
                 prompt="(local divergence broadcast)", modality=Modality.VIDEO,
                 assets=[asset], metadata={"newspaper": newspaper_fields(brief)})
     run = Run(name=f"broadcast-{brief.fork_id}-{brief.nation_iso}-{brief.sim_date.year}",

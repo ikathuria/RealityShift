@@ -105,3 +105,21 @@ def put_index(key: str, body: bytes) -> str:
         ContentType="application/json",
     )
     return presign_get(key)
+
+
+def get_index(key: str) -> bytes | None:
+    """Fetch the current media index JSON from B2, or None if it doesn't exist.
+
+    Any other error (auth, network) propagates: the batch must not overwrite an
+    index it couldn't read, or earlier media would drop off the wall.
+    """
+    from botocore.exceptions import ClientError
+
+    try:
+        obj = _client().get_object(Bucket=os.environ["B2_BUCKET"], Key=key)
+    except ClientError as exc:
+        code = str(exc.response.get("Error", {}).get("Code", ""))
+        if code in ("NoSuchKey", "404", "NotFound"):
+            return None
+        raise
+    return obj["Body"].read()

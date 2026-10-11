@@ -25,13 +25,16 @@ export const useAuthStore = create<AuthStore>((set) => ({
       return () => {};
     }
 
-    supabase.auth.getSession().then(({ data }) => {
-      set({
-        session: data.session,
-        user: data.session?.user ?? null,
-        loading: false,
-      });
-    });
+    supabase.auth.getSession()
+      .then(({ data }) => {
+        set({
+          session: data.session,
+          user: data.session?.user ?? null,
+          loading: false,
+        });
+      })
+      // Never leave auth-gated pages waiting forever on a failed restore.
+      .catch(() => set({ loading: false }));
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       set({ session, user: session?.user ?? null });
@@ -42,8 +45,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   signIn: async (email, password) => {
     if (!supabase) return 'Supabase not configured';
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return error?.message ?? null;
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return error.message;
+    // Set the session now rather than waiting on onAuthStateChange, so a caller
+    // that continues straight into an authenticated action sees the new user.
+    set({ session: data.session, user: data.session?.user ?? data.user ?? null });
+    return null;
   },
 
   signUp: async (email, password) => {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { instagramConfigured, buildCaption, postToInstagram } from './instagram.js'
+import { instagramConfigured, buildCaption, postToInstagram, sanitizeCaptionText } from './instagram.js'
 
 afterEach(() => vi.restoreAllMocks())
 
@@ -23,6 +23,39 @@ describe('buildCaption', () => {
 
   it('leads with the world title when provided', () => {
     expect(buildCaption({ country: 'USA', worldTitle: 'My Cold War' })).toContain('My Cold War')
+  })
+})
+
+describe('caption sanitisation', () => {
+  it('strips control characters, folds newlines and caps the title at 80 chars', () => {
+    const t = sanitizeCaptionText('Hello\u0000\u202e world\n\nline two ' + 'x'.repeat(200))
+    // eslint-disable-next-line no-control-regex
+    expect(t).not.toMatch(/[\u0000-\u001f\u202e\n]/)
+    expect(t.length).toBeLessThanOrEqual(80)
+    expect(t.startsWith('Hello world line two')).toBe(true)
+  })
+
+  it('neutralises @mentions, #hashtags and links', () => {
+    const t = sanitizeCaptionText('Follow @evil #spam at https://evil.example/x and evil.com')
+    expect(t).not.toContain('@')
+    expect(t).not.toContain('#')
+    expect(t).not.toContain('https://')
+    expect(t).not.toContain('evil.com')
+    expect(t).toContain('[link]')
+  })
+
+  it('a hostile title cannot inject extra caption lines or hashtags', () => {
+    const cap = buildCaption({ country: 'USA', worldTitle: 'Mine\n#ad @brand' })
+    const first = cap.split('\n')[0]
+    expect(first).toContain('Mine')
+    expect(first).not.toContain('#')
+    expect(first).not.toContain('@')
+  })
+
+  it('says "live world" instead of a cutoff for the live world', () => {
+    const cap = buildCaption({ country: 'USA', cutoff: null, liveWorld: true })
+    expect(cap).toContain('Live world')
+    expect(cap).not.toContain('No real-world data after')
   })
 })
 

@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .contracts import DivergenceBrief
+from .contracts import DivergenceBrief, cutoff_iso
 
 
 def simulation_metadata(brief: DivergenceBrief) -> dict[str, Any]:
@@ -22,13 +22,24 @@ def simulation_metadata(brief: DivergenceBrief) -> dict[str, Any]:
 
     Applied as `pipeline.metadata(simulation=simulation_metadata(brief))`, which
     merges into Run.metadata and is therefore covered by the canonical hash.
+
+    The key set is fixed: every key is always present, including
+    `real_world_data_cutoff` when it is null (live world, sample). A null value
+    is still part of the canonical JSON, so it is bound into the hash exactly
+    like a timestamp: stripping it or swapping in a timestamp breaks
+    verification.
     """
     return {
         "fork_id": brief.fork_id,
         "parent_fork_id": brief.parent_fork_id,
         "divergence_date": brief.divergence_date.isoformat(),
         "sim_date": brief.sim_date.isoformat(),
-        "real_world_data_cutoff": brief.real_world_data_cutoff.isoformat(),
+        # Fork: worlds.created_at as ISO-8601 UTC. Live world / sample: null.
+        "real_world_data_cutoff": cutoff_iso(brief.real_world_data_cutoff),
+        # True for the live world, which keeps ingesting real news monthly.
+        "live_world": brief.live_world,
+        # True only for explicit synthetic sample briefs; never real media.
+        "sample": brief.sample,
         "nation_iso": brief.nation_iso,
         # Constants, but they are the whole point: a verifier reads these off the
         # asset without needing to know how RealityShift works.

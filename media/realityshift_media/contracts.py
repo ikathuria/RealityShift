@@ -7,9 +7,11 @@ small module is what lets the media layer stay a pure consumer.
 """
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, timezone
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+LIVE_WORLD_ID = "live"
 
 
 class NarrativeBeat(BaseModel):
@@ -28,38 +30,99 @@ class NarrativeBeat(BaseModel):
 
 
 class DivergenceBrief(BaseModel):
-    """A single fork-month, ready to drive a media pipeline.
+    """A single fork-year, ready to drive a media pipeline.
 
     For a fork, divergence is measured against the live world at the same sim
-    year — NOT against reality. Forks receive no real-world data after their
-    split, so `real_world_data_cutoff` equals `divergence_date` by construction,
-    and that invariant is what gets bound into every generated asset's manifest.
+    year, NOT against reality.
+
+    Provenance semantics (shared contract with the frontend and workers):
+
+    - Fork: `real_world_data_cutoff` is the fork's `worlds.created_at`, a
+      timezone-aware UTC timestamp. It is the real moment the live state was
+      copied, so real-news corrections up to then are included and none after.
+    - Live world (`live_world=True`): `real_world_data_cutoff` is None, because
+      the live world keeps ingesting real news monthly and has no cutoff.
+    - Sample (`sample=True`): an explicit, opt-in synthetic brief for offline
+      demos. Never produced by default, never a real world, and marked as such
+      in provenance so it can't pass for real media.
+
+    Whatever the case, the cutoff (including a null one) and the flags are
+    carried into the provenance block bound into every asset's canonical hash.
     """
 
     fork_id: str
     parent_fork_id: str | None = None
 
-    # The month split from consensus reality (the live world's timeline).
+    # Sim date at which this timeline split from its parent. For a fork this is
+    # the start of `forked_at_year`; for the live world, the start of the sim
+    # year being reported (it is re-anchored to reality as news arrives).
     divergence_date: date
-    # The in-fork month this brief reports.
+    # The in-world date this brief reports.
     sim_date: date
     # ISO3 of the nation this brief is about; None for a global segment.
     nation_iso: str | None = None
 
     beats: list[NarrativeBeat] = Field(default_factory=list)
 
-    # MUST equal divergence_date for a fork — enforced in __init__ below, and
-    # carried into the provenance manifest as the verifiable no-new-data claim.
-    real_world_data_cutoff: date
+    # Real-world (UTC) moment after which no real data entered this world.
+    # Required for a fork; None for the live world and for samples.
+    real_world_data_cutoff: datetime | None = None
+
+    # True only for world_id == "live".
+    live_world: bool = False
+    # True only for explicit, synthetic offline sample briefs.
+    sample: bool = False
 
     # How this fork's state differs from the live world at sim_date, per
     # indicator. Structured, not prose, so the script step can reason over it.
     consensus_delta: dict[str, float] = Field(default_factory=dict)
 
-    def model_post_init(self, _context: object) -> None:
-        if self.real_world_data_cutoff != self.divergence_date:
+    @field_validator("real_world_data_cutoff")
+    @classmethod
+    def _cutoff_is_utc(cls, v: datetime | None) -> datetime | None:
+        if v is None:
+            return None
+        if v.tzinfo is None or v.utcoffset() is None:
             raise ValueError(
-                "real_world_data_cutoff must equal divergence_date for a fork: "
-                f"{self.real_world_data_cutoff} != {self.divergence_date}. "
-                "A fork receives no real-world data after it splits."
+                "real_world_data_cutoff must be timezone-aware (a real UTC moment, "
+                "e.g. worlds.created_at), not a naive datetime."
             )
+        return v.astimezone(timezone.utc)
+
+    @model_validator(mode="after")
+    def _check_world_kind(self) -> "DivergenceBrief":
+        if self.live_world and self.sample:
+            raise ValueError("a brief cannot be both live_world and sample")
+        if self.live_world or self.fork_id == LIVE_WORLD_ID:
+            if not (self.live_world and self.fork_id == LIVE_WORLD_ID):
+                raise ValueError(
+                    f"live_world must be set exactly when fork_id == {LIVE_WORLD_ID!r} "
+                    f"(fork_id={self.fork_id!r}, live_world={self.live_world})"
+                )
+            if self.real_world_data_cutoff is not None:
+                raise ValueError(
+                    "the live world has no real_world_data_cutoff (it keeps ingesting "
+                    "real news); it must be None"
+                )
+        elif self.sample:
+            if self.real_world_data_cutoff is not None:
+                raise ValueError("a sample brief has no real_world_data_cutoff")
+        elif self.real_world_data_cutoff is None:
+            raise ValueError(
+                "a fork requires real_world_data_cutoff = the fork's worlds.created_at"
+            )
+        return self
+
+
+def cutoff_iso(cutoff: datetime | None) -> str | None:
+    """Canonical ISO-8601 UTC form of a cutoff, or None.
+
+    Millisecond precision with a 'Z' suffix (the same shape as JavaScript's
+    Date.toISOString()), so the frontend can parse and compare it directly and
+    the hashed string is deterministic for a given instant. Truncating to
+    milliseconds can only move the cutoff earlier, never later.
+    """
+    if cutoff is None:
+        return None
+    utc = cutoff.astimezone(timezone.utc)
+    return utc.strftime("%Y-%m-%dT%H:%M:%S.") + f"{utc.microsecond // 1000:03d}Z"
